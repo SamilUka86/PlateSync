@@ -1,0 +1,176 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  Menu, 
+  Scale, 
+  Download, 
+  Sparkles,
+  User,
+  ShieldCheck,
+  ChevronRight
+} from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { useNotification } from '../../context/NotificationContext';
+
+export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, setCollapsed }) => {
+  const { userProfile, updateProfile, isDemoMode, isDevTester, demoAccessMode, toggleDemoAccessMode, logout } = useAuth();
+  const { addNotification } = useNotification();
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+
+  // Capture PWA install event if supported
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstallPWA = async () => {
+    if (!deferredPrompt) {
+      addNotification('To install on iOS: Tap Share then "Add to Home Screen". On Chrome: use the 3-dots menu.', 'info', 5000);
+      return;
+    }
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      addNotification('PlateSync installed as PWA!', 'success');
+    }
+    setDeferredPrompt(null);
+  };
+
+  const currentUnit = userProfile?.preferredUnit || 'KG';
+
+  const togglePreferredUnit = () => {
+    const nextUnit = currentUnit === 'KG' ? 'LB' : 'KG';
+    updateProfile({ preferredUnit: nextUnit });
+    addNotification(`Default weight unit set to ${nextUnit}`, 'success');
+  };
+
+  const getPageTitle = () => {
+    switch (activeTab) {
+      case 'dashboard': return 'Dashboard Overview';
+      case 'calculator': return 'Smart Barbell Calculator';
+      case 'tracker': return 'Workout Tracker & Logging';
+      case 'library': return 'Exercise Library & Programs';
+      case 'history': return 'Workout History & Logs';
+      case 'analytics': return 'Performance & Analytics';
+      case 'records': return 'Personal Records & Achievements';
+      case 'profile': return 'Athlete Profile';
+      case 'settings': return 'Platform Settings';
+      default: return 'PlateSync';
+    }
+  };
+
+  return (
+    <header className="sticky top-0 z-30 h-16 bg-midnight-bg/85 backdrop-blur-md border-b border-midnight-border px-4 md:px-8 flex items-center justify-between">
+      {/* Left: Mobile menu & Title */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onOpenMobileMenu}
+          className="p-2 text-slate-400 hover:text-white rounded-xl lg:hidden hover:bg-midnight-card transition"
+          aria-label="Open mobile navigation"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+
+        {collapsed && (
+          <button
+            onClick={() => setCollapsed(false)}
+            className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-midnight-border bg-midnight-card hover:bg-midnight-elevated text-neon-cyan hover:text-white text-xs font-semibold transition"
+            title="Expand Sidebar"
+          >
+            <ChevronRight className="w-4 h-4" />
+            <span>Open Menu</span>
+          </button>
+        )}
+
+        <div>
+          <h2 className="text-sm md:text-base font-bold text-white tracking-tight">
+            {getPageTitle()}
+          </h2>
+          <p className="hidden md:block text-[11px] text-slate-400 font-mono">
+            Smart Barbell &bull; Mixed-Unit Weight Tracking
+          </p>
+        </div>
+      </div>
+
+      {/* Right: Controls */}
+      <div className="flex items-center gap-2.5">
+        {/* Demo Mode Controller Badge & Toggle */}
+        {isDemoMode && (
+          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-midnight-card border border-neon-cyan/30 text-xs">
+            <span className="px-2 py-0.5 rounded-lg bg-neon-cyan/10 text-neon-cyan font-bold font-mono text-[10px]">
+              {isDevTester 
+                ? (demoAccessMode === 'calculator-only' ? 'Demo: Calc Only' : 'Demo: Testing Full')
+                : 'Demo Mode'}
+            </span>
+
+            {/* Developer Toggle: Only rendered when dev mode is active */}
+            {isDevTester && (
+              <button
+                onClick={() => {
+                  const next = toggleDemoAccessMode();
+                  addNotification(
+                    next === 'full' 
+                      ? 'Unlocked all tabs in Demo Mode for testing updates' 
+                      : 'Switched Demo Account back to Calculator-Only mode',
+                    'info'
+                  );
+                }}
+                className="px-2 py-0.5 rounded-lg bg-midnight-bg hover:bg-midnight-elevated text-slate-300 hover:text-white font-mono text-[10px] border border-midnight-border transition"
+                title={demoAccessMode === 'calculator-only' ? 'Click to unlock all tabs for testing updates' : 'Click to lock to calculator only'}
+              >
+                {demoAccessMode === 'calculator-only' ? 'Unlock All' : 'Lock Calc'}
+              </button>
+            )}
+
+            <button
+              onClick={logout}
+              className="px-2 py-0.5 rounded-lg bg-neon-cyan hover:bg-[#29bfcd] text-slate-950 font-black text-[10px] transition"
+              title="Sign in to your account"
+            >
+              Sign In
+            </button>
+          </div>
+        )}
+
+        {/* PWA Install Button */}
+        <button
+          onClick={handleInstallPWA}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-midnight-border bg-midnight-card hover:bg-midnight-elevated text-slate-300 hover:text-neon-cyan text-xs font-semibold transition"
+          title="Install PlateSync as Progressive Web App"
+        >
+          <Download className="w-3.5 h-3.5 text-neon-cyan" />
+          <span className="hidden sm:inline">Install App</span>
+        </button>
+
+        {/* Global Unit Switcher */}
+        <button
+          onClick={togglePreferredUnit}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-midnight-border bg-midnight-card hover:bg-midnight-elevated text-slate-200 text-xs font-bold font-mono transition"
+          title="Toggle Global Preferred Unit (KG / LB)"
+        >
+          <Scale className="w-3.5 h-3.5 text-neon-cyan" />
+          <span>{currentUnit}</span>
+        </button>
+
+        {/* User Avatar */}
+        <button
+          onClick={() => setActiveTab('profile')}
+          className="w-8 h-8 rounded-full border border-midnight-border bg-midnight-elevated p-0.5 hover:border-neon-cyan transition"
+          title="Open Profile"
+        >
+          <img
+            src={
+              userProfile?.profileImage ||
+              `https://api.dicebear.com/7.x/bottts/svg?seed=${userProfile?.name || 'athlete'}`
+            }
+            alt="User"
+            className="w-full h-full rounded-full object-cover"
+          />
+        </button>
+      </div>
+    </header>
+  );
+};

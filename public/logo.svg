@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Dark navy container -->
+  <rect width="64" height="64" rx="16" fill="#0D1425"/>
+  <rect x="1" y="1" width="62" height="62" rx="15" stroke="#26334D" stroke-width="1.5"/>
+
+  <!-- Subtle ambient cyan & violet glow -->
+  <circle cx="24" cy="32" r="14" fill="#35D9E8" fill-opacity="0.15" filter="blur(6px)"/>
+  <circle cx="40" cy="32" r="14" fill="#A855F7" fill-opacity="0.15" filter="blur(6px)"/>
+
+  <!-- Metallic barbell shaft -->
+  <rect x="8" y="29.5" width="48" height="5" rx="2.5" fill="#94A3B8"/>
+  <rect x="26" y="30.5" width="12" height="3" rx="1" fill="#475569"/>
+
+  <!-- Barbell sleeves and collars -->
+  <rect x="18" y="26" width="3" height="12" rx="1" fill="#64748B"/>
+  <rect x="43" y="26" width="3" height="12" rx="1" fill="#64748B"/>
+
+  <!-- Left plates (Cyan - KG) -->
+  <rect x="13" y="17" width="4.5" height="30" rx="2" fill="#35D9E8"/>
+  <rect x="9.5" y="21" width="3" height="22" rx="1.5" fill="#35D9E8" fill-opacity="0.8"/>
+
+  <!-- Right plates (Violet - LB) -->
+  <rect x="46.5" y="17" width="4.5" height="30" rx="2" fill="#A855F7"/>
+  <rect x="51.5" y="21" width="3" height="22" rx="1.5" fill="#A855F7" fill-opacity="0.8"/>
+</svg>

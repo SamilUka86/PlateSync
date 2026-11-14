@@ -1,0 +1,18 @@
+{
+  "short_name": "PlateSync",
+  "name": "PlateSync – Smart Workout & Mixed-Unit Weight Tracking",
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#080D1B",
+  "theme_color": "#0D1425",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "description": "Smart gym workout tracking platform designed to accurately calculate lifting weights when combining KG and LB plates."
+}

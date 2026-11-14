@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-midnight-bg text-slate-100 font-sans antialiased overflow-x-hidden;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* Custom Midnight Neon subtle scrollbars */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #080D1B;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #26334D;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #3988E8;
+  }
+}
+
+@layer utilities {
+  .bg-glass {
+    background: rgba(13, 20, 37, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  .border-midnight {
+    border-color: #26334D;
+  }
+
+  .text-glow-cyan {
+    text-shadow: 0 0 12px rgba(53, 217, 232, 0.45);
+  }
+
+  .text-glow-violet {
+    text-shadow: 0 0 12px rgba(168, 85, 247, 0.45);
+  }
+}

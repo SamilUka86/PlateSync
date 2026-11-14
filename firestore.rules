@@ -1,0 +1,163 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // =========================================================================
+    // GLOBAL SECURITY & AUTHENTICATION HELPER FUNCTIONS
+    // =========================================================================
+
+    // Verify user is authenticated with Firebase Auth
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Verify requesting user matches the document or path owner UID
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Valid barbell / plate / display unit check ('KG' or 'LB')
+    function isValidUnit(unit) {
+      return unit == 'KG' || unit == 'LB';
+    }
+
+    // Positive numerical check (supports integers and floating-point numbers)
+    function isPositiveNumber(val) {
+      return val is number && val >= 0;
+    }
+
+    // Strictly positive numerical check (for physical attributes like height/bodyweight)
+    function isStrictlyPositiveNumber(val) {
+      return val is number && val > 0;
+    }
+
+    // String validation with max length
+    function isValidString(val, maxLen) {
+      return val is string && val.size() <= maxLen;
+    }
+
+    // =========================================================================
+    // 1. ATHLETE USER PROFILES: /users/{userId}
+    // =========================================================================
+    match /users/{userId} {
+      // Authenticated owner can read and delete their own profile
+      allow read, delete: if isOwner(userId);
+
+      // Create athlete profile: enforce UID match and validate data fields
+      allow create: if isOwner(userId)
+        && request.resource.data.uid == userId
+        && (!('name' in request.resource.data) || isValidString(request.resource.data.name, 100))
+        && (!('displayName' in request.resource.data) || isValidString(request.resource.data.displayName, 100))
+        && (!('email' in request.resource.data) || isValidString(request.resource.data.email, 150))
+        && (!('profileImage' in request.resource.data) || request.resource.data.profileImage == null || request.resource.data.profileImage is string)
+        && (!('photoURL' in request.resource.data) || request.resource.data.photoURL == null || request.resource.data.photoURL is string)
+        && (!('height' in request.resource.data) || (isStrictlyPositiveNumber(request.resource.data.height) && request.resource.data.height <= 300))
+        && (!('bodyWeight' in request.resource.data) || (isStrictlyPositiveNumber(request.resource.data.bodyWeight) && request.resource.data.bodyWeight <= 600))
+        && (!('preferredUnit' in request.resource.data) || isValidUnit(request.resource.data.preferredUnit))
+        && (!('defaultBarbellWeight' in request.resource.data) || (isPositiveNumber(request.resource.data.defaultBarbellWeight) && request.resource.data.defaultBarbellWeight <= 200))
+        && (!('defaultBarbellUnit' in request.resource.data) || isValidUnit(request.resource.data.defaultBarbellUnit))
+        && (!('theme' in request.resource.data) || isValidString(request.resource.data.theme, 50))
+        && (!('bio' in request.resource.data) || isValidString(request.resource.data.bio, 500));
+
+      // Update athlete profile: UID cannot be reassigned to another user
+      allow update: if isOwner(userId)
+        && (!('uid' in request.resource.data) || request.resource.data.uid == userId)
+        && (!('name' in request.resource.data) || isValidString(request.resource.data.name, 100))
+        && (!('displayName' in request.resource.data) || isValidString(request.resource.data.displayName, 100))
+        && (!('email' in request.resource.data) || isValidString(request.resource.data.email, 150))
+        && (!('profileImage' in request.resource.data) || request.resource.data.profileImage == null || request.resource.data.profileImage is string)
+        && (!('photoURL' in request.resource.data) || request.resource.data.photoURL == null || request.resource.data.photoURL is string)
+        && (!('height' in request.resource.data) || (isStrictlyPositiveNumber(request.resource.data.height) && request.resource.data.height <= 300))
+        && (!('bodyWeight' in request.resource.data) || (isStrictlyPositiveNumber(request.resource.data.bodyWeight) && request.resource.data.bodyWeight <= 600))
+        && (!('preferredUnit' in request.resource.data) || isValidUnit(request.resource.data.preferredUnit))
+        && (!('defaultBarbellWeight' in request.resource.data) || (isPositiveNumber(request.resource.data.defaultBarbellWeight) && request.resource.data.defaultBarbellWeight <= 200))
+        && (!('defaultBarbellUnit' in request.resource.data) || isValidUnit(request.resource.data.defaultBarbellUnit))
+        && (!('theme' in request.resource.data) || isValidString(request.resource.data.theme, 50))
+        && (!('bio' in request.resource.data) || isValidString(request.resource.data.bio, 500));
+
+      // =======================================================================
+      // 2. WORKOUT SESSIONS: /users/{userId}/workouts/{workoutId}
+      // =======================================================================
+      match /workouts/{workoutId} {
+        // Authenticated owner can read and delete their own logged workouts
+        allow read, delete: if isOwner(userId);
+
+        // Create or update workout session: enforce user ownership & data limits
+        allow create, update: if isOwner(userId)
+          && (!('userId' in request.resource.data) || request.resource.data.userId == userId)
+          && (!('workoutName' in request.resource.data) || isValidString(request.resource.data.workoutName, 150))
+          && (!('title' in request.resource.data) || isValidString(request.resource.data.title, 150))
+          && (!('duration' in request.resource.data) || isPositiveNumber(request.resource.data.duration))
+          && (!('exercises' in request.resource.data) || request.resource.data.exercises is list)
+          && (!('totalVolume' in request.resource.data) || isPositiveNumber(request.resource.data.totalVolume))
+          && (!('totalVolumeKg' in request.resource.data) || isPositiveNumber(request.resource.data.totalVolumeKg))
+          && (!('totalVolumeLbs' in request.resource.data) || isPositiveNumber(request.resource.data.totalVolumeLbs))
+          && (!('totalSets' in request.resource.data) || isPositiveNumber(request.resource.data.totalSets))
+          && (!('totalReps' in request.resource.data) || isPositiveNumber(request.resource.data.totalReps));
+      }
+
+      // =======================================================================
+      // 3. SAVED PLATE & BARBELL SETUPS: /users/{userId}/plateConfigurations/{configId}
+      // =======================================================================
+      match /plateConfigurations/{configId} {
+        allow read, delete: if isOwner(userId);
+
+        allow create, update: if isOwner(userId)
+          && (!('name' in request.resource.data) || isValidString(request.resource.data.name, 100))
+          && (!('barbellWeight' in request.resource.data) || (isPositiveNumber(request.resource.data.barbellWeight) && request.resource.data.barbellWeight <= 200))
+          && (!('barbellUnit' in request.resource.data) || isValidUnit(request.resource.data.barbellUnit))
+          && (!('leftPlates' in request.resource.data) || request.resource.data.leftPlates is list)
+          && (!('rightPlates' in request.resource.data) || request.resource.data.rightPlates is list)
+          && (!('totalKg' in request.resource.data) || isPositiveNumber(request.resource.data.totalKg))
+          && (!('totalLbs' in request.resource.data) || isPositiveNumber(request.resource.data.totalLbs));
+      }
+
+      // =======================================================================
+      // 4. PERSONAL RECORDS (PRs): /users/{userId}/personalRecords/{recordId}
+      // =======================================================================
+      match /personalRecords/{recordId} {
+        allow read, delete: if isOwner(userId);
+
+        allow create, update: if isOwner(userId)
+          && (!('exerciseName' in request.resource.data) || isValidString(request.resource.data.exerciseName, 100))
+          && (!('name' in request.resource.data) || isValidString(request.resource.data.name, 100))
+          && (!('maxWeightKg' in request.resource.data) || isPositiveNumber(request.resource.data.maxWeightKg))
+          && (!('maxWeightLbs' in request.resource.data) || isPositiveNumber(request.resource.data.maxWeightLbs))
+          && (!('reps' in request.resource.data) || isPositiveNumber(request.resource.data.reps));
+      }
+
+      // =======================================================================
+      // 5. WORKOUT ROUTINE TEMPLATES: /users/{userId}/templates/{templateId}
+      // =======================================================================
+      match /templates/{templateId} {
+        allow read, delete: if isOwner(userId);
+
+        allow create, update: if isOwner(userId)
+          && (!('name' in request.resource.data) || isValidString(request.resource.data.name, 100))
+          && (!('title' in request.resource.data) || isValidString(request.resource.data.title, 100))
+          && (!('split' in request.resource.data) || isValidString(request.resource.data.split, 50))
+          && (!('exercises' in request.resource.data) || request.resource.data.exercises is list);
+      }
+
+      // =======================================================================
+      // 6. CUSTOM ATHLETE EXERCISES: /users/{userId}/customExercises/{exerciseId}
+      // =======================================================================
+      match /customExercises/{exerciseId} {
+        allow read, delete: if isOwner(userId);
+
+        allow create, update: if isOwner(userId)
+          && (!('name' in request.resource.data) || isValidString(request.resource.data.name, 100))
+          && (!('muscle' in request.resource.data) || isValidString(request.resource.data.muscle, 50))
+          && (!('category' in request.resource.data) || isValidString(request.resource.data.category, 50))
+          && (!('equipment' in request.resource.data) || isValidString(request.resource.data.equipment, 50));
+      }
+    }
+
+    // =========================================================================
+    // DEFAULT STRICT SECURITY RULE: DENY ALL UNMATCHED PATHS
+    // =========================================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
