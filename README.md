@@ -100,6 +100,6 @@
 ## 🌐 Live Website
 
 PlateSync is deployed and accessible worldwide:
-- **Official Website**: [https://platesync.vercel.app](https://platesync.vercel.app)
+- **Official Website**: [https://platesync.vercel.app](https://platesyncapp.vercel.app)
 
 ---
