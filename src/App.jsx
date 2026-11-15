@@ -60,11 +60,45 @@ const MainAppLayout = () => {
         const path = window.location.pathname.toLowerCase();
         const hash = window.location.hash.toLowerCase();
         const params = new URLSearchParams(window.location.search);
-        return path.startsWith('/admin') || hash === '#admin' || params.get('view') === 'admin';
+        const storedAdminView = localStorage.getItem('platesync_admin_view_active') === 'true';
+        return path.startsWith('/admin') || hash === '#admin' || params.get('view') === 'admin' || storedAdminView;
       }
     } catch (e) {}
     return false;
   });
+
+  // Keep admin view state synchronized across browser refreshes
+  useEffect(() => {
+    try {
+      if (isAdminViewOpen) {
+        localStorage.setItem('platesync_admin_view_active', 'true');
+        if (window.location.hash !== '#admin') {
+          window.location.hash = 'admin';
+        }
+      } else {
+        localStorage.removeItem('platesync_admin_view_active');
+        if (window.location.hash === '#admin') {
+          window.location.hash = '';
+        }
+      }
+    } catch (e) {}
+  }, [isAdminViewOpen]);
+
+  // Ensure non-admin athletes never stay in admin view
+  useEffect(() => {
+    if (currentUser) {
+      const email = currentUser.email?.toLowerCase();
+      if (email !== 'platesync86@gmail.com' && email !== 'samilplatesync@gmail.com') {
+        setIsAdminViewOpen(false);
+        try {
+          localStorage.removeItem('platesync_admin_view_active');
+          if (window.location.hash === '#admin') {
+            window.location.hash = '';
+          }
+        } catch (e) {}
+      }
+    }
+  }, [currentUser]);
 
   const [activeTab, setActiveTab] = useState(() => {
     try {
@@ -158,24 +192,28 @@ const MainAppLayout = () => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
 
+  const handleCloseAdminView = () => {
+    setIsAdminViewOpen(false);
+    try {
+      localStorage.removeItem('platesync_admin_view_active');
+      if (window.location.hash === '#admin') {
+        window.location.hash = '';
+      }
+    } catch (e) {}
+  };
+
   // Admin View Active Route
   if (isAdminViewOpen) {
     if (isAdmin) {
       return (
         <AdminLayout
-          onBackToApp={() => {
-            setIsAdminViewOpen(false);
-            if (window.location.hash === '#admin') window.location.hash = '';
-          }}
+          onBackToApp={handleCloseAdminView}
         />
       );
     }
     return (
       <AdminLoginPage
-        onBackToApp={() => {
-          setIsAdminViewOpen(false);
-          if (window.location.hash === '#admin') window.location.hash = '';
-        }}
+        onBackToApp={handleCloseAdminView}
       />
     );
   }

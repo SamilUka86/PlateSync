@@ -829,18 +829,19 @@ export const deleteWorkoutProgram = async (programId, programTitle) => {
 export const submitUserFeedback = async (feedbackData) => {
   const currentUser = auth?.currentUser;
   const feedbackId = `fb_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+  const nowIso = new Date().toISOString();
 
   const payload = {
     id: feedbackId,
-    userId: currentUser?.uid || 'guest_user',
-    userEmail: currentUser?.email || feedbackData.contactEmail || 'anonymous',
-    userName: currentUser?.displayName || 'Athlete',
+    userId: currentUser?.uid || feedbackData.userId || 'guest_user',
+    userEmail: currentUser?.email || feedbackData.contactEmail || 'anonymous@platesync.app',
+    userName: currentUser?.displayName || feedbackData.userName || 'Athlete',
     category: feedbackData.category || 'general', // 'bug', 'feature', 'calculation', 'install', 'general'
     subject: feedbackData.subject || '',
     message: feedbackData.message || '',
     status: 'pending', // 'pending', 'in-progress', 'resolved'
     internalNotes: '',
-    createdAt: new Date().toISOString()
+    createdAt: nowIso
   };
 
   const localFeedback = getLocalFallback('user_feedback', []);
@@ -850,7 +851,7 @@ export const submitUserFeedback = async (feedbackData) => {
     try {
       await setDoc(doc(db, 'userFeedback', feedbackId), {
         ...payload,
-        createdAt: serverTimestamp()
+        createdAt: nowIso
       });
     } catch (e) {
       console.warn('Feedback submit notice:', e);
@@ -869,17 +870,33 @@ export const getAllFeedback = async (statusFilter = 'ALL', categoryFilter = 'ALL
   if (isFirebaseConfigured() && db) {
     try {
       const snap = await getDocs(collection(db, 'userFeedback'));
-      list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      list = snap.docs.map(d => {
+        const data = d.data();
+        let createdAt = data.createdAt;
+        if (createdAt && typeof createdAt.toDate === 'function') {
+          createdAt = createdAt.toDate().toISOString();
+        } else if (createdAt && createdAt.seconds) {
+          createdAt = new Date(createdAt.seconds * 1000).toISOString();
+        } else if (!createdAt) {
+          createdAt = new Date().toISOString();
+        }
+        return { id: d.id, ...data, createdAt };
+      });
     } catch (e) {
       console.warn('Feedback fetch notice:', e);
     }
   }
 
-  if (list.length === 0) {
-    list = getLocalFallback('user_feedback', []);
+  // Merge with local fallback
+  const localList = getLocalFallback('user_feedback', []);
+  const seenIds = new Set(list.map(f => f.id));
+  for (const item of localList) {
+    if (!seenIds.has(item.id)) {
+      list.push(item);
+    }
   }
 
-  list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
   if (statusFilter !== 'ALL') {
     list = list.filter(f => (f.status || 'pending').toLowerCase() === statusFilter.toLowerCase());
@@ -897,10 +914,11 @@ export const getAllFeedback = async (statusFilter = 'ALL', categoryFilter = 'ALL
  */
 export const updateFeedbackStatus = async (feedbackId, status, internalNotes) => {
   if (!feedbackId) return false;
+  const nowIso = new Date().toISOString();
 
   const localFeedback = getLocalFallback('user_feedback', []);
   setLocalFallback('user_feedback', localFeedback.map(f => 
-    f.id === feedbackId ? { ...f, status, internalNotes, updatedAt: new Date().toISOString() } : f
+    f.id === feedbackId ? { ...f, status, internalNotes, updatedAt: nowIso } : f
   ));
 
   if (isFirebaseConfigured() && db) {
@@ -908,7 +926,7 @@ export const updateFeedbackStatus = async (feedbackId, status, internalNotes) =>
       await updateDoc(doc(db, 'userFeedback', feedbackId), {
         status,
         internalNotes: internalNotes || '',
-        updatedAt: serverTimestamp()
+        updatedAt: nowIso
       });
     } catch (e) {
       console.warn('Feedback update notice:', e);

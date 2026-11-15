@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   MessageSquare, 
   X, 
@@ -35,6 +35,13 @@ export const UserFeedbackModal = ({ isOpen, onClose }) => {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
 
+  // Sync contact email when athlete profile loads
+  useEffect(() => {
+    if (currentUser?.email && !contactEmail) {
+      setContactEmail(currentUser.email);
+    }
+  }, [currentUser, contactEmail]);
+
   if (!isOpen) return null;
 
   const handleSubmit = async (e) => {
@@ -52,11 +59,14 @@ export const UserFeedbackModal = ({ isOpen, onClose }) => {
         category,
         subject: subject.trim() || `${category.toUpperCase()} Report`,
         message: message.trim(),
-        contactEmail: contactEmail.trim()
+        contactEmail: contactEmail.trim() || currentUser?.email || '',
+        userId: currentUser?.uid,
+        userName: currentUser?.displayName || currentUser?.name || 'Athlete'
       });
       setSubmitted(true);
-      addNotification('Feedback submitted to PlateSync engineering team. Thank you!', 'success');
+      addNotification('Feedback submitted to PlateSync operations team. Thank you!', 'success');
     } catch (err) {
+      console.error('Feedback submission error:', err);
       setError('Failed to submit feedback. Please try again.');
     } finally {
       setSubmitting(false);
