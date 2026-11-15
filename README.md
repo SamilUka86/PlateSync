@@ -93,29 +93,7 @@
 
 ---
 
-## 🚀 How to Run the Project Locally
 
-### 1. Clone the Repository
-```bash
-git clone https://github.com/SamilUka86/PlateSync.git
-cd PlateSync
-```
-
-### 2. Install Dependencies
-```bash
-npm install
-```
-
-### 3. Start the Development Server
-```bash
-npm run dev
-```
-Open your browser and navigate to `http://localhost:5173`.
-
-### 4. Build for Production
-```bash
-npm run build
-```
 
 ---
 
@@ -123,22 +101,5 @@ npm run build
 
 PlateSync is deployed and accessible worldwide:
 - **Official Website**: [https://platesync.vercel.app](https://platesync.vercel.app)
-- **Custom Domain**: [https://platesyncapp.com](https://platesyncapp.com)
 
 ---
-
-## 👨‍💻 Author & Connect
-
-**Samil Uka**  
-*Full Stack Developer & Fitness Enthusiast*
-
-- 🐙 **GitHub**: [@SamilUka86](https://github.com/SamilUka86)
-- 💼 **LinkedIn**: [Samil Uka](https://www.linkedin.com/in/samil-uka-53049b359)
-- 📸 **Instagram**: [@_.samil._86](https://www.instagram.com/_.samil._86)
-- ✉️ **Contact Support**: [platesync86@gmail.com](mailto:platesync86@gmail.com)
-
----
-
-## 📄 License
-
-This project is open-source and available under the **MIT License**.
