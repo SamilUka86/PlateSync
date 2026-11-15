@@ -13,12 +13,14 @@ import {
   Settings,
   ShieldCheck,
   Check,
-  Calculator
+  Calculator,
+  KeyRound
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
 import { ForgotPasswordModal } from '../../components/auth/ForgotPasswordModal';
 import { FirebaseSetupModal } from '../../components/auth/FirebaseSetupModal';
+import { GoogleAuthSetupModal } from '../../components/auth/GoogleAuthSetupModal';
 import { Footer } from '../../components/layout/Footer';
 
 export const AuthPage = ({ onClose }) => {
@@ -31,6 +33,7 @@ export const AuthPage = ({ onClose }) => {
   // Modals
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [showConfigModal, setShowConfigModal] = useState(false);
+  const [showGoogleAuthModal, setShowGoogleAuthModal] = useState(false);
 
   // Form inputs
   const [name, setName] = useState('');
@@ -205,18 +208,15 @@ export const AuthPage = ({ onClose }) => {
       addNotification('Signed in with Google successfully!', 'success');
       if (onClose) onClose();
     } catch (err) {
-      let msg = 'Google authentication encountered an issue.';
-      if (err.message === 'FIREBASE_NOT_CONFIGURED') {
-        msg = 'Google authentication is currently connecting. Please try again or use Demo Account.';
-        if (isDevTester) setShowConfigModal(true);
+      if (err.message === 'GOOGLE_AUTH_NOT_CONFIGURED' || err.message === 'FIREBASE_NOT_CONFIGURED') {
+        setShowGoogleAuthModal(true);
       } else if (err.code === 'auth/popup-closed-by-user') {
-        msg = 'Sign-in popup was closed before completion.';
+        setErrorMessage('Sign-in popup was closed before completion.');
       } else if (err.code === 'auth/popup-blocked') {
-        msg = 'Popup blocked by browser. Please enable popups or retry.';
+        setErrorMessage('Popup blocked by browser. Please enable popups or retry.');
       } else if (err.message) {
-        msg = err.message;
+        setErrorMessage(err.message);
       }
-      setErrorMessage(msg);
     } finally {
       setGoogleSubmitting(false);
     }
@@ -259,15 +259,26 @@ export const AuthPage = ({ onClose }) => {
           )}
 
           {isDevTester && (
-            <button
-              onClick={() => setShowConfigModal(true)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-midnight-border bg-midnight-card text-slate-300 hover:text-white hover:border-neon-cyan/40 transition text-xs font-medium"
-              title="Configure Firebase Keys & Google OAuth"
-            >
-              <Settings className="w-3.5 h-3.5 text-neon-cyan" />
-              <span className="hidden sm:inline">Firebase Setup</span>
-              <span className={`w-2 h-2 rounded-full ${isFirebaseReady ? 'bg-neon-success' : 'bg-neon-warning animate-pulse'}`} />
-            </button>
+            <>
+              <button
+                onClick={() => setShowGoogleAuthModal(true)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-midnight-border bg-midnight-card hover:bg-midnight-elevated text-slate-300 hover:text-white hover:border-neon-cyan/40 transition text-xs font-medium"
+                title="Configure Google OAuth Client ID"
+              >
+                <KeyRound className="w-3.5 h-3.5 text-neon-cyan" />
+                <span className="hidden sm:inline">Google Auth</span>
+              </button>
+
+              <button
+                onClick={() => setShowConfigModal(true)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-midnight-border bg-midnight-card text-slate-300 hover:text-white hover:border-neon-cyan/40 transition text-xs font-medium"
+                title="Configure Firebase Keys & Google OAuth"
+              >
+                <Settings className="w-3.5 h-3.5 text-neon-cyan" />
+                <span className="hidden sm:inline">Firebase Setup</span>
+                <span className={`w-2 h-2 rounded-full ${isFirebaseReady ? 'bg-neon-success' : 'bg-neon-warning animate-pulse'}`} />
+              </button>
+            </>
           )}
 
           <button
@@ -698,6 +709,11 @@ export const AuthPage = ({ onClose }) => {
           onClose={() => setShowConfigModal(false)}
         />
       )}
+
+      <GoogleAuthSetupModal
+        isOpen={showGoogleAuthModal}
+        onClose={() => setShowGoogleAuthModal(false)}
+      />
 
       {/* Footer */}
       <Footer />

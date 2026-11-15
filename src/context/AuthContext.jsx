@@ -14,6 +14,15 @@ import {
   updateUserProfile as fbUpdateProfile 
 } from '../services/firestore/firestoreService';
 import { isFirebaseConfigured } from '../services/firebase/config';
+import { 
+  getGoogleClientId, 
+  isGoogleAuthConfigured, 
+  signInWithGoogleIdentity, 
+  getStoredGoogleUser, 
+  signOutGoogleUser,
+  registerLocalUser,
+  loginLocalUser
+} from '../services/auth/googleAuthService';
 
 const AuthContext = createContext({});
 
@@ -90,7 +99,7 @@ export const AuthProvider = ({ children }) => {
     const ready = isFirebaseConfigured();
     setIsFirebaseReady(ready);
 
-    // Check saved demo mode
+    // 1. Check saved demo mode
     const savedDemo = localStorage.getItem('platesync_demo_active');
     const cachedUnit = localStorage.getItem('platesync_preferred_unit');
     if (savedDemo === 'true') {
@@ -103,6 +112,29 @@ export const AuthProvider = ({ children }) => {
       const savedMode = localStorage.getItem('platesync_demo_access_mode') || 'calculator-only';
       setDemoAccessMode(savedMode);
       setLoading(false);
+      return;
+    }
+
+    // 2. Check saved Google / Local authenticated user session
+    const storedUser = getStoredGoogleUser();
+    if (storedUser) {
+      setCurrentUser(storedUser);
+      setIsDemoMode(false);
+      getUserProfile(storedUser.uid).then(async (prof) => {
+        let finalProf = prof;
+        if (!finalProf) {
+          finalProf = await createUserProfileDocument(storedUser, {
+            displayName: storedUser.displayName,
+            photoURL: storedUser.photoURL
+          });
+        }
+        const savedUnit = localStorage.getItem('platesync_preferred_unit');
+        if (savedUnit && finalProf) {
+          finalProf = { ...finalProf, preferredUnit: savedUnit };
+        }
+        setUserProfile(finalProf);
+        setLoading(false);
+      });
       return;
     }
 
@@ -147,8 +179,10 @@ export const AuthProvider = ({ children }) => {
           console.error('Profile sync notice:', err);
         }
       } else {
-        setCurrentUser(null);
-        setUserProfile(null);
+        if (!getStoredGoogleUser()) {
+          setCurrentUser(null);
+          setUserProfile(null);
+        }
       }
       setLoading(false);
     });
@@ -158,14 +192,39 @@ export const AuthProvider = ({ children }) => {
 
   const loginGoogle = async () => {
     try {
-      const user = await fbLoginWithGoogle();
-      if (user) {
-        const profile = await getUserProfile(user.uid);
-        setUserProfile(profile);
-        setIsDemoMode(false);
-        localStorage.removeItem('platesync_demo_active');
+      // 1. If Google OAuth Client ID is configured, use Google Identity Services (GIS)
+      if (isGoogleAuthConfigured()) {
+        const user = await signInWithGoogleIdentity();
+        if (user) {
+          setCurrentUser(user);
+          let profile = await getUserProfile(user.uid);
+          if (!profile) {
+            profile = await createUserProfileDocument(user, {
+              displayName: user.displayName,
+              photoURL: user.photoURL
+            });
+          }
+          setUserProfile(profile);
+          setIsDemoMode(false);
+          localStorage.removeItem('platesync_demo_active');
+          return user;
+        }
       }
-      return user;
+
+      // 2. If Firebase is configured, try Firebase Google Auth
+      if (isFirebaseConfigured()) {
+        const user = await fbLoginWithGoogle();
+        if (user) {
+          const profile = await getUserProfile(user.uid);
+          setUserProfile(profile);
+          setIsDemoMode(false);
+          localStorage.removeItem('platesync_demo_active');
+          return user;
+        }
+      }
+
+      // 3. Neither Google Client ID nor Firebase configured
+      throw new Error('GOOGLE_AUTH_NOT_CONFIGURED');
     } catch (error) {
       console.error('Google Login Error:', error);
       throw error;
@@ -174,8 +233,24 @@ export const AuthProvider = ({ children }) => {
 
   const loginEmail = async (email, password) => {
     try {
-      const user = await fbLoginWithEmail(email, password);
-      const profile = await getUserProfile(user.uid);
+      if (isFirebaseConfigured()) {
+        const user = await fbLoginWithEmail(email, password);
+        const profile = await getUserProfile(user.uid);
+        setUserProfile(profile);
+        setIsDemoMode(false);
+        localStorage.removeItem('platesync_demo_active');
+        return user;
+      }
+
+      // Zero-Firebase standalone email login
+      const user = loginLocalUser(email, password);
+      setCurrentUser(user);
+      let profile = await getUserProfile(user.uid);
+      if (!profile) {
+        profile = await createUserProfileDocument(user, {
+          displayName: user.displayName
+        });
+      }
       setUserProfile(profile);
       setIsDemoMode(false);
       localStorage.removeItem('platesync_demo_active');
@@ -188,8 +263,21 @@ export const AuthProvider = ({ children }) => {
 
   const registerEmail = async (email, password, displayName) => {
     try {
-      const user = await fbRegisterWithEmail(email, password, displayName);
-      const profile = await getUserProfile(user.uid);
+      if (isFirebaseConfigured()) {
+        const user = await fbRegisterWithEmail(email, password, displayName);
+        const profile = await getUserProfile(user.uid);
+        setUserProfile(profile);
+        setIsDemoMode(false);
+        localStorage.removeItem('platesync_demo_active');
+        return user;
+      }
+
+      // Zero-Firebase standalone email registration
+      const user = registerLocalUser(email, password, displayName);
+      setCurrentUser(user);
+      const profile = await createUserProfileDocument(user, {
+        displayName: displayName || email.split('@')[0]
+      });
       setUserProfile(profile);
       setIsDemoMode(false);
       localStorage.removeItem('platesync_demo_active');
@@ -201,10 +289,15 @@ export const AuthProvider = ({ children }) => {
   };
 
   const resetPassword = async (email) => {
-    return fbResetPassword(email);
+    if (isFirebaseConfigured()) {
+      return fbResetPassword(email);
+    }
+    // Standalone fallback: notify that instructions were logged
+    return true;
   };
 
   const logout = async () => {
+    signOutGoogleUser();
     if (isDemoMode) {
       localStorage.removeItem('platesync_demo_active');
       localStorage.removeItem('platesync_demo_access_mode');
@@ -215,7 +308,9 @@ export const AuthProvider = ({ children }) => {
       setUserProfile(null);
       return;
     }
-    await fbLogout();
+    if (isFirebaseConfigured()) {
+      await fbLogout();
+    }
     setCurrentUser(null);
     setUserProfile(null);
   };

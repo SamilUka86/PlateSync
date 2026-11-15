@@ -1,0 +1,232 @@
+/**
+ * PlateSync - Google Auth & Google Identity Services (GIS)
+ * Standard OAuth 2.0 Web Client authentication without Firebase complexity.
+ */
+
+const GOOGLE_CLIENT_ID_KEY = 'platesync_google_client_id';
+const GOOGLE_USER_SESSION_KEY = 'platesync_google_user';
+const LOCAL_USERS_KEY = 'platesync_local_users';
+
+/**
+ * Retrieve configured Google Client ID from environment or localStorage
+ */
+export const getGoogleClientId = () => {
+  try {
+    return (
+      import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+      localStorage.getItem(GOOGLE_CLIENT_ID_KEY) ||
+      ''
+    );
+  } catch (e) {
+    return '';
+  }
+};
+
+/**
+ * Check if Google Client ID is configured
+ */
+export const isGoogleAuthConfigured = () => {
+  const clientId = getGoogleClientId();
+  return Boolean(clientId && clientId.length > 15 && clientId.includes('.apps.googleusercontent.com'));
+};
+
+/**
+ * Save runtime Google Client ID
+ */
+export const saveGoogleClientId = (clientId) => {
+  if (clientId) {
+    localStorage.setItem(GOOGLE_CLIENT_ID_KEY, clientId.trim());
+  } else {
+    localStorage.removeItem(GOOGLE_CLIENT_ID_KEY);
+  }
+};
+
+/**
+ * Decode JWT token returned by Google Identity Services
+ */
+export const parseGoogleJwt = (token) => {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch (e) {
+    console.error('Failed to parse Google JWT credential:', e);
+    return null;
+  }
+};
+
+/**
+ * Dynamically load Google Identity Services script
+ */
+export const loadGoogleIdentityScript = () => {
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined') return resolve(false);
+
+    if (window.google?.accounts?.id) {
+      return resolve(true);
+    }
+
+    const existingScript = document.getElementById('google-identity-services');
+    if (existingScript) {
+      existingScript.addEventListener('load', () => resolve(true));
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.id = 'google-identity-services';
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    script.onload = () => resolve(true);
+    script.onerror = () => {
+      console.warn('Google Identity script failed to load.');
+      resolve(false);
+    };
+    document.head.appendChild(script);
+  });
+};
+
+/**
+ * Trigger Google Sign In using Google Identity Services
+ */
+export const signInWithGoogleIdentity = () => {
+  return new Promise(async (resolve, reject) => {
+    const clientId = getGoogleClientId();
+
+    if (!clientId) {
+      return reject(new Error('GOOGLE_AUTH_NOT_CONFIGURED'));
+    }
+
+    const loaded = await loadGoogleIdentityScript();
+    if (!loaded || !window.google?.accounts?.id) {
+      return reject(new Error('Google Identity Services library is unreachable.'));
+    }
+
+    try {
+      window.google.accounts.id.initialize({
+        client_id: clientId,
+        callback: (response) => {
+          if (response?.credential) {
+            const payload = parseGoogleJwt(response.credential);
+            if (payload) {
+              const user = {
+                uid: payload.sub,
+                email: payload.email,
+                displayName: payload.name || payload.given_name || 'Athlete',
+                photoURL: payload.picture || null,
+                provider: 'google.com'
+              };
+              localStorage.setItem(GOOGLE_USER_SESSION_KEY, JSON.stringify(user));
+              return resolve(user);
+            }
+          }
+          reject(new Error('Google authentication returned invalid credential.'));
+        },
+        auto_select: false,
+        cancel_on_tap_outside: true
+      });
+
+      // Prompt Google One Tap or Account Chooser
+      window.google.accounts.id.prompt((notification) => {
+        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+          console.debug('One Tap skipped or suppressed, falling back to popup.');
+        }
+      });
+    } catch (err) {
+      reject(err);
+    }
+  });
+};
+
+/**
+ * Retrieve saved Google user from localStorage
+ */
+export const getStoredGoogleUser = () => {
+  try {
+    const raw = localStorage.getItem(GOOGLE_USER_SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+};
+
+/**
+ * Sign out Google user
+ */
+export const signOutGoogleUser = () => {
+  try {
+    const user = getStoredGoogleUser();
+    if (user?.email && window.google?.accounts?.id?.revoke) {
+      window.google.accounts.id.revoke(user.email, () => {});
+    }
+    localStorage.removeItem(GOOGLE_USER_SESSION_KEY);
+  } catch (e) {}
+};
+
+/**
+ * Standalone Local User Registration (Zero Firebase dependency fallback)
+ */
+export const registerLocalUser = (email, password, displayName) => {
+  try {
+    const usersRaw = localStorage.getItem(LOCAL_USERS_KEY);
+    const users = usersRaw ? JSON.parse(usersRaw) : [];
+
+    const existing = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    if (existing) {
+      const err = new Error('An account with this email already exists.');
+      err.code = 'auth/email-already-in-use';
+      throw err;
+    }
+
+    const newUser = {
+      uid: `local_user_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      email: email.trim(),
+      password, // Local sandbox storage
+      displayName: displayName.trim() || email.split('@')[0],
+      photoURL: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(displayName || email)}`,
+      createdAt: new Date().toISOString()
+    };
+
+    users.push(newUser);
+    localStorage.setItem(LOCAL_USERS_KEY, JSON.stringify(users));
+    localStorage.setItem(GOOGLE_USER_SESSION_KEY, JSON.stringify(newUser));
+
+    return newUser;
+  } catch (e) {
+    throw e;
+  }
+};
+
+/**
+ * Standalone Local User Login (Zero Firebase dependency fallback)
+ */
+export const loginLocalUser = (email, password) => {
+  try {
+    const usersRaw = localStorage.getItem(LOCAL_USERS_KEY);
+    const users = usersRaw ? JSON.parse(usersRaw) : [];
+
+    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    if (!user) {
+      const err = new Error('No athlete account found with this email. Please create an account.');
+      err.code = 'auth/user-not-found';
+      throw err;
+    }
+
+    if (user.password !== password) {
+      const err = new Error('Invalid email or password.');
+      err.code = 'auth/wrong-password';
+      throw err;
+    }
+
+    localStorage.setItem(GOOGLE_USER_SESSION_KEY, JSON.stringify(user));
+    return user;
+  } catch (e) {
+    throw e;
+  }
+};
