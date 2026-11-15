@@ -32,6 +32,7 @@ import { AutoPlateSolver } from '../../components/calculator/AutoPlateSolver';
 import { useAuth } from '../../context/AuthContext';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useNotification } from '../../context/NotificationContext';
+import { logUserActivityEvent } from '../../services/analytics/activityTracker';
 
 export const CalculatorPage = ({ setActiveTab }) => {
   const { userProfile, updateProfile } = useAuth();
@@ -266,6 +267,11 @@ export const CalculatorPage = ({ setActiveTab }) => {
     if (solution?.targetUnit && solution.targetUnit !== displayUnit) {
       setDisplayUnit(solution.targetUnit);
     }
+
+    logUserActivityEvent('CALCULATOR_LOAD_SOLVED', `Solved plate load: ${solution?.targetWeight || 'Target'} ${solution?.targetUnit || displayUnit}`, {
+      targetWeight: solution?.targetWeight,
+      unit: solution?.targetUnit || displayUnit
+    });
   };
 
   // Copy total weight to clipboard
@@ -294,6 +300,10 @@ export const CalculatorPage = ({ setActiveTab }) => {
       totalLbs: Math.round(weightSummary.totalLbs * 100) / 100
     });
     addNotification(`Configuration "${name}" saved!`, 'success');
+    logUserActivityEvent('CALCULATOR_CONFIG_SAVED', `Saved plate configuration: "${name}" (${weightSummary.totalKg.toFixed(1)} KG)`, {
+      name,
+      totalKg: weightSummary.totalKg
+    });
     setConfigNameInput('');
     setShowSaveModal(false);
   };

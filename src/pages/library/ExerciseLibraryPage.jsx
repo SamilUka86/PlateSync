@@ -44,6 +44,7 @@ import { useNotification } from '../../context/NotificationContext';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useAuth } from '../../context/AuthContext';
 import { getGlobalExercises, getAdminWorkoutPrograms } from '../../services/admin/adminDataService';
+import { logUserActivityEvent } from '../../services/analytics/activityTracker';
 
 export const ExerciseLibraryPage = ({ setActiveTab }) => {
   const { addNotification } = useNotification();
@@ -214,6 +215,10 @@ export const ExerciseLibraryPage = ({ setActiveTab }) => {
   const handleOpenExerciseDetail = (exercise) => {
     setSelectedExercise(exercise);
     setRecentExerciseIds(prev => [exercise.id, ...prev.filter(id => id !== exercise.id)].slice(0, 25));
+    logUserActivityEvent('EXERCISE_SEARCH', `Viewed exercise: ${exercise.name} (${exercise.targetMuscle})`, {
+      exercise: exercise.name,
+      muscle: exercise.targetMuscle
+    });
   };
 
   // Toggle accordion expand/collapse for a specific muscle group

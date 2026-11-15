@@ -30,6 +30,7 @@ import { useNotification } from '../../context/NotificationContext';
 import { KG_TO_LBS, LBS_TO_KG } from '../../utils/weightCalculations';
 import { saveWeightLog, getWeightLogs, deleteWeightLog } from '../../services/firestore/firestoreService';
 import { getTodayLocalDateStr, formatDisplayDate } from '../../components/layout/SidebarWeightTracker';
+import { logUserActivityEvent } from '../../services/analytics/activityTracker';
 
 export const BodyWeightPage = ({ setActiveTab }) => {
   const { currentUser, userProfile, updateProfile, isDemoMode } = useAuth();
@@ -180,6 +181,11 @@ export const BodyWeightPage = ({ setActiveTab }) => {
       setSelectedDate(getTodayLocalDateStr());
 
       addNotification(`Body weight logged: ${num} ${unit} (${formatDisplayDate(newEntry.date)})`, 'success');
+      logUserActivityEvent('WEIGHT_LOGGED', `Logged body weight: ${num} ${unit}`, {
+        weight: num,
+        unit,
+        weightKg
+      });
 
       setTimeout(() => setJustSaved(false), 2500);
     } catch (err) {

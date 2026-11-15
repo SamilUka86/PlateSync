@@ -11,6 +11,7 @@ import {
 } from 'firebase/auth';
 import { auth, googleProvider, isFirebaseConfigured } from '../firebase/config';
 import { createUserProfileDocument } from '../firestore/firestoreService';
+import { endUserSession } from '../analytics/activityTracker';
 
 /**
  * Check if current user is on mobile browser
@@ -139,6 +140,11 @@ export const logoutUser = async () => {
   if (!isFirebaseConfigured() || !auth) {
     return true;
   }
+  try {
+    if (auth.currentUser) {
+      await endUserSession(auth.currentUser, 'LOGOUT');
+    }
+  } catch (e) {}
   return signOut(auth);
 };
 

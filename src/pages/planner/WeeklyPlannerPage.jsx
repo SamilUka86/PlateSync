@@ -33,6 +33,7 @@ import { AddPlanExerciseModal, SIX_BODY_PARTS } from '../../components/planner/A
 import { EditPlanExerciseModal } from '../../components/planner/EditPlanExerciseModal';
 import { getWeightLogs } from '../../services/firestore/firestoreService';
 import { KG_TO_LBS } from '../../utils/weightCalculations';
+import { logUserActivityEvent } from '../../services/analytics/activityTracker';
 
 export const WeeklyPlannerPage = ({ setActiveTab }) => {
   const { userProfile, currentUser, isDemoMode } = useAuth();
@@ -208,6 +209,10 @@ export const WeeklyPlannerPage = ({ setActiveTab }) => {
       exercises: updatedExercises
     });
     addNotification(`Added "${exercise.name}" to ${activeDay.dayName}`, 'success');
+    logUserActivityEvent('PLAN_UPDATED', `Added "${exercise.name}" to ${activeDay.dayName} routine`, {
+      day: activeDay.dayName,
+      exercise: exercise.name
+    });
   };
 
   const handleSaveEditedExercise = (updatedEx) => {
@@ -219,6 +224,10 @@ export const WeeklyPlannerPage = ({ setActiveTab }) => {
       exercises: updatedExercises
     });
     addNotification('Exercise targets updated', 'info');
+    logUserActivityEvent('PLAN_UPDATED', `Updated exercise targets in ${activeDay.dayName} routine`, {
+      day: activeDay.dayName,
+      exercise: updatedEx.name
+    });
   };
 
   const handleRemoveExercise = (exerciseId) => {

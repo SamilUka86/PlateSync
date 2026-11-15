@@ -35,6 +35,7 @@ import { useWorkout } from '../../context/WorkoutContext';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
 import { getGlobalExercises } from '../../services/admin/adminDataService';
+import { logUserActivityEvent } from '../../services/analytics/activityTracker';
 import { 
   EXERCISE_DATABASE, 
   MAIN_MUSCLE_GROUPS,
@@ -287,6 +288,7 @@ export const WorkoutTrackerPage = ({ setActiveTab }) => {
     setSessionTitle(title);
     setElapsedSeconds(0);
     addNotification('Workout session started! Let\'s lift.', 'success');
+    logUserActivityEvent('WORKOUT_STARTED', `Started workout: ${title}`, { workoutName: title });
   };
 
   // Toggle favorite
@@ -443,6 +445,12 @@ export const WorkoutTrackerPage = ({ setActiveTab }) => {
             setInitialRestSeconds(90);
             const vibrateOn = localStorage.getItem('platesync_timer_vibrate') !== 'false';
             if (vibrateOn) triggerShortHaptic();
+            logUserActivityEvent('SET_RECORDED', `Completed set: ${ex.exerciseName} - ${s.weight || 0} ${s.unit || 'KG'} × ${s.reps || 0} reps`, {
+              exercise: ex.exerciseName,
+              weight: s.weight,
+              unit: s.unit,
+              reps: s.reps
+            });
           }
           return { ...s, completed: nextCompleted };
         }
@@ -530,6 +538,14 @@ export const WorkoutTrackerPage = ({ setActiveTab }) => {
     if (saveWorkout) {
       saveWorkout(finished);
     }
+
+    logUserActivityEvent('WORKOUT_COMPLETED', `Completed workout: ${sessionTitle} (${totalSets} sets, ${totalReps} reps, ${Math.round(totalVolumeKg)} KG vol)`, {
+      workoutName: sessionTitle,
+      totalSets,
+      totalReps,
+      volumeKg: Math.round(totalVolumeKg),
+      durationSeconds: elapsedSeconds
+    });
 
     setActiveSession(null);
     setRestSeconds(null);

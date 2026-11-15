@@ -36,7 +36,7 @@ import {
 
 const PIE_COLORS = ['#00F5FF', '#BD00FF', '#00E5A3', '#FFB800'];
 
-export const AdminDashboardTab = () => {
+export const AdminDashboardTab = ({ onNavigateTab }) => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -99,10 +99,19 @@ export const AdminDashboardTab = () => {
       {/* Header Banner */}
       <div className="p-6 rounded-3xl bg-gradient-to-r from-midnight-card via-midnight-elevated to-midnight-card border border-midnight-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
             <span className="px-2.5 py-0.5 rounded-full bg-neon-cyan/10 border border-neon-cyan/30 text-neon-cyan font-mono text-[10px] font-bold uppercase tracking-wider">
               Live Platform Telemetry
             </span>
+            {onNavigateTab && (
+              <button
+                onClick={() => onNavigateTab('liveUsers')}
+                className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 hover:bg-emerald-500/20 transition cursor-pointer"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span>Live Active Users Tab &rarr;</span>
+              </button>
+            )}
             {lastUpdated && (
               <span className="text-[11px] text-slate-500 font-mono">
                 Updated {lastUpdated}

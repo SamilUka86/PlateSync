@@ -14,6 +14,7 @@ import { AdminLayout } from './pages/admin/AdminLayout';
 import { AdminLoginPage } from './pages/admin/AdminLoginPage';
 import { UserFeedbackModal } from './components/feedback/UserFeedbackModal';
 import { getPlatformSettings } from './services/admin/adminDataService';
+import { useUserActivityTracker } from './hooks/useUserActivityTracker';
 
 // Pages
 import { DashboardPage } from './pages/dashboard/DashboardPage';
@@ -44,6 +45,9 @@ import {
 const MainAppLayout = () => {
   const { currentUser, loading, isDemoMode, demoAccessMode } = useAuth();
   const { isAdmin } = useAdmin();
+
+  // Active user presence, session heartbeat & interaction monitoring
+  useUserActivityTracker(currentUser);
 
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);

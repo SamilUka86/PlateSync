@@ -187,6 +187,51 @@ service cloud.firestore {
     }
 
     // =========================================================================
+    // 8. LIVE USER PRESENCE: /userPresence/{userId}
+    // =========================================================================
+    match /userPresence/{userId} {
+      // Athlete can read own presence, Admins can read all presence
+      allow read: if isDocOwner(userId) || isAdmin();
+      // Athlete can update own presence (heartbeats, current session, status)
+      allow write: if isDocOwner(userId) || isAdmin();
+    }
+
+    // =========================================================================
+    // 9. USER SESSIONS: /userSessions/{sessionId}
+    // =========================================================================
+    match /userSessions/{sessionId} {
+      // Athletes can read their own sessions, Admins can inspect any user session
+      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isAdmin();
+      // Athletes can create their session records
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // Athletes can update their active session heartbeats/duration; Admins can manage
+      allow update: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // =========================================================================
+    // 10. REAL-TIME USER ACTIVITY EVENTS: /userActivityEvents/{eventId}
+    // =========================================================================
+    match /userActivityEvents/{eventId} {
+      // Admins read all live events; Athletes can read their own events
+      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isAdmin();
+      // Athletes append qualifying interaction events with their own UID
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // Activity events are immutable audit trails
+      allow update, delete: if false;
+    }
+
+    // =========================================================================
+    // 11. DAILY USER ACTIVITY AGGREGATES: /dailyUserActivity/{date}
+    // =========================================================================
+    match /dailyUserActivity/{date} {
+      // Admins can read aggregate DAU reports
+      allow read: if isAdmin();
+      // Authenticated users and admins can record daily activity telemetry
+      allow write: if isAuthenticated() || isAdmin();
+    }
+
+    // =========================================================================
     // DEFAULT STRICT SECURITY RULE: DENY ALL UNMATCHED PATHS
     // =========================================================================
     match /{document=**} {

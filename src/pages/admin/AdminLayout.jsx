@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { 
   Shield, 
   LayoutDashboard, 
+  Activity,
   Users, 
   Layers, 
   Calendar, 
@@ -19,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useAdmin } from '../../context/AdminContext';
 import { AdminDashboardTab } from './tabs/AdminDashboardTab';
+import { AdminLiveUsersTab } from './tabs/AdminLiveUsersTab';
 import { AdminUsersTab } from './tabs/AdminUsersTab';
 import { AdminExercisesTab } from './tabs/AdminExercisesTab';
 import { AdminProgramsTab } from './tabs/AdminProgramsTab';
@@ -35,6 +37,7 @@ export const AdminLayout = ({ onBackToApp }) => {
 
   const NAV_ITEMS = [
     { id: 'dashboard', label: 'Platform Overview', icon: LayoutDashboard },
+    { id: 'liveUsers', label: 'Live Active Users', icon: Activity, badge: 'Live' },
     { id: 'users', label: 'User Directory', icon: Users },
     { id: 'exercises', label: 'Exercise Library', icon: Layers },
     { id: 'programs', label: 'Workout Programs', icon: Calendar },
@@ -126,6 +129,11 @@ export const AdminLayout = ({ onBackToApp }) => {
                 <div className="flex items-center gap-2.5">
                   <Icon className={`w-4 h-4 ${isActive ? 'text-neon-cyan' : 'text-slate-400'}`} />
                   <span>{item.label}</span>
+                  {item.badge && (
+                    <span className="px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 animate-pulse">
+                      {item.badge}
+                    </span>
+                  )}
                 </div>
                 {isActive && <ChevronRight className="w-3.5 h-3.5 text-neon-cyan" />}
               </button>
@@ -203,7 +211,8 @@ export const AdminLayout = ({ onBackToApp }) => {
 
         {/* Tab View Container */}
         <main className="p-4 md:p-8 max-w-7xl w-full mx-auto flex-1">
-          {activeTab === 'dashboard' && <AdminDashboardTab />}
+          {activeTab === 'dashboard' && <AdminDashboardTab onNavigateTab={handleSelectTab} />}
+          {activeTab === 'liveUsers' && <AdminLiveUsersTab />}
           {activeTab === 'users' && <AdminUsersTab />}
           {activeTab === 'exercises' && <AdminExercisesTab />}
           {activeTab === 'programs' && <AdminProgramsTab />}
