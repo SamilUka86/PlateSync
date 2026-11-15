@@ -25,6 +25,7 @@ import {
   Calculator, 
   Dumbbell, 
   BookOpen,
+  Calendar,
   Trophy,
   Lock
 } from 'lucide-react';
@@ -194,16 +195,16 @@ const MainAppLayout = () => {
         </button>
 
         <button
-          onClick={() => setActiveTab('records')}
+          onClick={() => setActiveTab('planner')}
           className={`flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition ${
-            activeTab === 'records' ? 'text-neon-cyan' : 'text-slate-400 hover:text-white'
+            activeTab === 'planner' ? 'text-neon-cyan' : 'text-slate-400 hover:text-white'
           }`}
         >
           <div className="relative">
-            <Trophy className="w-4 h-4" />
+            <Calendar className="w-4 h-4" />
             {!currentUser && <Lock className="w-2.5 h-2.5 absolute -top-1 -right-2 text-slate-500" />}
           </div>
-          <span className="text-[10px] font-medium">PRs</span>
+          <span className="text-[10px] font-medium">Planner</span>
         </button>
       </nav>
     </div>
