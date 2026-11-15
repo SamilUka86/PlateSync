@@ -14,40 +14,22 @@ import { createUserProfileDocument } from '../firestore/firestoreService';
 import { endUserSession } from '../analytics/activityTracker';
 
 /**
- * Comprehensive check for mobile devices, tablets, and standalone PWA environments
+ * Check for genuine mobile devices
  */
 export const isMobileDevice = () => {
   if (typeof window === 'undefined') return false;
   const ua = navigator.userAgent || navigator.vendor || window.opera || '';
-  const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|mobile|CriOS/i.test(ua);
-  const isStandalone = window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone === true;
-  const isTouchScreen = (navigator.maxTouchPoints > 1 || 'ontouchstart' in window) && window.innerWidth <= 1024;
-  return Boolean(isMobileUA || isStandalone || isTouchScreen);
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|mobile|CriOS/i.test(ua);
 };
 
 /**
- * Handle Google Sign-In with mobile redirect & desktop popup
+ * Handle Google Sign-In with popup & mobile redirect fallback
  */
 export const loginWithGoogle = async () => {
   if (!isFirebaseConfigured() || !auth || !googleProvider) {
     throw new Error('FIREBASE_NOT_CONFIGURED');
   }
 
-  const onMobile = isMobileDevice();
-
-  // 1. Mobile devices & standalone PWAs: signInWithRedirect is the official standard
-  // It completely bypasses popup-blockers, multi-tab context detachment, and mobile FedCM restrictions
-  if (onMobile) {
-    try {
-      await signInWithRedirect(auth, googleProvider);
-      return { redirecting: true };
-    } catch (redirectErr) {
-      console.error('Mobile Google Redirect Error:', redirectErr);
-      throw redirectErr;
-    }
-  }
-
-  // 2. Desktop environments: attempt fast non-reloading popup first
   try {
     const result = await signInWithPopup(auth, googleProvider);
     const user = result.user;
@@ -56,23 +38,14 @@ export const loginWithGoogle = async () => {
       displayName: user.displayName || 'Athlete',
       photoURL: user.photoURL || null,
       email: user.email
-    });
+    }).catch(() => {});
 
     return user;
   } catch (error) {
-    // If desktop popup is blocked by browser or extension, seamlessly fallback to redirect
-    if (
-      error.code === 'auth/popup-blocked' || 
-      error.code === 'auth/popup-closed-by-user' ||
-      error.code === 'auth/cancelled-popup-request'
-    ) {
-      console.info('Desktop popup blocked or closed, falling back to Google redirect flow...');
-      try {
-        await signInWithRedirect(auth, googleProvider);
-        return { redirecting: true };
-      } catch (redirectErr) {
-        throw redirectErr;
-      }
+    // Only on actual mobile devices if the popup is blocked by the browser, fallback to redirect
+    if (error.code === 'auth/popup-blocked' && isMobileDevice()) {
+      await signInWithRedirect(auth, googleProvider);
+      return { redirecting: true };
     }
     console.error('Google Auth Error:', error);
     throw error;

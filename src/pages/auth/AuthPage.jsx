@@ -246,17 +246,6 @@ export const AuthPage = ({ onClose, onSuccess, onActivateAdminPortal }) => {
     }
   };
 
-  // Check for any redirect authentication error preserved across mobile page reload
-  useEffect(() => {
-    try {
-      const redirectErr = sessionStorage.getItem('platesync_auth_redirect_error');
-      if (redirectErr) {
-        sessionStorage.removeItem('platesync_auth_redirect_error');
-        setErrorMessage(redirectErr);
-      }
-    } catch (e) {}
-  }, []);
-
   const handleGoogleSignIn = async () => {
     setGoogleSubmitting(true);
     setErrorMessage('');
@@ -280,15 +269,16 @@ export const AuthPage = ({ onClose, onSuccess, onActivateAdminPortal }) => {
         onClose();
       }
     } catch (err) {
-      console.error('Google Sign-In error:', err);
+      console.warn('Google Sign-In notice:', err);
       if (err.message === 'GOOGLE_AUTH_NOT_CONFIGURED' || err.message === 'FIREBASE_NOT_CONFIGURED') {
         setShowGoogleAuthModal(true);
       } else if (err.code === 'auth/popup-closed-by-user') {
-        setErrorMessage('Sign-in window was closed before completion.');
+        // User closed or dismissed the popup; reset cleanly without red error banner
+        setErrorMessage('');
       } else if (err.code === 'auth/popup-blocked') {
-        setErrorMessage('Popup blocked by browser. Please enable popups or retry.');
+        setErrorMessage('Sign-in popup was blocked by browser. Please enable popups or tap again.');
       } else if (err.code === 'auth/unauthorized-domain') {
-        setErrorMessage(`Domain "${window.location.hostname}" is not authorized for Google Sign-In in Firebase Console. Please add "${window.location.hostname}" to Firebase Console -> Authentication -> Settings -> Authorized Domains.`);
+        setErrorMessage(`Domain "${window.location.hostname}" is not authorized for Google Sign-In in Firebase Console.`);
       } else if (err.code === 'auth/network-request-failed') {
         setErrorMessage('Network connection lost. Please verify your internet connection and retry.');
       } else if (err.message) {

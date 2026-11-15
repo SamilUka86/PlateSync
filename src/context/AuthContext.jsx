@@ -294,80 +294,94 @@ export const AuthProvider = ({ children }) => {
 
   const loginGoogle = async () => {
     try {
-      // 1. Primary: Official Firebase Authentication
-      // Handles both mobile redirects (phones/tablets/PWAs) and desktop popups with genuine Firebase Authenticator sync
-      if (isFirebaseConfigured()) {
+      // 1. Direct Native Google Identity Services (GIS)
+      // Standard OAuth 2.0 Web Client authentication with silent Firebase sync & zero redirect risk
+      if (isGoogleAuthConfigured()) {
         try {
-          const result = await fbLoginWithGoogle();
-
-          // On mobile browsers and PWAs, redirect is in flight
-          if (result && result.redirecting) {
-            return { redirecting: true };
-          }
-
-          if (result && result.uid) {
-            setCurrentUser(result);
+          const user = await signInWithGoogleIdentity();
+          if (user) {
+            setCurrentUser(user);
             setIsDemoMode(false);
             localStorage.removeItem('platesync_demo_active');
             localStorage.removeItem('platesync_demo_workouts');
 
-            const sessionUser = {
-              uid: result.uid,
-              email: result.email,
-              displayName: result.displayName || result.email?.split('@')[0] || 'Athlete',
-              photoURL: result.photoURL || null,
-              provider: 'google.com'
-            };
-            localStorage.setItem('platesync_google_user', JSON.stringify(sessionUser));
+            // Always create or update the athlete profile in Cloud Firestore (users/{uid})
+            const profile = await createUserProfileDocument(user, {
+              displayName: user.displayName,
+              photoURL: user.photoURL,
+              email: user.email
+            }).catch(() => null);
 
-            let profile = await getUserProfile(result.uid);
-            if (!profile) {
-              profile = await createUserProfileDocument(result, {
-                displayName: result.displayName || result.email?.split('@')[0],
-                photoURL: result.photoURL,
-                email: result.email
-              });
-            }
             const savedUnit = localStorage.getItem('platesync_preferred_unit');
-            setUserProfile(savedUnit && profile ? { ...profile, preferredUnit: savedUnit } : profile);
-            return result;
+            setUserProfile(savedUnit && profile ? { ...profile, preferredUnit: savedUnit } : (profile || {
+              uid: user.uid,
+              name: user.displayName,
+              displayName: user.displayName,
+              email: user.email,
+              photoURL: user.photoURL,
+              preferredUnit: savedUnit || 'KG'
+            }));
+            return user;
           }
-        } catch (fbErr) {
-          // If domain is unauthorized in Firebase Console, do not silently swallow
-          if (fbErr.code === 'auth/unauthorized-domain') {
-            throw fbErr;
+        } catch (gisError) {
+          // If the user closed the popup window deliberately, do not attempt fallback or show error
+          if (gisError.code === 'auth/popup-closed-by-user') {
+            throw gisError;
           }
-          console.warn('Firebase Google Auth error, checking fallback options:', fbErr);
-          // If Google Identity Services is NOT configured, re-throw the error
-          if (!isGoogleAuthConfigured()) {
-            throw fbErr;
+          console.warn('GIS sign-in notice, testing Firebase Auth fallback:', gisError);
+          // If GIS popup was blocked on mobile or unreachable, try Firebase Auth
+          if (isFirebaseConfigured() && auth && googleProvider) {
+            try {
+              const fbResult = await fbLoginWithGoogle();
+              if (fbResult && fbResult.redirecting) {
+                return { redirecting: true };
+              }
+              if (fbResult && fbResult.uid) {
+                setCurrentUser(fbResult);
+                setIsDemoMode(false);
+                localStorage.removeItem('platesync_demo_active');
+                localStorage.removeItem('platesync_demo_workouts');
+
+                const sessionUser = {
+                  uid: fbResult.uid,
+                  email: fbResult.email,
+                  displayName: fbResult.displayName || fbResult.email?.split('@')[0] || 'Athlete',
+                  photoURL: fbResult.photoURL || null,
+                  provider: 'google.com'
+                };
+                localStorage.setItem('platesync_google_user', JSON.stringify(sessionUser));
+
+                let profile = await getUserProfile(fbResult.uid).catch(() => null);
+                if (!profile) {
+                  profile = await createUserProfileDocument(fbResult, {
+                    displayName: fbResult.displayName || fbResult.email?.split('@')[0],
+                    photoURL: fbResult.photoURL,
+                    email: fbResult.email
+                  }).catch(() => null);
+                }
+                const savedUnit = localStorage.getItem('platesync_preferred_unit');
+                setUserProfile(savedUnit && profile ? { ...profile, preferredUnit: savedUnit } : profile);
+                return fbResult;
+              }
+            } catch (fbErr) {
+              console.warn('Firebase Auth fallback notice:', fbErr);
+            }
           }
+          throw gisError;
         }
       }
 
-      // 2. Secondary: Standalone Google Identity Services (GIS) fallback
-      if (isGoogleAuthConfigured()) {
-        const user = await signInWithGoogleIdentity();
-        if (user) {
-          setCurrentUser(user);
+      // 2. Direct Firebase Auth if GIS is unconfigured
+      if (isFirebaseConfigured() && auth && googleProvider) {
+        const result = await fbLoginWithGoogle();
+        if (result && result.redirecting) return { redirecting: true };
+        if (result && result.uid) {
+          setCurrentUser(result);
           setIsDemoMode(false);
-          localStorage.removeItem('platesync_demo_active');
-          localStorage.removeItem('platesync_demo_workouts');
-
-          // Always create or update the athlete profile in Cloud Firestore (users/{uid})
-          const profile = await createUserProfileDocument(user, {
-            displayName: user.displayName,
-            photoURL: user.photoURL,
-            email: user.email
-          });
-          const savedUnit = localStorage.getItem('platesync_preferred_unit');
-          setUserProfile(savedUnit && profile ? { ...profile, preferredUnit: savedUnit } : profile);
-          return user;
+          return result;
         }
-        throw new Error('Google authentication was cancelled.');
       }
 
-      // 3. Fallback when neither service is reachable
       throw new Error('GOOGLE_AUTH_NOT_CONFIGURED');
     } catch (error) {
       console.error('Google Login Error:', error);
