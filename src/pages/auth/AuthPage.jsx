@@ -43,6 +43,37 @@ export const AuthPage = ({ onClose }) => {
   const [googleSubmitting, setGoogleSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
+  // Real-time Name Validation
+  const trimmedName = name.trim();
+  const nameRegex = /^[a-zA-Z\s'.'-]{2,50}$/;
+  const isNameLengthValid = trimmedName.length >= 2;
+  const isNamePatternValid = nameRegex.test(trimmedName);
+  const isNameValid = isNameLengthValid && isNamePatternValid;
+
+  // Real-time Password Requirements (for Sign Up)
+  const reqLength = password.length >= 8;
+  const reqUpper = /[A-Z]/.test(password);
+  const reqLower = /[a-z]/.test(password);
+  const reqUpperLower = reqUpper && reqLower;
+  const reqNumberOrSymbol = /[0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+
+  // Password Strength Score (0 to 3)
+  const strengthScore = (reqLength ? 1 : 0) + (reqUpperLower ? 1 : 0) + (reqNumberOrSymbol ? 1 : 0);
+  const strengthLabel = 
+    password.length === 0 ? '' : 
+    strengthScore === 3 ? 'Strong' : 
+    strengthScore === 2 ? 'Medium' : 'Weak';
+  const strengthColor = 
+    strengthScore === 3 ? 'bg-neon-success' : 
+    strengthScore === 2 ? 'bg-amber-400' : 'bg-rose-500';
+  const strengthTextColor = 
+    strengthScore === 3 ? 'text-neon-success' : 
+    strengthScore === 2 ? 'text-amber-400' : 'text-rose-400';
+
+  // Password Confirmation State
+  const passwordsMatch = confirmPassword.length > 0 && password === confirmPassword;
+  const passwordsMismatch = confirmPassword.length > 0 && password !== confirmPassword;
+
   const { loginGoogle, loginEmail, registerEmail, loginAsDemo, isFirebaseReady, isDevTester } = useAuth();
   const { addNotification } = useNotification();
 
@@ -56,17 +87,37 @@ export const AuthPage = ({ onClose }) => {
   }, []);
 
   const validate = () => {
-    if (!email.trim() || !/\S+@\S+\.\S+/.test(email)) {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || !/\S+@\S+\.\S+/.test(trimmedEmail)) {
       setErrorMessage('Please enter a valid email address.');
       return false;
     }
-    if (!password || password.length < 6) {
-      setErrorMessage('Password must be at least 6 characters in length.');
-      return false;
-    }
+
     if (isSignUp) {
-      if (!name.trim()) {
+      const trimmedName = name.trim();
+      if (!trimmedName) {
         setErrorMessage('Please provide your full athlete name.');
+        return false;
+      }
+      if (trimmedName.length < 2) {
+        setErrorMessage('Full name must be at least 2 characters in length.');
+        return false;
+      }
+      const nameRegex = /^[a-zA-Z\s'.'-]{2,50}$/;
+      if (!nameRegex.test(trimmedName)) {
+        setErrorMessage('Full name should contain letters, spaces, hyphens, or apostrophes only.');
+        return false;
+      }
+      if (password.length < 8) {
+        setErrorMessage('Password must be at least 8 characters in length.');
+        return false;
+      }
+      if (!/[A-Z]/.test(password) || !/[a-z]/.test(password)) {
+        setErrorMessage('Password must include both uppercase and lowercase letters.');
+        return false;
+      }
+      if (!/[0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+        setErrorMessage('Password must include at least one number (0-9) or special symbol.');
         return false;
       }
       if (password !== confirmPassword) {
@@ -77,7 +128,13 @@ export const AuthPage = ({ onClose }) => {
         setErrorMessage('You must accept the terms & conditions to create an account.');
         return false;
       }
+    } else {
+      if (!password || password.length < 6) {
+        setErrorMessage('Please enter your password (at least 6 characters).');
+        return false;
+      }
     }
+
     setErrorMessage('');
     return true;
   };
@@ -103,6 +160,22 @@ export const AuthPage = ({ onClose }) => {
         await loginEmail(email.trim(), password);
         addNotification('Welcome back to PlateSync!', 'success');
       }
+
+      // Explicitly trigger Google Password Manager & Chromium Credential Manager prompt to save credentials
+      if (typeof window !== 'undefined' && window.PasswordCredential && navigator.credentials?.store) {
+        try {
+          const cred = new window.PasswordCredential({
+            id: email.trim(),
+            password: password,
+            name: isSignUp ? (name.trim() || undefined) : undefined
+          });
+          await navigator.credentials.store(cred);
+        } catch (credErr) {
+          // Non-blocking browser heuristic
+          console.debug('Credential store event:', credErr);
+        }
+      }
+
       if (onClose) onClose();
     } catch (err) {
       console.error('Auth submit error:', err);
@@ -115,7 +188,7 @@ export const AuthPage = ({ onClose }) => {
       } else if (err.code === 'auth/email-already-in-use') {
         msg = 'An account with this email address already exists. Please sign in instead.';
       } else if (err.code === 'auth/weak-password') {
-        msg = 'Password is too weak. Please use at least 6 characters.';
+        msg = 'Password is too weak. Please use at least 8 characters with uppercase, lowercase, and numbers.';
       }
       setErrorMessage(msg);
     } finally {
@@ -321,36 +394,75 @@ export const AuthPage = ({ onClose }) => {
             </div>
           </div>
 
-          {/* Email / Password Form */}
-          <form onSubmit={handleFormSubmit} className="space-y-3.5">
+          {/* Email / Password Form with Google Password Manager Integration */}
+          <form 
+            onSubmit={handleFormSubmit} 
+            method="post" 
+            action="#" 
+            autoComplete="on" 
+            className="space-y-3.5"
+          >
             {isSignUp && (
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Full Name
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label htmlFor="auth-name" className="text-xs font-semibold text-slate-300">
+                    Full Athlete Name
+                  </label>
+                  {trimmedName.length > 0 && (
+                    <span className={`text-[10px] font-mono flex items-center gap-1 ${isNameValid ? 'text-neon-success font-bold' : 'text-slate-400'}`}>
+                      {isNameValid ? (
+                        <>
+                          <Check className="w-3 h-3 text-neon-success" />
+                          <span>Valid name</span>
+                        </>
+                      ) : (
+                        <span>Min. 2 letters</span>
+                      )}
+                    </span>
+                  )}
+                </div>
                 <div className="relative">
                   <User className="w-4 h-4 text-slate-500 absolute left-3 top-3 pointer-events-none" />
                   <input
+                    id="auth-name"
+                    name="name"
                     type="text"
                     required
+                    autoComplete="name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Marcus Thorne"
-                    className="w-full pl-9 pr-3 py-2 bg-midnight-bg border border-midnight-border rounded-xl text-white text-xs placeholder-slate-600 focus:outline-none focus:border-neon-cyan focus:ring-1 focus:ring-neon-cyan transition"
+                    placeholder="e.g. Marcus Thorne"
+                    className={`w-full pl-9 pr-8 py-2 bg-midnight-bg border rounded-xl text-white text-xs placeholder-slate-600 focus:outline-none transition ${
+                      trimmedName.length > 0 && !isNameValid 
+                        ? 'border-rose-500/50 focus:border-rose-500 focus:ring-1 focus:ring-rose-500' 
+                        : trimmedName.length > 0 && isNameValid
+                          ? 'border-neon-success/50 focus:border-neon-success focus:ring-1 focus:ring-neon-success'
+                          : 'border-midnight-border focus:border-neon-cyan focus:ring-1 focus:ring-neon-cyan'
+                    }`}
                   />
+                  {trimmedName.length > 0 && isNameValid && (
+                    <Check className="w-4 h-4 text-neon-success absolute right-3 top-2.5 pointer-events-none" />
+                  )}
                 </div>
+                <p className="text-[10px] text-slate-500 mt-1">
+                  At least 2 characters (letters, spaces, hyphens).
+                </p>
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label htmlFor="auth-username" className="block text-xs font-semibold text-slate-300 mb-1">
                 Email Address
               </label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-3 pointer-events-none" />
                 <input
+                  id="auth-username"
+                  name="username"
                   type="email"
                   required
+                  autoComplete="username"
+                  spellCheck="false"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="athlete@domain.com"
@@ -361,10 +473,10 @@ export const AuthPage = ({ onClose }) => {
 
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="text-xs font-semibold text-slate-300">
+                <label htmlFor={isSignUp ? "auth-new-password" : "auth-password"} className="text-xs font-semibold text-slate-300">
                   Password
                 </label>
-                {!isSignUp && (
+                {!isSignUp ? (
                   <button
                     type="button"
                     onClick={() => setShowForgotModal(true)}
@@ -372,53 +484,137 @@ export const AuthPage = ({ onClose }) => {
                   >
                     Forgot password?
                   </button>
+                ) : (
+                  password.length > 0 && (
+                    <span className={`text-[10px] font-bold ${strengthTextColor}`}>
+                      Strength: {strengthLabel}
+                    </span>
+                  )
                 )}
               </div>
               <div className="relative">
                 <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-3 pointer-events-none" />
                 <input
+                  id={isSignUp ? "auth-new-password" : "auth-password"}
+                  name="password"
                   type={showPassword ? 'text' : 'password'}
                   required
+                  autoComplete={isSignUp ? "new-password" : "current-password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="At least 6 characters"
+                  placeholder={isSignUp ? "Min. 8 chars (Upper, lower, number)" : "Enter your password"}
                   className="w-full pl-9 pr-10 py-2 bg-midnight-bg border border-midnight-border rounded-xl text-white text-xs placeholder-slate-600 focus:outline-none focus:border-neon-cyan focus:ring-1 focus:ring-neon-cyan transition"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300"
+                  title={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+
+              {/* Real-time Password Requirements Checklist & Strength Bar for Sign-Up */}
+              {isSignUp && (
+                <div className="mt-2 space-y-2 animate-in fade-in">
+                  {/* Strength Bar */}
+                  {password.length > 0 && (
+                    <div className="w-full bg-midnight-bg h-1.5 rounded-full overflow-hidden border border-midnight-border">
+                      <div 
+                        className={`h-full transition-all duration-300 ${strengthColor}`} 
+                        style={{ width: `${(strengthScore / 3) * 100}%` }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Requirements List */}
+                  <div className="p-2.5 rounded-xl bg-midnight-bg border border-midnight-border/80 space-y-1.5">
+                    <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                      Password Requirements:
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 text-[10.5px]">
+                      <div className={`flex items-center gap-1.5 transition ${reqLength ? 'text-neon-success font-medium' : 'text-slate-500'}`}>
+                        <div className={`w-3.5 h-3.5 rounded-full flex items-center justify-center shrink-0 ${reqLength ? 'bg-neon-success/20 text-neon-success' : 'bg-midnight-card border border-midnight-border text-transparent'}`}>
+                          <Check className="w-2.5 h-2.5" />
+                        </div>
+                        <span>8+ characters</span>
+                      </div>
+
+                      <div className={`flex items-center gap-1.5 transition ${reqUpperLower ? 'text-neon-success font-medium' : 'text-slate-500'}`}>
+                        <div className={`w-3.5 h-3.5 rounded-full flex items-center justify-center shrink-0 ${reqUpperLower ? 'bg-neon-success/20 text-neon-success' : 'bg-midnight-card border border-midnight-border text-transparent'}`}>
+                          <Check className="w-2.5 h-2.5" />
+                        </div>
+                        <span>Upper & lowercase</span>
+                      </div>
+
+                      <div className={`flex items-center gap-1.5 transition ${reqNumberOrSymbol ? 'text-neon-success font-medium' : 'text-slate-500'}`}>
+                        <div className={`w-3.5 h-3.5 rounded-full flex items-center justify-center shrink-0 ${reqNumberOrSymbol ? 'bg-neon-success/20 text-neon-success' : 'bg-midnight-card border border-midnight-border text-transparent'}`}>
+                          <Check className="w-2.5 h-2.5" />
+                        </div>
+                        <span>Number or symbol</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {isSignUp && (
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Confirm Password
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label htmlFor="auth-confirm-password" className="text-xs font-semibold text-slate-300">
+                    Confirm Password
+                  </label>
+                  {confirmPassword.length > 0 && (
+                    <span className={`text-[10px] font-mono flex items-center gap-1 ${passwordsMatch ? 'text-neon-success font-bold' : 'text-rose-400'}`}>
+                      {passwordsMatch ? (
+                        <>
+                          <Check className="w-3 h-3 text-neon-success" />
+                          <span>Passwords match</span>
+                        </>
+                      ) : (
+                        <span>Does not match</span>
+                      )}
+                    </span>
+                  )}
+                </div>
                 <div className="relative">
                   <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-3 pointer-events-none" />
                   <input
+                    id="auth-confirm-password"
+                    name="confirm-password"
                     type={showConfirmPassword ? 'text' : 'password'}
                     required
+                    autoComplete="new-password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Repeat password"
-                    className="w-full pl-9 pr-10 py-2 bg-midnight-bg border border-midnight-border rounded-xl text-white text-xs placeholder-slate-600 focus:outline-none focus:border-neon-cyan focus:ring-1 focus:ring-neon-cyan transition"
+                    className={`w-full pl-9 pr-10 py-2 bg-midnight-bg border rounded-xl text-white text-xs placeholder-slate-600 focus:outline-none transition ${
+                      passwordsMismatch
+                        ? 'border-rose-500/50 focus:border-rose-500 focus:ring-1 focus:ring-rose-500'
+                        : passwordsMatch
+                          ? 'border-neon-success/50 focus:border-neon-success focus:ring-1 focus:ring-neon-success'
+                          : 'border-midnight-border focus:border-neon-cyan focus:ring-1 focus:ring-neon-cyan'
+                    }`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300"
+                    title={showConfirmPassword ? "Hide password" : "Show password"}
                   >
                     {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
             )}
+
+            {/* Google Password Manager Integration Indicator */}
+            <div className="p-2 rounded-xl bg-midnight-bg/60 border border-midnight-border flex items-center gap-2 text-[11px] text-slate-400">
+              <ShieldCheck className="w-3.5 h-3.5 text-neon-cyan shrink-0" />
+              <span>Google Password Manager & browser auto-save supported</span>
+            </div>
 
             {/* Remember Me / Terms Checkbox */}
             {!isSignUp ? (

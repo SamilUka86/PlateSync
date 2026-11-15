@@ -94,14 +94,17 @@ export const ForgotPasswordModal = ({ isOpen, onClose, defaultEmail = '' }) => {
             )}
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              <label htmlFor="reset-email" className="block text-xs font-semibold text-slate-300 mb-1.5">
                 Email Address
               </label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-3 pointer-events-none" />
                 <input
+                  id="reset-email"
+                  name="username"
                   type="email"
                   required
+                  autoComplete="username"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="athlete@domain.com"
