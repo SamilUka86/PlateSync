@@ -46,9 +46,9 @@ export const ProfilePage = () => {
         email: userProfile?.email || currentUser?.email || '',
         height: userProfile?.height || 178,
         bodyWeight: userProfile?.bodyWeight || 75,
-        preferredUnit: userProfile?.preferredUnit || 'KG',
+        preferredUnit: (userProfile?.preferredUnit === 'LB' || userProfile?.preferredUnit === 'LBS') ? 'LBS' : 'KG',
         defaultBarbellWeight: userProfile?.defaultBarbellWeight || 20,
-        defaultBarbellUnit: userProfile?.defaultBarbellUnit || 'KG',
+        defaultBarbellUnit: (userProfile?.defaultBarbellUnit === 'LB' || userProfile?.defaultBarbellUnit === 'LBS') ? 'LBS' : 'KG',
         bio: userProfile?.bio || '',
         profileImage: userProfile?.profileImage || currentUser?.photoURL || ''
       });
@@ -190,7 +190,7 @@ export const ProfilePage = () => {
               className="w-full px-3.5 py-2.5 bg-midnight-bg border border-midnight-border rounded-xl text-white text-xs focus:outline-none focus:border-neon-cyan"
             >
               <option value="KG">Kilograms (KG)</option>
-              <option value="LB">Pounds (LB)</option>
+              <option value="LBS">Pounds (LBS)</option>
             </select>
           </div>
 
@@ -211,7 +211,7 @@ export const ProfilePage = () => {
                 className="px-3.5 py-2.5 bg-midnight-bg border border-midnight-border rounded-xl text-white text-xs"
               >
                 <option value="KG">KG</option>
-                <option value="LB">LB</option>
+                <option value="LBS">LBS</option>
               </select>
             </div>
           </div>

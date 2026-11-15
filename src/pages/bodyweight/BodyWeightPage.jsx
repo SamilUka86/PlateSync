@@ -78,8 +78,8 @@ export const BodyWeightPage = ({ setActiveTab }) => {
               {
                 id: `seed_initial_${userId}`,
                 date: getTodayLocalDateStr(),
-                weight: preferredUnit === 'LB' ? Math.round(baseKg * KG_TO_LBS * 10) / 10 : baseKg,
-                unit: preferredUnit,
+                weight: (preferredUnit === 'LB' || preferredUnit === 'LBS') ? Math.round(baseKg * KG_TO_LBS * 10) / 10 : baseKg,
+                unit: (preferredUnit === 'LB' || preferredUnit === 'LBS') ? 'LBS' : 'KG',
                 weightKg: baseKg,
                 weightLb: Math.round(baseKg * KG_TO_LBS * 10) / 10,
                 notes: 'Baseline check-in',
@@ -111,7 +111,7 @@ export const BodyWeightPage = ({ setActiveTab }) => {
   // Display strings
   const currentWeightFormatted = useMemo(() => {
     if (!currentWeightKg) return '--';
-    if (unit === 'LB') {
+    if (unit === 'LB' || unit === 'LBS') {
       const lbs = Math.round(currentWeightKg * KG_TO_LBS * 10) / 10;
       return `${lbs} lbs`;
     }
@@ -127,10 +127,10 @@ export const BodyWeightPage = ({ setActiveTab }) => {
 
     if (Math.abs(diffKg) < 0.05) return { type: 'neutral', value: '0.0 kg' };
     if (diffKg > 0) {
-      const val = unit === 'LB' ? `+${Math.round(diffKg * KG_TO_LBS * 10) / 10} lbs` : `+${diffKg} kg`;
+      const val = (unit === 'LB' || unit === 'LBS') ? `+${Math.round(diffKg * KG_TO_LBS * 10) / 10} lbs` : `+${diffKg} kg`;
       return { type: 'up', value: val };
     } else {
-      const val = unit === 'LB' ? `${Math.round(diffKg * KG_TO_LBS * 10) / 10} lbs` : `${diffKg} kg`;
+      const val = (unit === 'LB' || unit === 'LBS') ? `${Math.round(diffKg * KG_TO_LBS * 10) / 10} lbs` : `${diffKg} kg`;
       return { type: 'down', value: val };
     }
   }, [logs, unit]);
@@ -146,7 +146,8 @@ export const BodyWeightPage = ({ setActiveTab }) => {
 
     setIsSaving(true);
     try {
-      const weightKg = unit === 'LB' ? Math.round((num / KG_TO_LBS) * 10) / 10 : Math.round(num * 10) / 10;
+      const isLb = (unit === 'LB' || unit === 'LBS');
+      const weightKg = isLb ? Math.round((num / KG_TO_LBS) * 10) / 10 : Math.round(num * 10) / 10;
       const weightLb = unit === 'KG' ? Math.round((num * KG_TO_LBS) * 10) / 10 : Math.round(num * 10) / 10;
 
       const newEntry = {
@@ -214,7 +215,7 @@ export const BodyWeightPage = ({ setActiveTab }) => {
       .reverse()
       .map(l => ({
         date: formatDisplayDate(l.date),
-        weight: unit === 'LB' ? l.weightLb : l.weightKg,
+        weight: (unit === 'LB' || unit === 'LBS') ? l.weightLb : l.weightKg,
         kg: l.weightKg,
         lbs: l.weightLb,
         fullDate: l.date
@@ -241,7 +242,7 @@ export const BodyWeightPage = ({ setActiveTab }) => {
             </h1>
 
             <p className="text-xs md:text-sm text-slate-400 max-w-xl leading-relaxed">
-              Log your body mass in KG or LB, select dates via the calendar (defaults automatically to today), track progression curves, and keep your barbell calculations calibrated.
+              Log your body mass in KG or LBS, select dates via the calendar (defaults automatically to today), track progression curves, and keep your barbell calculations calibrated.
             </p>
           </div>
 
@@ -297,14 +298,14 @@ export const BodyWeightPage = ({ setActiveTab }) => {
               </button>
               <button
                 type="button"
-                onClick={() => setUnit('LB')}
+                onClick={() => setUnit('LBS')}
                 className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
-                  unit === 'LB'
+                  (unit === 'LB' || unit === 'LBS')
                     ? 'bg-neon-violet text-white shadow-md shadow-neon-violet/20'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
-                LB
+                LBS
               </button>
             </div>
           </div>
@@ -476,7 +477,7 @@ export const BodyWeightPage = ({ setActiveTab }) => {
                               <p className="font-bold text-white">{data.date}</p>
                               <p className="text-neon-cyan font-mono font-bold">{data.weight} {unit}</p>
                               <p className="text-slate-400 text-[10px] font-mono">
-                                ({unit === 'LB' ? `${data.kg} KG` : `${data.lbs} LB`})
+                                ({(unit === 'LB' || unit === 'LBS') ? `${data.kg} KG` : `${data.lbs} LBS`})
                               </p>
                             </div>
                           );
@@ -534,7 +535,7 @@ export const BodyWeightPage = ({ setActiveTab }) => {
                 <tr className="border-b border-midnight-border text-slate-400 font-bold uppercase tracking-wider text-[10px]">
                   <th className="pb-3 pl-3">Date</th>
                   <th className="pb-3">Weight (KG)</th>
-                  <th className="pb-3">Weight (LB)</th>
+                  <th className="pb-3">Weight (LBS)</th>
                   <th className="pb-3">Delta</th>
                   <th className="pb-3">Notes</th>
                   <th className="pb-3 pr-3 text-right">Action</th>
@@ -561,7 +562,7 @@ export const BodyWeightPage = ({ setActiveTab }) => {
                         {log.weightKg} kg
                       </td>
                       <td className="py-3 font-mono font-bold text-neon-violet">
-                        {log.weightLb} lb
+                        {log.weightLb} lbs
                       </td>
                       <td className="py-3 font-mono">
                         {delta !== null ? (

@@ -272,7 +272,7 @@ export const CalculatorPage = ({ setActiveTab }) => {
   const handleCopyWeight = () => {
     const text = displayUnit === 'KG'
       ? `${(Math.round(weightSummary.totalKg * 100) / 100).toFixed(2)} KG`
-      : `${(Math.round(weightSummary.totalLbs * 100) / 100).toFixed(2)} LB`;
+      : `${(Math.round(weightSummary.totalLbs * 100) / 100).toFixed(2)} LBS`;
     navigator.clipboard.writeText(text);
     setCopied(true);
     addNotification(`Copied ${text} to clipboard!`, 'success');
@@ -345,7 +345,7 @@ export const CalculatorPage = ({ setActiveTab }) => {
       setRightPlates([{ id: 'p_4', weight: 45, unit: 'LB' }, { id: 'p_5', weight: 45, unit: 'LB' }, { id: 'p_6', weight: 45, unit: 'LB' }]);
     }
 
-    addNotification(`Applied ${targetUnit === 'LB' ? 'Imperial' : 'Metric'} Barbell Preset`, 'info');
+    addNotification(`Applied ${(targetUnit === 'LB' || targetUnit === 'LBS') ? 'Imperial' : 'Metric'} Barbell Preset`, 'info');
   };
 
   // Transfer weight to tracker
@@ -408,7 +408,7 @@ export const CalculatorPage = ({ setActiveTab }) => {
                 <span className="block text-[10px] uppercase text-slate-400 font-bold">Exact Equivalent</span>
                 <span className="text-lg md:text-xl font-bold text-slate-200 font-mono">
                   {displayUnit === 'KG'
-                    ? `${(Math.round(weightSummary.totalLbs * 100) / 100).toFixed(2)} LB`
+                    ? `${(Math.round(weightSummary.totalLbs * 100) / 100).toFixed(2)} LBS`
                     : `${(Math.round(weightSummary.totalKg * 100) / 100).toFixed(2)} KG`}
                 </span>
               </div>
@@ -420,22 +420,22 @@ export const CalculatorPage = ({ setActiveTab }) => {
                 {barbellConfig.isLegPress45 ? (
                   <>Sled: <strong className="text-neon-cyan">0 KG</strong></>
                 ) : (
-                  <>Barbell: <strong className="text-white">{barbellConfig.weight} {barbellConfig.unit}</strong></>
+                  <>Barbell: <strong className="text-white">{barbellConfig.weight} {barbellConfig.unit === 'LB' ? 'LBS' : barbellConfig.unit}</strong></>
                 )}
               </span>
               <span className="px-2.5 py-1 rounded-lg bg-midnight-bg border border-midnight-border">
-                Total Plates: <strong className="text-slate-100">{displayUnit === 'KG' ? `${weightSummary.totalPlateWeightKg.toFixed(2)} KG` : `${weightSummary.totalPlateWeightLbs.toFixed(2)} LB`}</strong>
+                Total Plates: <strong className="text-slate-100">{displayUnit === 'KG' ? `${weightSummary.totalPlateWeightKg.toFixed(2)} KG` : `${weightSummary.totalPlateWeightLbs.toFixed(2)} LBS`}</strong>
               </span>
               <span className="px-2.5 py-1 rounded-lg bg-midnight-bg border border-midnight-border">
-                {barbellConfig.isLegPress45 ? 'Left Horn: ' : 'Left: '}<strong className="text-neon-cyan">{displayUnit === 'KG' ? `${weightSummary.leftWeightKg.toFixed(2)} KG` : `${weightSummary.leftWeightLbs.toFixed(2)} LB`}</strong>
+                {barbellConfig.isLegPress45 ? 'Left Horn: ' : 'Left: '}<strong className="text-neon-cyan">{displayUnit === 'KG' ? `${weightSummary.leftWeightKg.toFixed(2)} KG` : `${weightSummary.leftWeightLbs.toFixed(2)} LBS`}</strong>
               </span>
               {barbellConfig.isLegPress45 && (
                 <span className="px-2.5 py-1 rounded-lg bg-midnight-bg border border-neon-cyan/40">
-                  Center Horn: <strong className="text-neon-cyan">{displayUnit === 'KG' ? `${weightSummary.centerWeightKg.toFixed(2)} KG` : `${weightSummary.centerWeightLbs.toFixed(2)} LB`}</strong>
+                  Center Horn: <strong className="text-neon-cyan">{displayUnit === 'KG' ? `${weightSummary.centerWeightKg.toFixed(2)} KG` : `${weightSummary.centerWeightLbs.toFixed(2)} LBS`}</strong>
                 </span>
               )}
               <span className="px-2.5 py-1 rounded-lg bg-midnight-bg border border-midnight-border">
-                {barbellConfig.isLegPress45 ? 'Right Horn: ' : 'Right: '}<strong className="text-neon-violet">{displayUnit === 'KG' ? `${weightSummary.rightWeightKg.toFixed(2)} KG` : `${weightSummary.rightWeightLbs.toFixed(2)} LB`}</strong>
+                {barbellConfig.isLegPress45 ? 'Right Horn: ' : 'Right: '}<strong className="text-neon-violet">{displayUnit === 'KG' ? `${weightSummary.rightWeightKg.toFixed(2)} KG` : `${weightSummary.rightWeightLbs.toFixed(2)} LBS`}</strong>
               </span>
             </div>
           </div>
@@ -457,14 +457,14 @@ export const CalculatorPage = ({ setActiveTab }) => {
               </button>
               <button
                 type="button"
-                onClick={() => handleToggleDisplayUnit('LB')}
+                onClick={() => handleToggleDisplayUnit('LBS')}
                 className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-black font-mono transition ${
-                  displayUnit === 'LB'
+                  (displayUnit === 'LB' || displayUnit === 'LBS')
                     ? 'bg-neon-cyan text-slate-950 shadow-md shadow-neon-cyan/20'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
-                Display in LB
+                Display in LBS
               </button>
             </div>
 
@@ -672,7 +672,7 @@ export const CalculatorPage = ({ setActiveTab }) => {
                     className="w-full px-3 py-2 bg-midnight-bg border border-midnight-border rounded-xl text-white text-xs focus:outline-none focus:border-neon-cyan"
                   >
                     <option value="KG">KG</option>
-                    <option value="LB">LB</option>
+                    <option value="LBS">LBS</option>
                   </select>
                 </div>
               </div>
@@ -704,7 +704,7 @@ export const CalculatorPage = ({ setActiveTab }) => {
                     <span className="text-lg font-black font-mono text-neon-cyan">
                       {displayUnit === 'KG'
                         ? `${weightSummary.centerWeightKg.toFixed(2)} KG`
-                        : `${weightSummary.centerWeightLbs.toFixed(2)} LB`}
+                        : `${weightSummary.centerWeightLbs.toFixed(2)} LBS`}
                     </span>
                     <span className="text-[11px] text-slate-400 font-mono">
                       ({centerPlates.length}p)
@@ -821,7 +821,7 @@ export const CalculatorPage = ({ setActiveTab }) => {
                     className="w-full px-3 py-2 bg-midnight-bg border border-midnight-border rounded-xl text-white text-xs font-mono focus:outline-none focus:border-neon-cyan"
                   >
                     <option value="KG">KG</option>
-                    <option value="LB">LB</option>
+                    <option value="LBS">LBS</option>
                   </select>
                 </div>
               </div>
@@ -865,19 +865,19 @@ export const CalculatorPage = ({ setActiveTab }) => {
                 onClick={() => handleApplyPreset(102.05, 'LB')}
                 className="p-2 rounded-xl bg-midnight-bg border border-midnight-border hover:border-neon-violet text-slate-200 hover:text-white transition text-center"
               >
-                225 LB
+                225 LBS
               </button>
               <button
                 onClick={() => handleApplyPreset(61.23, 'LB')}
                 className="p-2 rounded-xl bg-midnight-bg border border-midnight-border hover:border-neon-violet text-slate-200 hover:text-white transition text-center"
               >
-                135 LB
+                135 LBS
               </button>
               <button
                 onClick={() => handleApplyPreset(142.88, 'LB')}
                 className="p-2 rounded-xl bg-midnight-bg border border-midnight-border hover:border-neon-violet text-slate-200 hover:text-white transition text-center"
               >
-                315 LB
+                315 LBS
               </button>
               <button
                 onClick={() => {
@@ -940,10 +940,10 @@ export const CalculatorPage = ({ setActiveTab }) => {
             </div>
           </div>
 
-          {/* Section B: LB Plates Rack */}
+          {/* Section B: LBS Plates Rack */}
           <div className="bg-midnight-card border border-midnight-border rounded-3xl p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold text-white">LB Plates</h3>
+              <h3 className="text-sm font-bold text-white">LBS Plates</h3>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
@@ -959,7 +959,7 @@ export const CalculatorPage = ({ setActiveTab }) => {
                       <div className={`w-3 h-8 ${style.bg} rounded-sm shadow-sm`} />
                       <div className="text-left">
                         <span className="text-sm font-black font-mono text-white block group-hover:text-neon-violet">
-                          {w} <span className="text-xs text-slate-400 font-semibold font-mono">LB</span>
+                          {w} <span className="text-xs text-slate-400 font-semibold font-mono">LBS</span>
                         </span>
                       </div>
                     </div>
@@ -1000,7 +1000,7 @@ export const CalculatorPage = ({ setActiveTab }) => {
                       }`}
                       title="Click to remove"
                     >
-                      {p.weight} {p.unit} &times;
+                      {p.weight} {(p.unit === 'LB' || p.unit === 'LBS') ? 'LBS' : 'KG'} &times;
                     </span>
                   ))
                 )}
@@ -1031,7 +1031,7 @@ export const CalculatorPage = ({ setActiveTab }) => {
                       }`}
                       title="Click to remove"
                     >
-                      {p.weight} {p.unit} &times;
+                      {p.weight} {(p.unit === 'LB' || p.unit === 'LBS') ? 'LBS' : 'KG'} &times;
                     </span>
                   ))
                 )}
@@ -1059,7 +1059,7 @@ export const CalculatorPage = ({ setActiveTab }) => {
                     <div className="min-w-0 pr-2">
                       <p className="text-xs font-bold text-white truncate">{cfg.name}</p>
                       <p className="text-[10px] text-slate-400 font-mono">
-                        {cfg.totalKg} KG &bull; {cfg.totalLbs} LB
+                        {cfg.totalKg} KG &bull; {cfg.totalLbs} LBS
                       </p>
                     </div>
 

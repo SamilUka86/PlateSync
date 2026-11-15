@@ -68,7 +68,8 @@ export const DashboardPage = ({ setActiveTab }) => {
       const dayWorkouts = workouts.filter(w => new Date(w.date || w.createdAt).toDateString() === dateStr);
       let volume = 0;
       dayWorkouts.forEach(w => {
-        const v = preferredUnit === 'LB'
+        const isLb = (preferredUnit === 'LB' || preferredUnit === 'LBS');
+        const v = isLb
           ? (w.totalVolumeLbs || (w.totalVolumeKg || w.totalVolume || 0) * KG_TO_LBS)
           : (w.totalVolumeKg || w.totalVolume || 0);
         volume += v;
@@ -128,8 +129,8 @@ export const DashboardPage = ({ setActiveTab }) => {
 
             <p className="text-xs md:text-sm text-slate-400 max-w-xl leading-relaxed">
               {workouts.length === 0
-                ? "Your training journey starts now! Calculate mixed KG and LB barbell setups, record your sets, and start building your Personal Records."
-                : "Ready to crush today's lifting targets? Calculate mixed KG and LB plates, log your sets without manual conversion, and track your PRs."}
+                ? "Your training journey starts now! Calculate mixed KG and LBS barbell setups, record your sets, and start building your Personal Records."
+                : "Ready to crush today's lifting targets? Calculate mixed KG and LBS plates, log your sets without manual conversion, and track your PRs."}
             </p>
 
             <div className="flex items-center gap-2 pt-1 text-[11px] text-slate-400 font-mono">
@@ -233,18 +234,18 @@ export const DashboardPage = ({ setActiveTab }) => {
           </div>
           <div className="mt-3">
             <span className="text-2xl font-black text-white tracking-tight font-mono">
-              {preferredUnit === 'LB'
+              {(preferredUnit === 'LB' || preferredUnit === 'LBS')
                 ? (metrics.totalLiftedLbs || 0).toLocaleString()
                 : (metrics.totalLiftedKg || 0).toLocaleString()}
             </span>
             <span className="text-xs text-neon-cyan ml-1.5 font-mono font-bold">
-              {preferredUnit}
+              {preferredUnit === 'LB' ? 'LBS' : preferredUnit}
             </span>
           </div>
           <p className="text-[11px] text-slate-400 mt-1 font-mono">
-            {preferredUnit === 'LB'
+            {(preferredUnit === 'LB' || preferredUnit === 'LBS')
               ? `≈ ${(metrics.totalLiftedKg || 0).toLocaleString()} KG`
-              : `≈ ${(metrics.totalLiftedLbs || 0).toLocaleString()} LB`}
+              : `≈ ${(metrics.totalLiftedLbs || 0).toLocaleString()} LBS`}
           </p>
         </div>
 
@@ -473,7 +474,7 @@ export const DashboardPage = ({ setActiveTab }) => {
             ) : (
               <div className="space-y-3">
                 {strengthOverviewList.map((item) => {
-                  const displayWeight = preferredUnit === 'LB'
+                  const displayWeight = (preferredUnit === 'LB' || preferredUnit === 'LBS')
                     ? Math.round(item.maxWeightKg * KG_TO_LBS * 10) / 10
                     : item.maxWeightKg;
 
@@ -491,7 +492,7 @@ export const DashboardPage = ({ setActiveTab }) => {
 
                       <div className="text-right shrink-0">
                         <span className="text-xs font-black font-mono text-neon-cyan">
-                          {displayWeight} {preferredUnit}
+                          {displayWeight} {preferredUnit === 'LB' ? 'LBS' : preferredUnit}
                         </span>
                         <span className="block text-[10px] text-neon-gold font-mono font-bold">
                           {item.change}
@@ -610,8 +611,8 @@ export const DashboardPage = ({ setActiveTab }) => {
                     <div className="text-right shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-midnight-border">
                       <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Volume</span>
                       <span className="text-sm font-black font-mono text-neon-cyan">
-                        {preferredUnit === 'LB'
-                          ? `${(w.totalVolumeLbs || ((w.totalVolumeKg || w.totalVolume || 0) * KG_TO_LBS)).toLocaleString()} LB`
+                        {(preferredUnit === 'LB' || preferredUnit === 'LBS')
+                          ? `${(w.totalVolumeLbs || ((w.totalVolumeKg || w.totalVolume || 0) * KG_TO_LBS)).toLocaleString()} LBS`
                           : `${(w.totalVolumeKg || w.totalVolume || 0).toLocaleString()} KG`}
                       </span>
                     </div>
@@ -665,7 +666,7 @@ export const DashboardPage = ({ setActiveTab }) => {
                   <span className="text-xs font-bold text-white block group-hover:text-neon-cyan">
                     Calculate Weight
                   </span>
-                  <span className="text-[10px] text-slate-400">Load mixed KG & LB barbell</span>
+                  <span className="text-[10px] text-slate-400">Load mixed KG & LBS barbell</span>
                 </div>
               </div>
               <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-neon-cyan transition-transform group-hover:translate-x-1" />

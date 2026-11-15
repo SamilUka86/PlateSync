@@ -321,7 +321,7 @@ export const AuthPage = ({ onClose }) => {
             </h1>
             <p className="text-xs text-slate-400 mt-1">
               {isSignUp 
-                ? 'Join PlateSync to calculate mixed KG & LB barbell loads with scientific precision'
+                ? 'Join PlateSync to calculate mixed KG & LBS barbell loads with scientific precision'
                 : 'Sign in to access your workout tracker, history, and plate setups'
               }
             </p>

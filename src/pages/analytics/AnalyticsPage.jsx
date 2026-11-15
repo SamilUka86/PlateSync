@@ -30,7 +30,8 @@ import { getWeightLogs } from '../../services/firestore/firestoreService';
 export const AnalyticsPage = () => {
   const { workouts, metrics } = useWorkout();
   const { userProfile, currentUser, isDemoMode } = useAuth();
-  const preferredUnit = userProfile?.preferredUnit || 'KG';
+  const rawUnit = userProfile?.preferredUnit || 'KG';
+  const preferredUnit = (rawUnit === 'LB' || rawUnit === 'LBS') ? 'LBS' : 'KG';
 
   // Scroll to top on mount
   useEffect(() => {
@@ -59,7 +60,7 @@ export const AnalyticsPage = () => {
       return [
         {
           date: 'Current',
-          weight: preferredUnit === 'LB' ? Math.round(baseKg * KG_TO_LBS * 10) / 10 : baseKg,
+          weight: (preferredUnit === 'LB' || preferredUnit === 'LBS') ? Math.round(baseKg * KG_TO_LBS * 10) / 10 : baseKg,
           kg: baseKg,
           lbs: Math.round(baseKg * KG_TO_LBS * 10) / 10
         }
@@ -67,7 +68,7 @@ export const AnalyticsPage = () => {
     }
     return [...weightLogs].reverse().map(l => ({
       date: new Date(l.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-      weight: preferredUnit === 'LB' ? (l.weightLb || Math.round(l.weightKg * KG_TO_LBS * 10) / 10) : l.weightKg,
+      weight: (preferredUnit === 'LB' || preferredUnit === 'LBS') ? (l.weightLb || Math.round(l.weightKg * KG_TO_LBS * 10) / 10) : l.weightKg,
       kg: l.weightKg,
       lbs: l.weightLb || Math.round(l.weightKg * KG_TO_LBS * 10) / 10,
       fullDate: l.date
@@ -78,7 +79,8 @@ export const AnalyticsPage = () => {
   const volumeData = useMemo(() => {
     const sorted = [...workouts].sort((a, b) => new Date(a.date || a.createdAt) - new Date(b.date || b.createdAt));
     return sorted.map((w) => {
-      const vol = preferredUnit === 'LB'
+      const isLb = (preferredUnit === 'LB' || preferredUnit === 'LBS');
+      const vol = isLb
         ? (w.totalVolumeLbs || ((w.totalVolumeKg || w.totalVolume || 0) * KG_TO_LBS))
         : (w.totalVolumeKg || w.totalVolume || 0);
       return {
@@ -99,12 +101,14 @@ export const AnalyticsPage = () => {
       if (match && match.sets) {
         let maxWeightKg = 0;
         match.sets.forEach((s) => {
-          const wKg = s.unit === 'LB' ? (Number(s.weight) || 0) / KG_TO_LBS : (Number(s.weight) || 0);
+          const isLb = (s.unit === 'LB' || s.unit === 'LBS');
+          const wKg = isLb ? (Number(s.weight) || 0) / KG_TO_LBS : (Number(s.weight) || 0);
           if (wKg > maxWeightKg) maxWeightKg = wKg;
         });
 
         if (maxWeightKg > 0) {
-          const displayW = preferredUnit === 'LB'
+          const isLb = (preferredUnit === 'LB' || preferredUnit === 'LBS');
+          const displayW = isLb
             ? Math.round(maxWeightKg * KG_TO_LBS * 10) / 10
             : Math.round(maxWeightKg * 10) / 10;
 
@@ -144,7 +148,7 @@ export const AnalyticsPage = () => {
         <div className="px-4 py-2 rounded-2xl bg-midnight-bg border border-midnight-border text-right shrink-0">
           <span className="text-[10px] uppercase font-bold text-slate-400 block">All-Time Volume</span>
           <span className="text-lg font-black font-mono text-neon-cyan">
-            {preferredUnit === 'LB' ? `${(metrics.totalLiftedLbs || 0).toLocaleString()} LB` : `${(metrics.totalLiftedKg || 0).toLocaleString()} KG`}
+            {preferredUnit === 'LBS' ? `${(metrics.totalLiftedLbs || 0).toLocaleString()} LBS` : `${(metrics.totalLiftedKg || 0).toLocaleString()} KG`}
           </span>
         </div>
       </div>
@@ -240,7 +244,7 @@ export const AnalyticsPage = () => {
                           <div className="bg-midnight-bg border border-midnight-border p-3 rounded-xl shadow-xl text-xs space-y-1">
                             <p className="font-bold text-white">{selectedExerciseName}</p>
                             <p className="text-neon-violet font-mono font-bold">{data.weight} {preferredUnit}</p>
-                            <p className="text-slate-400 text-[10px] font-mono">({preferredUnit === 'LB' ? `${data.kg} KG` : `${data.lbs} LB`}) &bull; {data.date}</p>
+                            <p className="text-slate-400 text-[10px] font-mono">({preferredUnit === 'LBS' ? `${data.kg} KG` : `${data.lbs} LBS`}) &bull; {data.date}</p>
                           </div>
                         );
                       }
@@ -274,7 +278,7 @@ export const AnalyticsPage = () => {
             <div className="text-right">
               <span className="text-[10px] text-slate-400 block font-mono">Current Weight</span>
               <span className="text-xs font-mono font-bold text-neon-cyan bg-neon-cyan/10 px-2 py-0.5 rounded border border-neon-cyan/20">
-                {preferredUnit === 'LB' ? `${Math.round((userProfile?.bodyWeight || 75) * KG_TO_LBS * 10) / 10} lbs` : `${userProfile?.bodyWeight || 75} kg`}
+                {preferredUnit === 'LBS' ? `${Math.round((userProfile?.bodyWeight || 75) * KG_TO_LBS * 10) / 10} lbs` : `${userProfile?.bodyWeight || 75} kg`}
               </span>
             </div>
           </div>
@@ -311,7 +315,7 @@ export const AnalyticsPage = () => {
                             <p className="font-bold text-white">Body Weight</p>
                             <p className="text-neon-cyan font-mono font-bold">{data.weight} {preferredUnit}</p>
                             <p className="text-slate-400 text-[10px] font-mono">
-                              ({preferredUnit === 'LB' ? `${data.kg} KG` : `${data.lbs} LB`}) &bull; {data.date}
+                              ({preferredUnit === 'LBS' ? `${data.kg} KG` : `${data.lbs} LBS`}) &bull; {data.date}
                             </p>
                           </div>
                         );

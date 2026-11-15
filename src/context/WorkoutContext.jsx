@@ -164,17 +164,17 @@ const DEFAULT_SAVED_CONFIGS = [
   },
   {
     id: 'cfg_mixed_deadlift',
-    name: 'Mixed Gym Deadlift (20kg + 45lb + 10kg)',
+    name: 'Mixed Gym Deadlift (20kg + 45lbs + 10kg)',
     barbellWeight: 20,
     barbellUnit: 'KG',
     leftPlates: [
       { id: 'm1', weight: 20, unit: 'KG' },
-      { id: 'm2', weight: 45, unit: 'LB' },
+      { id: 'm2', weight: 45, unit: 'LBS' },
       { id: 'm3', weight: 10, unit: 'KG' }
     ],
     rightPlates: [
       { id: 'm4', weight: 20, unit: 'KG' },
-      { id: 'm5', weight: 45, unit: 'LB' },
+      { id: 'm5', weight: 45, unit: 'LBS' },
       { id: 'm6', weight: 10, unit: 'KG' }
     ],
     totalKg: 120.82,
@@ -567,7 +567,8 @@ export const WorkoutProvider = ({ children }) => {
         }
         ex.sets?.forEach(s => {
           totalSetsCount += 1;
-          const wKg = s.unit === 'LB' ? (Number(s.weight) || 0) / KG_TO_LBS : (Number(s.weight) || 0);
+          const isLb = (s.unit === 'LB' || s.unit === 'LBS');
+          const wKg = isLb ? (Number(s.weight) || 0) / KG_TO_LBS : (Number(s.weight) || 0);
           if (wKg > personalRecords[exName].maxWeightKg) {
             personalRecords[exName] = {
               maxWeightKg: Math.round(wKg * 10) / 10,

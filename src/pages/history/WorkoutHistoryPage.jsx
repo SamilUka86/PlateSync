@@ -194,8 +194,8 @@ export const WorkoutHistoryPage = ({ setActiveTab }) => {
                   <div className="text-right">
                     <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Total Volume</span>
                     <span className="text-sm md:text-base font-black font-mono text-neon-cyan">
-                      {preferredUnit === 'LB'
-                        ? `${(w.totalVolumeLbs || ((w.totalVolumeKg || w.totalVolume || 0) * KG_TO_LBS)).toLocaleString()} LB`
+                      {(preferredUnit === 'LB' || preferredUnit === 'LBS')
+                        ? `${(w.totalVolumeLbs || ((w.totalVolumeKg || w.totalVolume || 0) * KG_TO_LBS)).toLocaleString()} LBS`
                         : `${(w.totalVolumeKg || w.totalVolume || 0).toLocaleString()} KG`}
                     </span>
                   </div>

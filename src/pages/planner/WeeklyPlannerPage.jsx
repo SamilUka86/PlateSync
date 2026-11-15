@@ -213,9 +213,12 @@ export const WeeklyPlannerPage = ({ setActiveTab }) => {
     <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-300">
       
       {/* Top Banner / Hero Card */}
-      <div className="bg-midnight-card border border-midnight-border rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-2xl">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-neon-cyan/5 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-80 h-80 bg-neon-violet/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="bg-midnight-card border border-midnight-border rounded-3xl p-6 md:p-8 relative shadow-2xl">
+        {/* Background decorative glow (strictly clipped inside card) */}
+        <div className="absolute inset-0 rounded-3xl overflow-hidden pointer-events-none">
+          <div className="absolute top-0 right-0 w-80 h-80 bg-neon-cyan/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-80 h-80 bg-neon-violet/5 rounded-full blur-3xl" />
+        </div>
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
           <div className="space-y-2">
@@ -270,42 +273,66 @@ export const WeeklyPlannerPage = ({ setActiveTab }) => {
               >
                 <Layers className="w-3.5 h-3.5 text-neon-cyan" />
                 <span>Split Presets</span>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${showTemplateDropdown ? 'rotate-180' : ''}`} />
               </button>
 
               {showTemplateDropdown && (
-                <div className="absolute right-0 mt-2 w-56 bg-midnight-card border border-midnight-border rounded-2xl shadow-2xl p-2 z-30 space-y-1 animate-in fade-in">
-                  <p className="px-3 py-1 text-[10px] uppercase font-bold text-slate-500 font-mono">
-                    Select Training Split:
-                  </p>
-                  <button
-                    onClick={() => handleApplyTemplate('ppl')}
-                    className="w-full text-left px-3 py-2 rounded-xl text-xs hover:bg-midnight-elevated text-slate-300 hover:text-white transition flex items-center justify-between"
-                  >
-                    <span>Push / Pull / Legs (6-Day)</span>
-                    <Sparkles className="w-3 h-3 text-neon-cyan" />
-                  </button>
-                  <button
-                    onClick={() => handleApplyTemplate('upper-lower')}
-                    className="w-full text-left px-3 py-2 rounded-xl text-xs hover:bg-midnight-elevated text-slate-300 hover:text-white transition"
-                  >
-                    Upper / Lower (4-Day)
-                  </button>
-                  <button
-                    onClick={() => handleApplyTemplate('full-body')}
-                    className="w-full text-left px-3 py-2 rounded-xl text-xs hover:bg-midnight-elevated text-slate-300 hover:text-white transition"
-                  >
-                    Full Body (3-Day)
-                  </button>
-                  <div className="border-t border-midnight-border my-1" />
-                  <button
-                    onClick={() => handleApplyTemplate('blank')}
-                    className="w-full text-left px-3 py-2 rounded-xl text-xs hover:bg-rose-500/10 text-rose-400 hover:text-rose-300 transition flex items-center gap-1.5"
-                  >
-                    <RotateCcw className="w-3 h-3" />
-                    <span>Clear / Start Blank</span>
-                  </button>
-                </div>
+                <>
+                  {/* Backdrop to close when clicking outside */}
+                  <div 
+                    className="fixed inset-0 z-30" 
+                    onClick={() => setShowTemplateDropdown(false)} 
+                  />
+                  <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-64 max-w-[calc(100vw-2.5rem)] bg-midnight-card border border-midnight-border rounded-2xl shadow-2xl p-2 z-40 space-y-1 animate-in fade-in">
+                    <p className="px-3 py-1 text-[10px] uppercase font-bold text-slate-400 font-mono">
+                      Select Training Split:
+                    </p>
+                    <button
+                      onClick={() => {
+                        handleApplyTemplate('ppl');
+                        setShowTemplateDropdown(false);
+                      }}
+                      className="w-full text-left px-3 py-2 rounded-xl text-xs hover:bg-midnight-elevated text-slate-300 hover:text-white transition flex items-center justify-between"
+                    >
+                      <div>
+                        <span className="font-bold text-white block">Push / Pull / Legs</span>
+                        <span className="text-[10px] text-slate-400">6-Day Split &bull; High Frequency</span>
+                      </div>
+                      <Sparkles className="w-3.5 h-3.5 text-neon-cyan shrink-0 ml-2" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleApplyTemplate('upper-lower');
+                        setShowTemplateDropdown(false);
+                      }}
+                      className="w-full text-left px-3 py-2 rounded-xl text-xs hover:bg-midnight-elevated text-slate-300 hover:text-white transition"
+                    >
+                      <span className="font-bold text-white block">Upper / Lower</span>
+                      <span className="text-[10px] text-slate-400">4-Day Split &bull; Strength &amp; Mass</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleApplyTemplate('full-body');
+                        setShowTemplateDropdown(false);
+                      }}
+                      className="w-full text-left px-3 py-2 rounded-xl text-xs hover:bg-midnight-elevated text-slate-300 hover:text-white transition"
+                    >
+                      <span className="font-bold text-white block">Full Body Foundation</span>
+                      <span className="text-[10px] text-slate-400">3-Day Split &bull; High Efficiency</span>
+                    </button>
+                    <div className="border-t border-midnight-border my-1" />
+                    <button
+                      onClick={() => {
+                        handleApplyTemplate('blank');
+                        setShowTemplateDropdown(false);
+                      }}
+                      className="w-full text-left px-3 py-2 rounded-xl text-xs hover:bg-rose-500/10 text-rose-400 hover:text-rose-300 transition flex items-center gap-1.5"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                      <span>Clear / Start Blank</span>
+                    </button>
+                  </div>
+                </>
               )}
             </div>
           </div>

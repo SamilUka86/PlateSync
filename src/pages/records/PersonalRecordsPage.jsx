@@ -7,7 +7,8 @@ import { KG_TO_LBS } from '../../utils/weightCalculations';
 export const PersonalRecordsPage = () => {
   const { metrics } = useWorkout();
   const { userProfile } = useAuth();
-  const preferredUnit = userProfile?.preferredUnit || 'KG';
+  const rawUnit = userProfile?.preferredUnit || 'KG';
+  const preferredUnit = (rawUnit === 'LB' || rawUnit === 'LBS') ? 'LBS' : 'KG';
 
   // Scroll to top on mount
   useEffect(() => {
@@ -90,10 +91,10 @@ export const PersonalRecordsPage = () => {
                 <div className="pt-2 border-t border-midnight-border flex items-baseline justify-between">
                   <div>
                     <span className="text-2xl font-black font-mono text-white">
-                      {preferredUnit === 'LB' ? `${pr.maxWeightLbs} LB` : `${pr.maxWeightKg} KG`}
+                      {preferredUnit === 'LBS' ? `${pr.maxWeightLbs} LBS` : `${pr.maxWeightKg} KG`}
                     </span>
                     <span className="text-xs font-mono text-slate-400 ml-2">
-                      {preferredUnit === 'LB' ? `(${pr.maxWeightKg} KG)` : `(${pr.maxWeightLbs} LB)`}
+                      {preferredUnit === 'LBS' ? `(${pr.maxWeightKg} KG)` : `(${pr.maxWeightLbs} LBS)`}
                     </span>
                   </div>
 

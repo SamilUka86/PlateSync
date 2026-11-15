@@ -126,14 +126,14 @@ export const SettingsPage = () => {
               Metric (KG)
             </button>
             <button
-              onClick={() => handleUnitToggle('LB')}
+              onClick={() => handleUnitToggle('LBS')}
               className={`px-4 py-2 rounded-xl text-xs font-bold font-mono transition ${
-                userProfile?.preferredUnit === 'LB'
+                (userProfile?.preferredUnit === 'LB' || userProfile?.preferredUnit === 'LBS')
                   ? 'bg-neon-cyan text-slate-950 shadow-md shadow-neon-cyan/20'
                   : 'bg-midnight-bg border border-midnight-border text-slate-400 hover:text-white'
               }`}
             >
-              Imperial (LB)
+              Imperial (LBS)
             </button>
           </div>
         </div>

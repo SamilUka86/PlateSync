@@ -29,7 +29,7 @@ export const EditPlanExerciseModal = ({
   const [targetSets, setTargetSets] = useState(exercise.targetSets || 3);
   const [targetReps, setTargetReps] = useState(exercise.targetReps || '8-10');
   const [targetWeight, setTargetWeight] = useState(exercise.targetWeight || 0);
-  const [targetUnit, setTargetUnit] = useState(exercise.unit || 'KG');
+  const [targetUnit, setTargetUnit] = useState((exercise.unit === 'LB' || exercise.unit === 'LBS') ? 'LBS' : 'KG');
   const [notes, setNotes] = useState(exercise.notes || '');
 
   const handleSubmit = (e) => {
@@ -109,10 +109,10 @@ export const EditPlanExerciseModal = ({
                 </label>
                 <button
                   type="button"
-                  onClick={() => setTargetUnit(prev => prev === 'KG' ? 'LB' : 'KG')}
+                  onClick={() => setTargetUnit(prev => (prev === 'LB' || prev === 'LBS') ? 'KG' : 'LBS')}
                   className="text-[11px] font-mono font-bold text-neon-cyan hover:underline shrink-0"
                 >
-                  {targetUnit}
+                  {targetUnit === 'LB' ? 'LBS' : targetUnit}
                 </button>
               </div>
               <div className="relative">
@@ -125,7 +125,7 @@ export const EditPlanExerciseModal = ({
                   className="w-full pl-2.5 sm:pl-3 pr-7 py-2 bg-midnight-bg border border-slate-700 rounded-xl text-white text-xs md:text-sm font-bold font-mono focus:outline-none focus:border-neon-cyan"
                 />
                 <span className="absolute right-2 top-2 text-[11px] text-slate-400 font-mono pointer-events-none font-bold">
-                  {targetUnit}
+                  {targetUnit === 'LB' ? 'LBS' : targetUnit}
                 </span>
               </div>
             </div>

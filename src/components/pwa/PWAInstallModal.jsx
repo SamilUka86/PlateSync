@@ -23,21 +23,33 @@ export const PWAInstallModal = ({
   hasNativePrompt = false,
   onPromptInstall
 }) => {
-  // Default tab based on device detection
+  // Default tab based on device detection: Android -> iOS -> Desktop
   const [activePlatform, setActivePlatform] = useState(() => {
-    if (isIOS) return 'ios';
     if (isAndroid) return 'android';
+    if (isIOS) return 'ios';
     return 'desktop';
   });
 
   // Keep active platform in sync when modal opens or platform detected
   useEffect(() => {
     if (isOpen) {
-      if (isIOS) setActivePlatform('ios');
-      else if (isAndroid) setActivePlatform('android');
+      if (isAndroid) setActivePlatform('android');
+      else if (isIOS) setActivePlatform('ios');
       else setActivePlatform('desktop');
     }
-  }, [isOpen, isIOS, isAndroid]);
+  }, [isOpen, isAndroid, isIOS]);
+
+  const handleIOSAction = async () => {
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: 'PlateSync - Smart Barbell & Workout Tracker',
+          text: 'Install PlateSync to your home screen for full offline gym tracking!',
+          url: window.location.href
+        });
+      } catch (e) {}
+    }
+  };
 
   // Lock body scroll when modal is open so underlying page never moves
   useEffect(() => {
@@ -97,21 +109,8 @@ export const PWAInstallModal = ({
           </button>
         </div>
 
-        {/* Platform Tabs (pinned under header) */}
+        {/* 3 Platform Portions Tabs: Android, iOS, Desktop */}
         <div className="p-2 sm:p-2.5 bg-midnight-bg border-b border-midnight-border flex items-center gap-1.5 shrink-0">
-          <button
-            type="button"
-            onClick={() => setActivePlatform('ios')}
-            className={`flex-1 py-2 px-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
-              activePlatform === 'ios'
-                ? 'bg-neon-cyan text-slate-950 shadow-md shadow-neon-cyan/20 font-black'
-                : 'text-slate-400 hover:text-white hover:bg-midnight-elevated'
-            }`}
-          >
-            <Smartphone className="w-3.5 h-3.5 shrink-0" />
-            <span>Apple iOS</span>
-          </button>
-
           <button
             type="button"
             onClick={() => setActivePlatform('android')}
@@ -123,6 +122,19 @@ export const PWAInstallModal = ({
           >
             <Smartphone className="w-3.5 h-3.5 shrink-0" />
             <span>Android</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActivePlatform('ios')}
+            className={`flex-1 py-2 px-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+              activePlatform === 'ios'
+                ? 'bg-neon-cyan text-slate-950 shadow-md shadow-neon-cyan/20 font-black'
+                : 'text-slate-400 hover:text-white hover:bg-midnight-elevated'
+            }`}
+          >
+            <Smartphone className="w-3.5 h-3.5 shrink-0" />
+            <span>Apple iOS</span>
           </button>
 
           <button
@@ -139,7 +151,7 @@ export const PWAInstallModal = ({
           </button>
         </div>
 
-        {/* Scrollable Content Body (strictly contained inside modal height) */}
+        {/* Scrollable Content Body */}
         <div className="p-3.5 sm:p-5 overflow-y-auto space-y-3.5 text-xs flex-1 overscroll-contain">
           
           {/* Status if already running in standalone mode */}
@@ -155,45 +167,129 @@ export const PWAInstallModal = ({
             </div>
           )}
 
-          {/* 1-Click Native Install (If supported on Android Chrome or Desktop) */}
-          {!isStandalone && hasNativePrompt && onPromptInstall && (
-            <div className="p-3.5 rounded-2xl bg-neon-cyan/15 border border-neon-cyan/40 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-neon-cyan" />
-                  <span>1-Tap Install Ready</span>
-                </span>
-                <span className="text-[9px] uppercase font-mono px-2 py-0.5 rounded-full bg-neon-cyan text-slate-950 font-black">
-                  Fast
-                </span>
+          {/* 1. ANDROID PORTION */}
+          {activePlatform === 'android' && (
+            <div className="space-y-3 animate-in fade-in duration-200">
+              {/* Install Button for Android */}
+              <div className="p-3.5 rounded-2xl bg-neon-cyan/15 border border-neon-cyan/40 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-neon-cyan" />
+                    <span>Android App Installation</span>
+                  </span>
+                  <span className="text-[9px] uppercase font-mono px-2 py-0.5 rounded-full bg-neon-cyan text-slate-950 font-black">
+                    1-Tap / Chrome
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-200 font-medium leading-relaxed">
+                  Tap below to launch direct installation to your Android home screen and app launcher:
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (onPromptInstall) onPromptInstall();
+                    onClose();
+                  }}
+                  className="w-full py-3 px-4 rounded-xl bg-neon-cyan hover:bg-[#29bfcd] text-slate-950 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-neon-cyan/25 transition active:scale-95"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Install PlateSync on Android</span>
+                </button>
               </div>
-              <p className="text-[11px] text-slate-200 font-medium">
-                Your browser supports direct 1-tap installation to your home screen right now.
-              </p>
-              <button
-                type="button"
-                onClick={() => {
-                  if (onPromptInstall) onPromptInstall();
-                  onClose();
-                }}
-                className="w-full py-2.5 px-4 rounded-xl bg-neon-cyan hover:bg-[#29bfcd] text-slate-950 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-neon-cyan/25 transition active:scale-95"
-              >
-                <Download className="w-4 h-4" />
-                <span>Install PlateSync Now</span>
-              </button>
+
+              {/* Android Step-by-Step Guidance */}
+              <div className="p-3 rounded-2xl bg-midnight-bg border border-midnight-border space-y-1">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-white">
+                  <Sparkles className="w-4 h-4 text-neon-cyan shrink-0" />
+                  <span>Manual Installation Steps (Chrome &amp; Edge)</span>
+                </div>
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  If the prompt doesn&apos;t appear automatically, follow these 3 quick steps in your browser:
+                </p>
+              </div>
+
+              {/* Android Step 1 */}
+              <div className="flex items-start gap-3 p-3 rounded-2xl bg-midnight-bg border border-midnight-border">
+                <div className="w-6 h-6 rounded-full bg-neon-cyan text-slate-950 font-black text-xs flex items-center justify-center shrink-0">
+                  1
+                </div>
+                <div className="space-y-1 min-w-0">
+                  <p className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <span>Tap the Three Dots Menu</span>
+                    <MoreVertical className="w-3.5 h-3.5 text-neon-cyan shrink-0" />
+                  </p>
+                  <p className="text-[11px] text-slate-300 leading-relaxed">
+                    Tap the vertical three dots (⋮) located at the top-right corner of Google Chrome.
+                  </p>
+                </div>
+              </div>
+
+              {/* Android Step 2 */}
+              <div className="flex items-start gap-3 p-3 rounded-2xl bg-midnight-bg border border-midnight-border">
+                <div className="w-6 h-6 rounded-full bg-neon-cyan text-slate-950 font-black text-xs flex items-center justify-center shrink-0">
+                  2
+                </div>
+                <div className="space-y-1 min-w-0">
+                  <p className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <span>Select &quot;Install app&quot;</span>
+                    <Download className="w-3.5 h-3.5 text-neon-violet shrink-0" />
+                  </p>
+                  <p className="text-[11px] text-slate-300 leading-relaxed">
+                    Select <strong className="text-white font-bold">&quot;Install app&quot;</strong> (or &quot;Add to Home screen&quot; depending on Chrome version).
+                  </p>
+                </div>
+              </div>
+
+              {/* Android Step 3 */}
+              <div className="flex items-start gap-3 p-3 rounded-2xl bg-midnight-bg border border-midnight-border">
+                <div className="w-6 h-6 rounded-full bg-neon-cyan text-slate-950 font-black text-xs flex items-center justify-center shrink-0">
+                  3
+                </div>
+                <div className="space-y-1 min-w-0">
+                  <p className="text-xs font-bold text-white">Tap &quot;Install&quot; to Confirm</p>
+                  <p className="text-[11px] text-slate-300 leading-relaxed">
+                    PlateSync will download and appear in your phone&apos;s app drawer with instant launch speed.
+                  </p>
+                </div>
+              </div>
             </div>
           )}
 
-          {/* iOS INSTRUCTIONS */}
+          {/* 2. APPLE iOS PORTION */}
           {activePlatform === 'ios' && (
-            <div className="space-y-3">
+            <div className="space-y-3 animate-in fade-in duration-200">
+              {/* Install / Share Action for iOS */}
+              <div className="p-3.5 rounded-2xl bg-neon-cyan/15 border border-neon-cyan/40 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <Share className="w-4 h-4 text-neon-cyan" />
+                    <span>Apple iOS Home Screen App</span>
+                  </span>
+                  <span className="text-[9px] uppercase font-mono px-2 py-0.5 rounded-full bg-neon-cyan text-slate-950 font-black">
+                    Safari
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-200 font-medium leading-relaxed">
+                  Apple requires installing via Safari&apos;s Share sheet. Tap below to initiate or follow the steps below:
+                </p>
+                <button
+                  type="button"
+                  onClick={handleIOSAction}
+                  className="w-full py-3 px-4 rounded-xl bg-neon-cyan hover:bg-[#29bfcd] text-slate-950 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-neon-cyan/25 transition active:scale-95"
+                >
+                  <Share className="w-4 h-4 text-slate-950" />
+                  <span>Open Share Menu (Add to Home Screen)</span>
+                </button>
+              </div>
+
+              {/* Safari Notice */}
               <div className="p-3 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-200 space-y-1">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-amber-300">
                   <Compass className="w-4 h-4 shrink-0" />
-                  <span>iOS Requirement: Use Apple Safari</span>
+                  <span>Requirement: Open in Apple Safari Browser</span>
                 </div>
                 <p className="text-[11px] sm:text-xs text-slate-200 leading-relaxed">
-                  Apple does not allow automated 1-click install popups. To install on iPhone or iPad, follow these 3 quick steps in <strong>Safari</strong>:
+                  Apple does not support automated 1-click install popups. To install on iPhone or iPad, follow these 3 quick steps in <strong>Safari</strong>:
                 </p>
               </div>
 
@@ -243,74 +339,42 @@ export const PWAInstallModal = ({
               </div>
 
               <div className="p-2.5 rounded-xl bg-midnight-elevated border border-midnight-border text-[11px] text-slate-300">
-                <span className="font-bold text-white">Chrome on iOS?</span> Tap the Share icon in Chrome&apos;s address bar &gt; select <strong className="text-white">&quot;Add to Home Screen&quot;</strong>.
+                <span className="font-bold text-white">Using Chrome on iOS?</span> Tap the Share icon in Chrome&apos;s address bar &gt; select <strong className="text-white">&quot;Add to Home Screen&quot;</strong>.
               </div>
             </div>
           )}
 
-          {/* ANDROID INSTRUCTIONS */}
-          {activePlatform === 'android' && (
-            <div className="space-y-3">
-              <div className="p-3 rounded-2xl bg-neon-cyan/15 border border-neon-cyan/30 text-neon-cyan space-y-1">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-white">
-                  <Sparkles className="w-4 h-4 text-neon-cyan shrink-0" />
-                  <span>Google Chrome or Android Browser</span>
-                </div>
-                <p className="text-[11px] sm:text-xs text-slate-200 leading-relaxed">
-                  On Android, you can install PlateSync directly into your phone&apos;s app launcher with full offline capabilities:
-                </p>
-              </div>
-
-              {/* Android Step 1 */}
-              <div className="flex items-start gap-3 p-3 rounded-2xl bg-midnight-bg border border-midnight-border">
-                <div className="w-6 h-6 rounded-full bg-neon-cyan text-slate-950 font-black text-xs flex items-center justify-center shrink-0">
-                  1
-                </div>
-                <div className="space-y-1 min-w-0">
-                  <p className="text-xs font-bold text-white flex items-center gap-1.5">
-                    <span>Tap the Three Dots Menu</span>
-                    <MoreVertical className="w-3.5 h-3.5 text-neon-cyan shrink-0" />
-                  </p>
-                  <p className="text-[11px] text-slate-300 leading-relaxed">
-                    Tap the vertical three dots (⋮) located at the top-right corner of Google Chrome.
-                  </p>
-                </div>
-              </div>
-
-              {/* Android Step 2 */}
-              <div className="flex items-start gap-3 p-3 rounded-2xl bg-midnight-bg border border-midnight-border">
-                <div className="w-6 h-6 rounded-full bg-neon-cyan text-slate-950 font-black text-xs flex items-center justify-center shrink-0">
-                  2
-                </div>
-                <div className="space-y-1 min-w-0">
-                  <p className="text-xs font-bold text-white flex items-center gap-1.5">
-                    <span>Tap &quot;Install app&quot;</span>
-                    <Download className="w-3.5 h-3.5 text-neon-violet shrink-0" />
-                  </p>
-                  <p className="text-[11px] text-slate-300 leading-relaxed">
-                    Select <strong className="text-white font-bold">&quot;Install app&quot;</strong> (or &quot;Add to Home screen&quot; depending on Chrome version).
-                  </p>
-                </div>
-              </div>
-
-              {/* Android Step 3 */}
-              <div className="flex items-start gap-3 p-3 rounded-2xl bg-midnight-bg border border-midnight-border">
-                <div className="w-6 h-6 rounded-full bg-neon-cyan text-slate-950 font-black text-xs flex items-center justify-center shrink-0">
-                  3
-                </div>
-                <div className="space-y-1 min-w-0">
-                  <p className="text-xs font-bold text-white">Tap &quot;Install&quot; to Confirm</p>
-                  <p className="text-[11px] text-slate-300 leading-relaxed">
-                    PlateSync will download and appear in your phone&apos;s app drawer with instant launch speed.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* DESKTOP INSTRUCTIONS */}
+          {/* 3. DESKTOP PORTION */}
           {activePlatform === 'desktop' && (
-            <div className="space-y-3">
+            <div className="space-y-3 animate-in fade-in duration-200">
+              {/* Install Button for Desktop */}
+              <div className="p-3.5 rounded-2xl bg-neon-cyan/15 border border-neon-cyan/40 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <Monitor className="w-4 h-4 text-neon-cyan" />
+                    <span>Desktop App Installation</span>
+                  </span>
+                  <span className="text-[9px] uppercase font-mono px-2 py-0.5 rounded-full bg-neon-cyan text-slate-950 font-black">
+                    Windows &bull; Mac
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-200 font-medium leading-relaxed">
+                  Install PlateSync as a standalone desktop program without browser tabs:
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (onPromptInstall) onPromptInstall();
+                    onClose();
+                  }}
+                  className="w-full py-3 px-4 rounded-xl bg-neon-cyan hover:bg-[#29bfcd] text-slate-950 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-neon-cyan/25 transition active:scale-95"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Install PlateSync on Desktop</span>
+                </button>
+              </div>
+
+              {/* Desktop Guidance */}
               <div className="p-3 rounded-2xl bg-midnight-bg border border-midnight-border space-y-1">
                 <p className="text-xs font-bold text-white flex items-center gap-2">
                   <Monitor className="w-4 h-4 text-neon-cyan shrink-0" />

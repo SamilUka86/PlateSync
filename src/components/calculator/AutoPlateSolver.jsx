@@ -53,9 +53,9 @@ export const AutoPlateSolver = ({
       ]
     : [
         { label: 'Any Plate Size', value: '' },
-        { label: 'Max 45 LB', value: '45' },
-        { label: 'Max 35 LB', value: '35' },
-        { label: 'Max 25 LB', value: '25' }
+        { label: 'Max 45 LBS', value: '45' },
+        { label: 'Max 35 LBS', value: '35' },
+        { label: 'Max 25 LBS', value: '25' }
       ];
 
   // Calculate plate combination
@@ -162,7 +162,7 @@ export const AutoPlateSolver = ({
                 className="w-full px-3 py-2 bg-midnight-card border border-midnight-border rounded-xl text-white text-xs focus:outline-none focus:border-neon-cyan"
               >
                 <option value="KG">Use KG Plates</option>
-                <option value="LB">Use LB Plates</option>
+                <option value="LBS">Use LBS Plates</option>
               </select>
             </div>
 
@@ -266,16 +266,16 @@ export const AutoPlateSolver = ({
             <button
               type="button"
               onClick={() => {
-                setTargetUnit('LB');
-                setPlateUnit('LB');
+                setTargetUnit('LBS');
+                setPlateUnit('LBS');
               }}
               className={`h-full px-3 rounded-xl text-xs font-mono font-black transition ${
-                targetUnit === 'LB'
+                (targetUnit === 'LB' || targetUnit === 'LBS')
                   ? 'bg-neon-violet text-white shadow-sm'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              LB
+              LBS
             </button>
           </div>
         </div>

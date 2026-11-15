@@ -23,9 +23,9 @@ export const FRACTIONAL_LB_PLATES = [2.5, 1.25];
  */
 export const BARBELL_PRESETS = [
   { id: 'oly-kg-20', name: 'Olympic Barbell 20 kg', weight: 20, unit: 'KG', isLegPress45: false },
-  { id: 'oly-lb-45', name: 'Olympic Barbell 45 lb', weight: 45, unit: 'LB', isLegPress45: false },
+  { id: 'oly-lb-45', name: 'Olympic Barbell 45 lbs', weight: 45, unit: 'LBS', isLegPress45: false },
   { id: 'oly-kg-15', name: "Women's Olympic Barbell 15 kg", weight: 15, unit: 'KG', isLegPress45: false },
-  { id: 'oly-lb-35', name: "Women's Barbell 35 lb", weight: 35, unit: 'LB', isLegPress45: false },
+  { id: 'oly-lb-35', name: "Women's Barbell 35 lbs", weight: 35, unit: 'LBS', isLegPress45: false },
   { id: 'leg-press-45', name: '45-Degree Leg Press', weight: 0, unit: 'KG', isLegPress45: true },
   { id: 'ez-curl', name: 'EZ Curl Bar 10 kg', weight: 10, unit: 'KG', isLegPress45: false },
   { id: 'smith-machine', name: 'Smith Machine Bar 7 kg', weight: 7, unit: 'KG', isLegPress45: false },
@@ -37,14 +37,18 @@ export const BARBELL_PRESETS = [
  */
 export const convertWeight = (val, fromUnit, toUnit) => {
   const num = Number(val) || 0;
-  const from = (fromUnit || 'KG').toUpperCase();
-  const to = (toUnit || 'KG').toUpperCase();
+  const normalize = (u) => {
+    const s = (u || 'KG').toUpperCase();
+    return (s === 'LB' || s === 'LBS') ? 'LBS' : 'KG';
+  };
+  const from = normalize(fromUnit);
+  const to = normalize(toUnit);
 
   if (from === to) return num;
-  if (from === 'KG' && to === 'LB') {
+  if (from === 'KG' && to === 'LBS') {
     return num * KG_TO_LBS;
   }
-  if (from === 'LB' && to === 'KG') {
+  if (from === 'LBS' && to === 'KG') {
     return num * LBS_TO_KG;
   }
   return num;
@@ -134,7 +138,7 @@ export const calculateTotalWeight = (
   const bUnit = (barbellUnit || 'KG').toUpperCase();
 
   const barbellKg = bUnit === 'KG' ? bWeight : bWeight * LBS_TO_KG;
-  const barbellLbs = bUnit === 'LB' ? bWeight : bWeight * KG_TO_LBS;
+  const barbellLbs = (bUnit === 'LB' || bUnit === 'LBS') ? bWeight : bWeight * KG_TO_LBS;
 
   const left = calculateSideWeight(leftPlates);
   const right = calculateSideWeight(rightPlates);

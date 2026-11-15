@@ -114,8 +114,8 @@ export const SidebarWeightTracker = ({ collapsed = false, onExpandSidebar, onOpe
               {
                 id: `seed_1_${userId}`,
                 date: getTodayLocalDateStr(),
-                weight: preferredUnit === 'LB' ? Math.round(baseKg * KG_TO_LBS * 10) / 10 : baseKg,
-                unit: preferredUnit,
+                weight: (preferredUnit === 'LB' || preferredUnit === 'LBS') ? Math.round(baseKg * KG_TO_LBS * 10) / 10 : baseKg,
+                unit: (preferredUnit === 'LB' || preferredUnit === 'LBS') ? 'LBS' : 'KG',
                 weightKg: baseKg,
                 weightLb: Math.round(baseKg * KG_TO_LBS * 10) / 10,
                 createdAt: new Date().toISOString()
@@ -147,7 +147,7 @@ export const SidebarWeightTracker = ({ collapsed = false, onExpandSidebar, onOpe
 
   // Current weight formatted in active unit
   const displayCurrentWeight = useMemo(() => {
-    if (unit === 'LB') {
+    if (unit === 'LB' || unit === 'LBS') {
       const lbs = Math.round(currentWeightKg * KG_TO_LBS * 10) / 10;
       return `${lbs} lbs`;
     }
@@ -163,10 +163,10 @@ export const SidebarWeightTracker = ({ collapsed = false, onExpandSidebar, onOpe
 
     if (Math.abs(diffKg) < 0.05) return { type: 'neutral', label: '0.0 kg' };
     if (diffKg > 0) {
-      const val = unit === 'LB' ? `+${Math.round(diffKg * KG_TO_LBS * 10) / 10} lbs` : `+${diffKg} kg`;
+      const val = (unit === 'LB' || unit === 'LBS') ? `+${Math.round(diffKg * KG_TO_LBS * 10) / 10} lbs` : `+${diffKg} kg`;
       return { type: 'up', label: val };
     } else {
-      const val = unit === 'LB' ? `${Math.round(diffKg * KG_TO_LBS * 10) / 10} lbs` : `${diffKg} kg`;
+      const val = (unit === 'LB' || unit === 'LBS') ? `${Math.round(diffKg * KG_TO_LBS * 10) / 10} lbs` : `${diffKg} kg`;
       return { type: 'down', label: val };
     }
   }, [logs, unit]);
@@ -182,7 +182,7 @@ export const SidebarWeightTracker = ({ collapsed = false, onExpandSidebar, onOpe
 
     setIsSaving(true);
     try {
-      const weightKg = unit === 'LB' ? Math.round((num / KG_TO_LBS) * 10) / 10 : Math.round(num * 10) / 10;
+      const weightKg = (unit === 'LB' || unit === 'LBS') ? Math.round((num / KG_TO_LBS) * 10) / 10 : Math.round(num * 10) / 10;
       const weightLb = unit === 'KG' ? Math.round((num * KG_TO_LBS) * 10) / 10 : Math.round(num * 10) / 10;
 
       const newEntry = {
@@ -264,7 +264,7 @@ export const SidebarWeightTracker = ({ collapsed = false, onExpandSidebar, onOpe
       .reverse()
       .map(l => ({
         date: formatDisplayDate(l.date),
-        weight: unit === 'LB' ? l.weightLb : l.weightKg,
+        weight: (unit === 'LB' || unit === 'LBS') ? l.weightLb : l.weightKg,
         fullDate: l.date
       }));
   }, [logs, unit]);
@@ -345,14 +345,14 @@ export const SidebarWeightTracker = ({ collapsed = false, onExpandSidebar, onOpe
                       </button>
                       <button
                         type="button"
-                        onClick={() => setUnit('LB')}
+                        onClick={() => setUnit('LBS')}
                         className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition ${
-                          unit === 'LB'
+                          (unit === 'LB' || unit === 'LBS')
                             ? 'bg-neon-violet text-white shadow-sm'
                             : 'text-slate-400 hover:text-white'
                         }`}
                       >
-                        LB
+                        LBS
                       </button>
                     </div>
                   </div>
@@ -476,7 +476,7 @@ export const SidebarWeightTracker = ({ collapsed = false, onExpandSidebar, onOpe
         </div>
         <div className="pt-2.5 text-center space-y-2">
           <p className="text-[10px] text-slate-400 leading-tight">
-            Sign in to record body weight in KG/LB and view your progression curve.
+            Sign in to record body weight in KG/LBS and view your progression curve.
           </p>
           <button
             type="button"
@@ -550,7 +550,7 @@ export const SidebarWeightTracker = ({ collapsed = false, onExpandSidebar, onOpe
             <div>
               <div className="flex items-center justify-between mb-1">
                 <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Weight</span>
-                {/* KG / LB Unit Toggle */}
+                {/* KG / LBS Unit Toggle */}
                 <div className="flex items-center p-0.5 rounded-lg bg-midnight-bg border border-midnight-border">
                   <button
                     type="button"
@@ -565,14 +565,14 @@ export const SidebarWeightTracker = ({ collapsed = false, onExpandSidebar, onOpe
                   </button>
                   <button
                     type="button"
-                    onClick={() => setUnit('LB')}
+                    onClick={() => setUnit('LBS')}
                     className={`px-2 py-0.5 rounded text-[9px] font-bold transition ${
-                      unit === 'LB'
+                      (unit === 'LB' || unit === 'LBS')
                         ? 'bg-neon-violet text-white shadow-sm'
                         : 'text-slate-400 hover:text-white'
                     }`}
                   >
-                    LB
+                    LBS
                   </button>
                 </div>
               </div>
@@ -691,7 +691,7 @@ export const SidebarWeightTracker = ({ collapsed = false, onExpandSidebar, onOpe
                       <div className="flex items-center gap-1.5 font-mono">
                         <span className="text-slate-400">{formatDisplayDate(l.date)}</span>
                         <span className="text-white font-bold">
-                          {unit === 'LB' ? `${l.weightLb} lb` : `${l.weightKg} kg`}
+                          {(unit === 'LB' || unit === 'LBS') ? `${l.weightLb} lbs` : `${l.weightKg} kg`}
                         </span>
                       </div>
                       <button

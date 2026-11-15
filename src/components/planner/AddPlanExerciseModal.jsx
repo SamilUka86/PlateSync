@@ -76,7 +76,7 @@ export const AddPlanExerciseModal = ({
   if (!isOpen) return null;
 
   const { userProfile } = useAuth();
-  const defaultUnit = userProfile?.preferredUnit || 'KG';
+  const defaultUnit = (userProfile?.preferredUnit === 'LB' || userProfile?.preferredUnit === 'LBS') ? 'LBS' : 'KG';
 
   // Mode: 'library' | 'custom'
   const [activeTab, setActiveTab] = useState('library');
@@ -477,10 +477,10 @@ export const AddPlanExerciseModal = ({
                         </label>
                         <button
                           type="button"
-                          onClick={() => setTargetUnit(prev => prev === 'KG' ? 'LB' : 'KG')}
+                          onClick={() => setTargetUnit(prev => (prev === 'LB' || prev === 'LBS') ? 'KG' : 'LBS')}
                           className="text-[11px] font-mono font-bold text-neon-cyan hover:underline shrink-0"
                         >
-                          {targetUnit}
+                          {targetUnit === 'LB' ? 'LBS' : targetUnit}
                         </button>
                       </div>
                       <div className="relative">
@@ -493,7 +493,7 @@ export const AddPlanExerciseModal = ({
                           className="w-full pl-2.5 sm:pl-3 pr-7 py-2 bg-midnight-bg border border-slate-700 rounded-xl text-white text-xs md:text-sm font-bold font-mono focus:outline-none focus:border-neon-cyan"
                         />
                         <span className="absolute right-2 top-2 text-[11px] text-slate-400 font-mono pointer-events-none font-bold">
-                          {targetUnit}
+                          {targetUnit === 'LB' ? 'LBS' : targetUnit}
                         </span>
                       </div>
                     </div>
@@ -599,10 +599,10 @@ export const AddPlanExerciseModal = ({
                     </label>
                     <button
                       type="button"
-                      onClick={() => setTargetUnit(prev => prev === 'KG' ? 'LB' : 'KG')}
+                      onClick={() => setTargetUnit(prev => (prev === 'LB' || prev === 'LBS') ? 'KG' : 'LBS')}
                       className="text-[11px] font-mono font-bold text-neon-cyan hover:underline shrink-0"
                     >
-                      {targetUnit}
+                      {targetUnit === 'LB' ? 'LBS' : targetUnit}
                     </button>
                   </div>
                   <div className="relative">
@@ -615,7 +615,7 @@ export const AddPlanExerciseModal = ({
                       className="w-full pl-2.5 sm:pl-3 pr-7 py-2 bg-midnight-bg border border-slate-700 rounded-xl text-white text-xs md:text-sm font-bold font-mono focus:outline-none focus:border-neon-cyan"
                     />
                     <span className="absolute right-2 top-2 text-[11px] text-slate-400 font-mono pointer-events-none font-bold">
-                      {targetUnit}
+                      {targetUnit === 'LB' ? 'LBS' : targetUnit}
                     </span>
                   </div>
                 </div>

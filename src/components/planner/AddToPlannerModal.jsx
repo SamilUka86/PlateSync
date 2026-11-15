@@ -30,7 +30,7 @@ export const AddToPlannerModal = ({ isOpen, onClose, exercise, setActiveTab }) =
     if (exercise?.isLegPress45 || /45.*leg\s*press/i.test(exercise?.name || '')) return 100;
     return 20;
   });
-  const [unit, setUnit] = useState(() => userProfile?.preferredUnit || 'KG');
+  const [unit, setUnit] = useState(() => (userProfile?.preferredUnit === 'LB' || userProfile?.preferredUnit === 'LBS') ? 'LBS' : 'KG');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAddedSuccess, setIsAddedSuccess] = useState(false);
@@ -261,10 +261,10 @@ export const AddToPlannerModal = ({ isOpen, onClose, exercise, setActiveTab }) =
                   </label>
                   <button
                     type="button"
-                    onClick={() => setUnit(unit === 'KG' ? 'LB' : 'KG')}
+                    onClick={() => setUnit(u => (u === 'LB' || u === 'LBS') ? 'KG' : 'LBS')}
                     className="text-[9px] font-mono font-bold text-neon-cyan hover:underline shrink-0"
                   >
-                    {unit}
+                    {unit === 'LB' ? 'LBS' : unit}
                   </button>
                 </div>
                 <div className="relative">
@@ -278,7 +278,7 @@ export const AddToPlannerModal = ({ isOpen, onClose, exercise, setActiveTab }) =
                     className="w-full pl-2 pr-6 py-1.5 bg-midnight-card border border-slate-700/80 rounded-xl text-white text-xs font-mono text-center focus:outline-none focus:border-neon-cyan"
                   />
                   <span className="absolute right-1.5 top-1.5 text-[9px] font-mono text-slate-400 font-bold pointer-events-none">
-                    {unit}
+                    {unit === 'LB' ? 'LBS' : unit}
                   </span>
                 </div>
               </div>

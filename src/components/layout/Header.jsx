@@ -38,10 +38,10 @@ export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, s
     );
   };
 
-  const currentUnit = userProfile?.preferredUnit || 'KG';
+  const currentUnit = (userProfile?.preferredUnit === 'LB' || userProfile?.preferredUnit === 'LBS') ? 'LBS' : 'KG';
 
   const togglePreferredUnit = () => {
-    const nextUnit = currentUnit === 'KG' ? 'LB' : 'KG';
+    const nextUnit = currentUnit === 'KG' ? 'LBS' : 'KG';
     updateProfile({ preferredUnit: nextUnit });
     addNotification(`Default weight unit set to ${nextUnit}`, 'success');
   };
@@ -171,7 +171,7 @@ export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, s
         <button
           onClick={togglePreferredUnit}
           className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-midnight-border bg-midnight-card hover:bg-midnight-elevated text-slate-200 text-xs font-bold font-mono transition"
-          title="Toggle Global Preferred Unit (KG / LB)"
+          title="Toggle Global Preferred Unit (KG / LBS)"
         >
           <Scale className="w-3.5 h-3.5 text-neon-cyan" />
           <span>{currentUnit}</span>

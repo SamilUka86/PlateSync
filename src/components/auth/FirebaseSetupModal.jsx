@@ -54,7 +54,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function isAuthenticated() { return request.auth != null; }
     function isOwner(userId) { return isAuthenticated() && request.auth.uid == userId; }
-    function isValidUnit(unit) { return unit == 'KG' || unit == 'LB'; }
+    function isValidUnit(unit) { return unit == 'KG' || unit == 'LB' || unit == 'LBS'; }
     function isPositive(val) { return val is number && val >= 0; }
     function isStrictPositive(val) { return val is number && val > 0; }
     function isValidStr(val, maxLen) { return val is string && val.size() <= maxLen; }

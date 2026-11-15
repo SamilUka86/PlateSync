@@ -500,7 +500,8 @@ export const WorkoutTrackerPage = ({ setActiveTab }) => {
           const r = Number(s.reps) || 0;
           const w = Number(s.weight) || 0;
           totalReps += r;
-          const wKg = s.unit === 'LB' ? w / KG_TO_LBS : w;
+          const isLb = s.unit === 'LB' || s.unit === 'LBS';
+          const wKg = isLb ? w / KG_TO_LBS : w;
           totalVolumeKg += wKg * r;
         }
       });
@@ -525,7 +526,7 @@ export const WorkoutTrackerPage = ({ setActiveTab }) => {
     setActiveSession(null);
     setRestSeconds(null);
     setCompletedWorkoutForShare(finished);
-    addNotification(`Workout completed! Total volume: ${Math.round(totalVolumeKg)} KG (${Math.round(totalVolumeKg * KG_TO_LBS)} LB)`, 'success');
+    addNotification(`Workout completed! Total volume: ${Math.round(totalVolumeKg)} KG (${Math.round(totalVolumeKg * KG_TO_LBS)} LBS)`, 'success');
   };
 
   // Unified Exercise Catalog = Custom + 194 Built-in Exercises
@@ -619,7 +620,7 @@ export const WorkoutTrackerPage = ({ setActiveTab }) => {
             Live Workout Tracker
           </h2>
           <p className="text-xs text-slate-400 leading-relaxed">
-            Record exercises from the unified 160+ exercise catalog, calculate mixed KG/LB plates, use rest countdowns, and build custom movements.
+            Record exercises from the unified 160+ exercise catalog, calculate mixed KG/LBS plates, use rest countdowns, and build custom movements.
           </p>
         </div>
 
@@ -856,7 +857,7 @@ export const WorkoutTrackerPage = ({ setActiveTab }) => {
                             className="px-2 py-1.5 bg-midnight-bg border border-slate-700 rounded-lg text-white text-xs sm:text-sm font-mono font-bold focus:outline-none focus:border-neon-cyan"
                           >
                             <option value="KG">KG</option>
-                            <option value="LB">LB</option>
+                            <option value="LBS">LBS</option>
                           </select>
                         </td>
 
