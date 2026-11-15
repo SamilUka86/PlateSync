@@ -6,13 +6,14 @@ import {
   Sparkles,
   User,
   ShieldCheck,
-  ChevronRight
+  ChevronRight,
+  LogIn
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
 
-export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, setCollapsed }) => {
-  const { userProfile, updateProfile, isDemoMode, isDevTester, demoAccessMode, toggleDemoAccessMode, logout } = useAuth();
+export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, setCollapsed, onOpenAuth }) => {
+  const { currentUser, userProfile, updateProfile, isDemoMode, isDevTester, demoAccessMode, toggleDemoAccessMode, logout } = useAuth();
   const { addNotification } = useNotification();
   const [deferredPrompt, setDeferredPrompt] = useState(null);
 
@@ -135,6 +136,18 @@ export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, s
           </div>
         )}
 
+        {/* Guest Sign In Button */}
+        {!currentUser && !isDemoMode && (
+          <button
+            onClick={onOpenAuth}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-neon-cyan hover:bg-[#29bfcd] text-slate-950 font-black text-xs transition shadow-md shadow-neon-cyan/25 active:scale-95"
+            title="Sign in or register account"
+          >
+            <LogIn className="w-3.5 h-3.5" />
+            <span>Sign In</span>
+          </button>
+        )}
+
         {/* PWA Install Button */}
         <button
           onClick={handleInstallPWA}
@@ -157,18 +170,29 @@ export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, s
 
         {/* User Avatar */}
         <button
-          onClick={() => setActiveTab('profile')}
-          className="w-8 h-8 rounded-full border border-midnight-border bg-midnight-elevated p-0.5 hover:border-neon-cyan transition"
-          title="Open Profile"
-        >
-          <img
-            src={
-              userProfile?.profileImage ||
-              `https://api.dicebear.com/7.x/bottts/svg?seed=${userProfile?.name || 'athlete'}`
+          onClick={() => {
+            if (!currentUser) {
+              if (onOpenAuth) onOpenAuth();
+            } else {
+              setActiveTab('profile');
             }
-            alt="User"
-            className="w-full h-full rounded-full object-cover"
-          />
+          }}
+          className="w-8 h-8 rounded-full border border-midnight-border bg-midnight-elevated p-0.5 hover:border-neon-cyan transition flex items-center justify-center"
+          title={currentUser ? "Open Profile" : "Sign In to create profile"}
+        >
+          {currentUser ? (
+            <img
+              src={
+                userProfile?.profileImage ||
+                currentUser?.photoURL ||
+                `https://api.dicebear.com/7.x/bottts/svg?seed=${userProfile?.name || 'athlete'}`
+              }
+              alt="User"
+              className="w-full h-full rounded-full object-cover"
+            />
+          ) : (
+            <User className="w-4 h-4 text-slate-400" />
+          )}
         </button>
       </div>
     </header>

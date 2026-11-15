@@ -24,11 +24,13 @@ import {
   Calculator, 
   Dumbbell, 
   BookOpen,
-  Trophy 
+  Trophy,
+  Lock
 } from 'lucide-react';
 
 const MainAppLayout = () => {
   const { currentUser, loading, isDemoMode, demoAccessMode } = useAuth();
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [activeTab, setActiveTab] = useState(() => {
     try {
       const isDemo = localStorage.getItem('platesync_demo_active') === 'true';
@@ -38,7 +40,7 @@ const MainAppLayout = () => {
       const savedTab = localStorage.getItem('platesync_active_tab');
       if (savedTab) return savedTab;
     } catch (e) {}
-    return 'dashboard';
+    return 'calculator';
   });
 
   // Persist activeTab across browser page reloads
@@ -49,6 +51,16 @@ const MainAppLayout = () => {
       }
     } catch (e) {}
   }, [activeTab]);
+
+  // If a guest user lands on 'dashboard', automatically direct them to 'calculator'
+  useEffect(() => {
+    if (!loading && !currentUser && !isDemoMode) {
+      if (activeTab === 'dashboard') {
+        setActiveTab('calculator');
+      }
+    }
+  }, [currentUser, isDemoMode, loading, activeTab]);
+
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
 
@@ -67,12 +79,7 @@ const MainAppLayout = () => {
     );
   }
 
-  // Not authenticated: Show Login/Signup Screen
-  if (!currentUser) {
-    return <AuthPage />;
-  }
-
-  const isTabLocked = isDemoMode && demoAccessMode === 'calculator-only' && activeTab !== 'calculator';
+  const isTabLocked = (!currentUser || (isDemoMode && demoAccessMode === 'calculator-only')) && activeTab !== 'calculator';
 
   return (
     <div className="min-h-screen bg-midnight-bg text-slate-100 flex flex-col">
@@ -84,6 +91,7 @@ const MainAppLayout = () => {
         setIsMobileOpen={setIsMobileOpen}
         collapsed={collapsed}
         setCollapsed={setCollapsed}
+        onOpenAuth={() => setShowAuthModal(true)}
       />
 
       {/* Main Content Area */}
@@ -95,12 +103,17 @@ const MainAppLayout = () => {
           onOpenMobileMenu={() => setIsMobileOpen(true)}
           collapsed={collapsed}
           setCollapsed={setCollapsed}
+          onOpenAuth={() => setShowAuthModal(true)}
         />
 
         {/* Tab View Container */}
         <main className="flex-1 p-4 md:p-8 max-w-7xl w-full mx-auto">
           {isTabLocked ? (
-            <DemoRestrictedView activeTab={activeTab} setActiveTab={setActiveTab} />
+            <DemoRestrictedView 
+              activeTab={activeTab} 
+              setActiveTab={setActiveTab} 
+              onOpenAuth={() => setShowAuthModal(true)}
+            />
           ) : (
             <>
               {activeTab === 'dashboard' && <DashboardPage setActiveTab={setActiveTab} />}
@@ -120,6 +133,13 @@ const MainAppLayout = () => {
         <Footer />
       </div>
 
+      {/* Auth Modal Overlay */}
+      {showAuthModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-midnight-bg/95 backdrop-blur-xl animate-in fade-in">
+          <AuthPage onClose={() => setShowAuthModal(false)} />
+        </div>
+      )}
+
       {/* Mobile Bottom Navigation Bar */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-midnight-card/95 border-t border-midnight-border px-3 py-2 flex items-center justify-around backdrop-blur-xl">
         <button
@@ -128,7 +148,10 @@ const MainAppLayout = () => {
             activeTab === 'dashboard' ? 'text-neon-cyan' : 'text-slate-400 hover:text-white'
           }`}
         >
-          <LayoutDashboard className="w-4 h-4" />
+          <div className="relative">
+            <LayoutDashboard className="w-4 h-4" />
+            {!currentUser && <Lock className="w-2.5 h-2.5 absolute -top-1 -right-2 text-slate-500" />}
+          </div>
           <span className="text-[10px] font-bold">Home</span>
         </button>
 
@@ -148,7 +171,10 @@ const MainAppLayout = () => {
             activeTab === 'tracker' ? 'text-neon-cyan' : 'text-slate-400 hover:text-white'
           }`}
         >
-          <Dumbbell className="w-4 h-4" />
+          <div className="relative">
+            <Dumbbell className="w-4 h-4" />
+            {!currentUser && <Lock className="w-2.5 h-2.5 absolute -top-1 -right-2 text-slate-500" />}
+          </div>
           <span className="text-[10px] font-medium">Workout</span>
         </button>
 
@@ -158,7 +184,10 @@ const MainAppLayout = () => {
             activeTab === 'library' ? 'text-neon-cyan' : 'text-slate-400 hover:text-white'
           }`}
         >
-          <BookOpen className="w-4 h-4" />
+          <div className="relative">
+            <BookOpen className="w-4 h-4" />
+            {!currentUser && <Lock className="w-2.5 h-2.5 absolute -top-1 -right-2 text-slate-500" />}
+          </div>
           <span className="text-[10px] font-medium">Library</span>
         </button>
 
@@ -168,7 +197,10 @@ const MainAppLayout = () => {
             activeTab === 'records' ? 'text-neon-cyan' : 'text-slate-400 hover:text-white'
           }`}
         >
-          <Trophy className="w-4 h-4" />
+          <div className="relative">
+            <Trophy className="w-4 h-4" />
+            {!currentUser && <Lock className="w-2.5 h-2.5 absolute -top-1 -right-2 text-slate-500" />}
+          </div>
           <span className="text-[10px] font-medium">PRs</span>
         </button>
       </nav>

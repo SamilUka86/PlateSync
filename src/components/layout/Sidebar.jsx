@@ -10,6 +10,7 @@ import {
   User, 
   Settings, 
   LogOut,
+  LogIn,
   ChevronLeft,
   ChevronRight,
   Sparkles,
@@ -30,7 +31,7 @@ const NAV_ITEMS = [
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
-export const Sidebar = ({ activeTab, setActiveTab, isMobileOpen, setIsMobileOpen, collapsed, setCollapsed }) => {
+export const Sidebar = ({ activeTab, setActiveTab, isMobileOpen, setIsMobileOpen, collapsed, setCollapsed, onOpenAuth }) => {
   const { currentUser, userProfile, logout, isDemoMode, isFirebaseReady, demoAccessMode, toggleDemoAccessMode, isDevTester, toggleDevTester } = useAuth();
   const [logoClicks, setLogoClicks] = useState(0);
 
@@ -127,7 +128,7 @@ export const Sidebar = ({ activeTab, setActiveTab, isMobileOpen, setIsMobileOpen
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
-              const isLocked = isDemoMode && demoAccessMode === 'calculator-only' && item.id !== 'calculator';
+              const isLocked = (!currentUser || (isDemoMode && demoAccessMode === 'calculator-only')) && item.id !== 'calculator';
 
               return (
                 <button
@@ -204,42 +205,53 @@ export const Sidebar = ({ activeTab, setActiveTab, isMobileOpen, setIsMobileOpen
             </div>
           )}
 
-          {/* User Row */}
-          <div className={`flex ${collapsed ? 'flex-col items-center gap-2' : 'items-center justify-between'} pt-1`}>
-            <div
-              onClick={() => handleSelectTab('profile')}
-              title={collapsed ? (userProfile?.name || 'Athlete Profile') : undefined}
-              className={`flex items-center gap-2.5 cursor-pointer group ${collapsed ? '' : 'flex-1 min-w-0 mr-1'}`}
-            >
-              <img
-                src={
-                  userProfile?.profileImage ||
-                  currentUser?.photoURL ||
-                  `https://api.dicebear.com/7.x/bottts/svg?seed=${userProfile?.name || 'athlete'}`
-                }
-                alt="Avatar"
-                className="w-8 h-8 rounded-full border border-midnight-border bg-midnight-card object-cover shrink-0 group-hover:border-neon-cyan transition"
-              />
-              {!collapsed && (
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-bold text-white truncate group-hover:text-neon-cyan transition">
-                    {userProfile?.name || currentUser?.displayName || 'Athlete'}
-                  </p>
-                  <p className="text-[10px] text-slate-500 truncate font-mono">
-                    {currentUser?.email || 'Logged In'}
-                  </p>
-                </div>
-              )}
-            </div>
-
+          {/* User Row or Guest Sign In */}
+          {!currentUser ? (
             <button
-              onClick={logout}
-              title="Log Out"
-              className="p-2 text-slate-400 hover:text-neon-error hover:bg-neon-error/10 rounded-xl transition shrink-0"
+              onClick={onOpenAuth}
+              className={`w-full py-2.5 px-3 rounded-xl bg-neon-cyan hover:bg-[#29bfcd] text-slate-950 font-black text-xs flex items-center ${collapsed ? 'justify-center' : 'justify-center gap-2'} transition shadow-lg shadow-neon-cyan/25 active:scale-95`}
+              title="Sign In or Register"
             >
-              <LogOut className="w-4 h-4" />
+              <LogIn className="w-4 h-4 shrink-0" />
+              {!collapsed && <span>Sign In / Register</span>}
             </button>
-          </div>
+          ) : (
+            <div className={`flex ${collapsed ? 'flex-col items-center gap-2' : 'items-center justify-between'} pt-1`}>
+              <div
+                onClick={() => handleSelectTab('profile')}
+                title={collapsed ? (userProfile?.name || 'Athlete Profile') : undefined}
+                className={`flex items-center gap-2.5 cursor-pointer group ${collapsed ? '' : 'flex-1 min-w-0 mr-1'}`}
+              >
+                <img
+                  src={
+                    userProfile?.profileImage ||
+                    currentUser?.photoURL ||
+                    `https://api.dicebear.com/7.x/bottts/svg?seed=${userProfile?.name || 'athlete'}`
+                  }
+                  alt="Avatar"
+                  className="w-8 h-8 rounded-full border border-midnight-border bg-midnight-card object-cover shrink-0 group-hover:border-neon-cyan transition"
+                />
+                {!collapsed && (
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold text-white truncate group-hover:text-neon-cyan transition">
+                      {userProfile?.name || currentUser?.displayName || 'Athlete'}
+                    </p>
+                    <p className="text-[10px] text-slate-500 truncate font-mono">
+                      {currentUser?.email || 'Logged In'}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <button
+                onClick={logout}
+                title="Log Out"
+                className="p-2 text-slate-400 hover:text-neon-error hover:bg-neon-error/10 rounded-xl transition shrink-0"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          )}
         </div>
       </aside>
     </>

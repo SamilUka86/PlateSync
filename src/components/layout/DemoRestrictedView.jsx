@@ -3,6 +3,7 @@ import {
   Lock, 
   Calculator, 
   ArrowRight, 
+  LogIn,
   LogOut, 
   Sparkles, 
   ShieldCheck, 
@@ -11,8 +12,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
-export const DemoRestrictedView = ({ activeTab, setActiveTab }) => {
-  const { logout, toggleDemoAccessMode, demoAccessMode, isDevTester } = useAuth();
+export const DemoRestrictedView = ({ activeTab, setActiveTab, onOpenAuth }) => {
+  const { currentUser, logout, toggleDemoAccessMode, demoAccessMode, isDevTester } = useAuth();
 
   const getTabName = () => {
     switch (activeTab) {
@@ -27,6 +28,8 @@ export const DemoRestrictedView = ({ activeTab, setActiveTab }) => {
       default: return 'Feature';
     }
   };
+
+  const isGuest = !currentUser;
 
   return (
     <div className="max-w-2xl mx-auto py-12 px-4 animate-in fade-in duration-300">
@@ -43,18 +46,22 @@ export const DemoRestrictedView = ({ activeTab, setActiveTab }) => {
         {/* Heading & Subtitle */}
         <div className="space-y-2">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-neon-cyan/10 border border-neon-cyan/30 text-neon-cyan text-xs font-bold font-mono">
-            <span>Demo Account &bull; Weight Calculator Access Only</span>
+            <span>{isGuest ? 'Athlete Account Required' : 'Demo Account • Weight Calculator Access Only'}</span>
           </div>
 
           <h2 className="text-2xl font-black text-white">
-            {getTabName()} is Locked in Demo Mode
+            {getTabName()} is Locked
           </h2>
 
           <p className="text-sm text-slate-400 max-w-md mx-auto leading-relaxed">
-            The Demo Account provides unrestricted access to the <strong className="text-white">Smart Weight Calculator</strong>, plate racks, 45° leg press, and auto plate solver.
+            {isGuest 
+              ? `Sign in or create a free athlete account to access ${getTabName()}, record custom workouts, and save your Personal Records.`
+              : 'The Demo Account provides unrestricted access to the Smart Weight Calculator, plate racks, 45° leg press, and auto plate solver.'}
           </p>
           <p className="text-xs text-slate-500 max-w-sm mx-auto">
-            To track live sets, save exercise histories, and analyze performance records, please create a free account or sign in.
+            {isGuest
+              ? 'Our Smart Barbell Calculator is 100% free and open for everyone. Create a free account anytime to unlock all features.'
+              : 'To track live sets, save exercise histories, and analyze performance records, please create a free account or sign in.'}
           </p>
         </div>
 
@@ -62,25 +69,25 @@ export const DemoRestrictedView = ({ activeTab, setActiveTab }) => {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
           <button
             type="button"
-            onClick={() => setActiveTab('calculator')}
+            onClick={onOpenAuth || logout}
             className="w-full sm:w-auto px-6 py-3 bg-neon-cyan hover:bg-[#29bfcd] text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-neon-cyan/20 transition active:scale-95 flex items-center justify-center gap-2"
           >
-            <Calculator className="w-4 h-4" />
-            <span>Open Weight Calculator</span>
+            <LogIn className="w-4 h-4" />
+            <span>Sign In or Register</span>
           </button>
 
           <button
             type="button"
-            onClick={logout}
+            onClick={() => setActiveTab('calculator')}
             className="w-full sm:w-auto px-6 py-3 bg-midnight-bg hover:bg-midnight-elevated border border-midnight-border text-slate-200 hover:text-white font-bold text-xs rounded-xl transition active:scale-95 flex items-center justify-center gap-2"
           >
-            <LogOut className="w-4 h-4" />
-            <span>Sign In or Register</span>
+            <Calculator className="w-4 h-4 text-neon-cyan" />
+            <span>Return to Weight Calculator</span>
           </button>
         </div>
 
         {/* Developer / Update Verification Section (Only visible when developer mode is active) */}
-        {isDevTester && (
+        {!isGuest && isDevTester && (
           <div className="pt-6 border-t border-midnight-border/80 text-center animate-in fade-in">
             <div className="p-3.5 rounded-2xl bg-midnight-bg/60 border border-dashed border-midnight-border flex flex-col sm:flex-row items-center justify-between gap-3 text-left">
               <div>

@@ -7,6 +7,8 @@ import {
   User, 
   Sparkles, 
   ArrowRight, 
+  ArrowLeft,
+  X,
   AlertCircle,
   Settings,
   ShieldCheck,
@@ -19,7 +21,7 @@ import { ForgotPasswordModal } from '../../components/auth/ForgotPasswordModal';
 import { FirebaseSetupModal } from '../../components/auth/FirebaseSetupModal';
 import { Footer } from '../../components/layout/Footer';
 
-export const AuthPage = () => {
+export const AuthPage = ({ onClose }) => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -101,6 +103,7 @@ export const AuthPage = () => {
         await loginEmail(email.trim(), password);
         addNotification('Welcome back to PlateSync!', 'success');
       }
+      if (onClose) onClose();
     } catch (err) {
       console.error('Auth submit error:', err);
       let msg = err.message || 'Authentication failed.';
@@ -127,6 +130,7 @@ export const AuthPage = () => {
     try {
       await loginGoogle();
       addNotification('Signed in with Google successfully!', 'success');
+      if (onClose) onClose();
     } catch (err) {
       let msg = 'Google authentication encountered an issue.';
       if (err.message === 'FIREBASE_NOT_CONFIGURED') {
@@ -171,6 +175,16 @@ export const AuthPage = () => {
         </div>
 
         <div className="flex items-center gap-3">
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-midnight-border bg-midnight-card hover:bg-midnight-elevated text-slate-300 hover:text-white transition text-xs font-bold"
+            >
+              <ArrowLeft className="w-3.5 h-3.5 text-neon-cyan" />
+              <span className="hidden sm:inline">Back to Calculator</span>
+            </button>
+          )}
+
           {isDevTester && (
             <button
               onClick={() => setShowConfigModal(true)}
@@ -184,7 +198,10 @@ export const AuthPage = () => {
           )}
 
           <button
-            onClick={loginAsDemo}
+            onClick={() => {
+              loginAsDemo();
+              if (onClose) onClose();
+            }}
             className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-neon-cyan/10 hover:bg-neon-cyan/20 border border-neon-cyan/30 text-neon-cyan transition text-xs font-bold"
           >
             <Sparkles className="w-3.5 h-3.5 text-neon-cyan" />
@@ -195,7 +212,17 @@ export const AuthPage = () => {
 
       {/* Main Form Center Card */}
       <main className="flex-1 flex items-center justify-center p-4 md:p-8 relative z-10">
-        <div className="w-full max-w-md bg-midnight-card border border-midnight-border rounded-3xl shadow-card p-6 md:p-8 backdrop-blur-xl">
+        <div className="w-full max-w-md bg-midnight-card border border-midnight-border rounded-3xl shadow-card p-6 md:p-8 backdrop-blur-xl relative">
+          
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white hover:bg-midnight-elevated rounded-xl transition"
+              title="Return to Calculator"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
           
           {/* Header */}
           <div className="text-center mb-6">
@@ -446,7 +473,10 @@ export const AuthPage = () => {
             </p>
             <button
               type="button"
-              onClick={() => loginAsDemo('calculator-only')}
+              onClick={() => {
+                loginAsDemo('calculator-only');
+                if (onClose) onClose();
+              }}
               className="w-full py-2.5 px-3 rounded-xl border border-neon-cyan/40 bg-neon-cyan/10 hover:bg-neon-cyan/20 text-neon-cyan text-xs font-bold flex items-center justify-center gap-2 transition active:scale-95 shadow-md shadow-neon-cyan/5"
             >
               <Calculator className="w-4 h-4 text-neon-cyan" />
