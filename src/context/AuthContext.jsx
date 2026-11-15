@@ -194,20 +194,32 @@ export const AuthProvider = ({ children }) => {
     try {
       // 1. If Google OAuth Client ID is configured, use Google Identity Services (GIS)
       if (isGoogleAuthConfigured()) {
-        const user = await signInWithGoogleIdentity();
-        if (user) {
-          setCurrentUser(user);
-          let profile = await getUserProfile(user.uid);
-          if (!profile) {
-            profile = await createUserProfileDocument(user, {
-              displayName: user.displayName,
-              photoURL: user.photoURL
-            });
+        try {
+          const user = await signInWithGoogleIdentity();
+          if (user) {
+            setCurrentUser(user);
+            let profile = await getUserProfile(user.uid);
+            if (!profile) {
+              profile = await createUserProfileDocument(user, {
+                displayName: user.displayName,
+                photoURL: user.photoURL
+              });
+            }
+            setUserProfile(profile);
+            setIsDemoMode(false);
+            localStorage.removeItem('platesync_demo_active');
+            return user;
           }
-          setUserProfile(profile);
-          setIsDemoMode(false);
-          localStorage.removeItem('platesync_demo_active');
-          return user;
+        } catch (gisErr) {
+          console.warn('Google Identity Services notice:', gisErr);
+          // If popup was intentionally closed by the user, don't spam another popup
+          if (gisErr.code === 'auth/popup-closed-by-user') {
+            throw gisErr;
+          }
+          // If Firebase is not configured, rethrow GIS error
+          if (!isFirebaseConfigured()) {
+            throw gisErr;
+          }
         }
       }
 

@@ -7,6 +7,10 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: false,
-    host: true
+    host: true,
+    headers: {
+      // Ensure Google OAuth and Firebase Auth popups can communicate with the opener window on localhost:5173
+      'Cross-Origin-Opener-Policy': 'same-origin-allow-popups'
+    }
   }
 })

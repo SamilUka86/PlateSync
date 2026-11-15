@@ -93,7 +93,7 @@ export const loadGoogleIdentityScript = () => {
 };
 
 /**
- * Trigger Google Sign In using Google Identity Services
+ * Trigger Google Sign In using Google Identity Services (GIS OAuth 2.0 Popup & One Tap)
  */
 export const signInWithGoogleIdentity = () => {
   return new Promise(async (resolve, reject) => {
@@ -104,40 +104,110 @@ export const signInWithGoogleIdentity = () => {
     }
 
     const loaded = await loadGoogleIdentityScript();
-    if (!loaded || !window.google?.accounts?.id) {
+    if (!loaded || !window.google?.accounts) {
       return reject(new Error('Google Identity Services library is unreachable.'));
     }
 
     try {
-      window.google.accounts.id.initialize({
-        client_id: clientId,
-        callback: (response) => {
-          if (response?.credential) {
-            const payload = parseGoogleJwt(response.credential);
-            if (payload) {
-              const user = {
-                uid: payload.sub,
-                email: payload.email,
-                displayName: payload.name || payload.given_name || 'Athlete',
-                photoURL: payload.picture || null,
-                provider: 'google.com'
-              };
-              localStorage.setItem(GOOGLE_USER_SESSION_KEY, JSON.stringify(user));
-              return resolve(user);
-            }
-          }
-          reject(new Error('Google authentication returned invalid credential.'));
-        },
-        auto_select: false,
-        cancel_on_tap_outside: true
-      });
+      // 1. Google OAuth2 Token Client Popup (recommended & most reliable for button clicks)
+      if (window.google.accounts.oauth2) {
+        let settled = false;
 
-      // Prompt Google One Tap or Account Chooser
-      window.google.accounts.id.prompt((notification) => {
-        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-          console.debug('One Tap skipped or suppressed, falling back to popup.');
-        }
-      });
+        const tokenClient = window.google.accounts.oauth2.initTokenClient({
+          client_id: clientId,
+          scope: 'openid email profile',
+          callback: async (tokenResponse) => {
+            if (settled) return;
+            settled = true;
+
+            if (tokenResponse?.error) {
+              if (
+                tokenResponse.error === 'popup_closed_by_user' || 
+                tokenResponse.error === 'access_denied'
+              ) {
+                const err = new Error('Sign-in popup was closed before completion.');
+                err.code = 'auth/popup-closed-by-user';
+                return reject(err);
+              }
+              return reject(new Error(tokenResponse.error_description || tokenResponse.error));
+            }
+
+            if (tokenResponse?.access_token) {
+              try {
+                const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                  headers: {
+                    Authorization: `Bearer ${tokenResponse.access_token}`
+                  }
+                });
+                const info = await res.json();
+                const user = {
+                  uid: info.sub,
+                  email: info.email,
+                  displayName: info.name || info.given_name || 'Athlete',
+                  photoURL: info.picture || null,
+                  provider: 'google.com'
+                };
+                localStorage.setItem(GOOGLE_USER_SESSION_KEY, JSON.stringify(user));
+                return resolve(user);
+              } catch (fetchErr) {
+                return reject(fetchErr);
+              }
+            }
+            reject(new Error('Google authentication did not return an access token.'));
+          },
+          error_callback: (error) => {
+            if (settled) return;
+            settled = true;
+            if (error?.type === 'popup_closed') {
+              const err = new Error('Sign-in popup was closed before completion.');
+              err.code = 'auth/popup-closed-by-user';
+              return reject(err);
+            }
+            reject(new Error(error?.message || 'Google sign-in popup could not open.'));
+          }
+        });
+
+        tokenClient.requestAccessToken({ prompt: 'select_account' });
+        return;
+      }
+
+      // 2. Google Identity One Tap fallback
+      if (window.google.accounts.id) {
+        let resolved = false;
+        window.google.accounts.id.initialize({
+          client_id: clientId,
+          callback: (response) => {
+            if (resolved) return;
+            resolved = true;
+            if (response?.credential) {
+              const payload = parseGoogleJwt(response.credential);
+              if (payload) {
+                const user = {
+                  uid: payload.sub,
+                  email: payload.email,
+                  displayName: payload.name || payload.given_name || 'Athlete',
+                  photoURL: payload.picture || null,
+                  provider: 'google.com'
+                };
+                localStorage.setItem(GOOGLE_USER_SESSION_KEY, JSON.stringify(user));
+                return resolve(user);
+              }
+            }
+            reject(new Error('Google authentication returned invalid credential.'));
+          },
+          auto_select: false,
+          cancel_on_tap_outside: true
+        });
+
+        window.google.accounts.id.prompt((notification) => {
+          if ((notification.isNotDisplayed() || notification.isSkippedMoment()) && !resolved) {
+            resolved = true;
+            const err = new Error('Google sign-in prompt was closed or skipped.');
+            err.code = 'auth/popup-closed-by-user';
+            reject(err);
+          }
+        });
+      }
     } catch (err) {
       reject(err);
     }

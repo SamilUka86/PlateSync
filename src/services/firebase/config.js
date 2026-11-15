@@ -63,6 +63,11 @@ if (isFirebaseConfigured()) {
   }
 }
 
+export const googleClientId = 
+  import.meta.env.VITE_GOOGLE_CLIENT_ID || 
+  (typeof localStorage !== 'undefined' ? localStorage.getItem('platesync_google_client_id') : '') || 
+  '';
+
 export { app, auth, db, googleProvider };
 
 export const saveRuntimeFirebaseConfig = (cfg) => {
