@@ -20,12 +20,58 @@ import {
 } from '../../utils/exerciseData';
 import { useAuth } from '../../context/AuthContext';
 
+export const SIX_BODY_PARTS = [
+  { 
+    id: 'Chest', 
+    label: 'Chest', 
+    icon: '🏋️‍♂️', 
+    count: EXERCISE_DATABASE.filter(e => e.muscle === 'Chest' || e.category === 'Chest').length, 
+    description: 'Upper, Middle, Lower, Inner & Outer Pecs' 
+  },
+  { 
+    id: 'Back', 
+    label: 'Back', 
+    icon: '🧗‍♂️', 
+    count: EXERCISE_DATABASE.filter(e => e.muscle === 'Back' || e.category === 'Back').length, 
+    description: 'Lats, Traps, Upper, Middle & Lower Back' 
+  },
+  { 
+    id: 'Shoulders', 
+    label: 'Shoulders', 
+    icon: '🛡️', 
+    count: EXERCISE_DATABASE.filter(e => e.muscle === 'Shoulders' || e.category === 'Shoulders').length, 
+    description: 'Front Delts, Side Delts, Rear Delts & Cuff' 
+  },
+  { 
+    id: 'Arms', 
+    label: 'Arms', 
+    icon: '💪', 
+    count: EXERCISE_DATABASE.filter(e => e.muscle === 'Biceps' || e.muscle === 'Triceps' || e.category === 'Arms').length, 
+    description: 'Biceps, Triceps, Brachialis & Forearms' 
+  },
+  { 
+    id: 'Legs', 
+    label: 'Legs (Thighs)', 
+    icon: '🦵', 
+    count: EXERCISE_DATABASE.filter(e => e.muscle === 'Thighs' || e.muscle === 'Legs' || e.category === 'Legs').length, 
+    description: 'Quads, Hamstrings, Glutes & Adductors' 
+  },
+  { 
+    id: 'Core', 
+    label: 'Core (Abs)', 
+    icon: '⚡', 
+    count: EXERCISE_DATABASE.filter(e => e.muscle === 'Abs' || e.muscle === 'Core' || e.category === 'Core').length, 
+    description: 'Upper Abs, Lower Abs, Obliques & Deep Core' 
+  }
+];
+
 export const AddPlanExerciseModal = ({ 
   isOpen, 
   onClose, 
   dayKey, 
   dayName, 
-  onAddExercise 
+  onAddExercise,
+  initialMuscle = 'All'
 }) => {
   if (!isOpen) return null;
 
@@ -37,9 +83,18 @@ export const AddPlanExerciseModal = ({
 
   // Library Search & Filters
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedMuscle, setSelectedMuscle] = useState('All');
+  const [selectedMuscle, setSelectedMuscle] = useState(initialMuscle || 'All');
   const [selectedSubgroup, setSelectedSubgroup] = useState('All');
   const [selectedEquipment, setSelectedEquipment] = useState('All Equipment');
+
+  // Sync when initialMuscle or modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedMuscle(initialMuscle || 'All');
+      setSelectedSubgroup('All');
+      setSelectedExercise(null);
+    }
+  }, [isOpen, initialMuscle]);
 
   // Selected Library Exercise
   const [selectedExercise, setSelectedExercise] = useState(null);
@@ -56,6 +111,27 @@ export const AddPlanExerciseModal = ({
   const [customMuscle, setCustomMuscle] = useState('Chest');
   const [customEquipment, setCustomEquipment] = useState('Barbell');
 
+  // Helper to determine active subgroups for selected muscle / body part
+  const activeSubgroups = useMemo(() => {
+    if (selectedMuscle === 'Arms') {
+      return [
+        'Biceps Long Head',
+        'Biceps Short Head',
+        'Brachialis',
+        'Long Head',
+        'Lateral Head',
+        'Medial Head'
+      ];
+    }
+    if (selectedMuscle === 'Legs' || selectedMuscle === 'Thighs') {
+      return MUSCLE_SUBGROUPS['Thighs'] || [];
+    }
+    if (selectedMuscle === 'Core' || selectedMuscle === 'Abs') {
+      return MUSCLE_SUBGROUPS['Abs'] || [];
+    }
+    return MUSCLE_SUBGROUPS[selectedMuscle] || [];
+  }, [selectedMuscle]);
+
   // Filter exercises
   const filteredExercises = useMemo(() => {
     return EXERCISE_DATABASE.filter(ex => {
@@ -64,8 +140,21 @@ export const AddPlanExerciseModal = ({
         ex.name.toLowerCase().includes(q) || 
         ex.muscle.toLowerCase().includes(q) ||
         (ex.subgroup && ex.subgroup.toLowerCase().includes(q));
-      const matchesMuscle = selectedMuscle === 'All' || ex.muscle === selectedMuscle || ex.category === selectedMuscle;
-      const matchesSubgroup = selectedSubgroup === 'All' || ex.subgroup === selectedSubgroup;
+
+      let matchesMuscle = true;
+      if (selectedMuscle === 'All') {
+        matchesMuscle = true;
+      } else if (selectedMuscle === 'Arms') {
+        matchesMuscle = ex.muscle === 'Biceps' || ex.muscle === 'Triceps' || ex.category === 'Arms';
+      } else if (selectedMuscle === 'Legs' || selectedMuscle === 'Thighs') {
+        matchesMuscle = ex.muscle === 'Thighs' || ex.muscle === 'Legs' || ex.category === 'Legs';
+      } else if (selectedMuscle === 'Core' || selectedMuscle === 'Abs') {
+        matchesMuscle = ex.muscle === 'Abs' || ex.muscle === 'Core' || ex.category === 'Core';
+      } else {
+        matchesMuscle = ex.muscle === selectedMuscle || ex.category === selectedMuscle;
+      }
+
+      const matchesSubgroup = selectedSubgroup === 'All' || ex.subgroup === selectedSubgroup || (ex.subgroup && ex.subgroup.includes(selectedSubgroup));
       const matchesEquip = selectedEquipment === 'All Equipment' || ex.equipment === selectedEquipment;
       return matchesSearch && matchesMuscle && matchesSubgroup && matchesEquip;
     });
@@ -199,28 +288,57 @@ export const AddPlanExerciseModal = ({
                   />
                 </div>
 
-                {/* Muscle Group Horizontal Pills */}
+                {/* 6 Body Parts + All Horizontal Pills */}
                 <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-                  {['All', ...MAIN_MUSCLE_GROUPS].map((m) => (
-                    <button
-                      key={m}
-                      onClick={() => {
-                        setSelectedMuscle(m);
-                        setSelectedSubgroup('All');
-                      }}
-                      className={`px-3 py-1 rounded-xl text-[11px] font-medium whitespace-nowrap transition ${
-                        selectedMuscle === m
-                          ? 'bg-neon-cyan text-slate-950 font-bold'
-                          : 'bg-midnight-bg text-slate-400 hover:text-white border border-midnight-border'
-                      }`}
-                    >
-                      {m}
-                    </button>
-                  ))}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedMuscle('All');
+                      setSelectedSubgroup('All');
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition ${
+                      selectedMuscle === 'All'
+                        ? 'bg-neon-cyan text-slate-950 font-black shadow-md shadow-neon-cyan/20'
+                        : 'bg-midnight-bg text-slate-400 hover:text-white border border-midnight-border'
+                    }`}
+                  >
+                    All Exercises
+                  </button>
+
+                  {SIX_BODY_PARTS.map((bp) => {
+                    const isSelected = selectedMuscle === bp.id || 
+                      (bp.id === 'Arms' && (selectedMuscle === 'Biceps' || selectedMuscle === 'Triceps')) ||
+                      (bp.id === 'Legs' && selectedMuscle === 'Thighs') ||
+                      (bp.id === 'Core' && selectedMuscle === 'Abs');
+
+                    return (
+                      <button
+                        key={bp.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedMuscle(bp.id);
+                          setSelectedSubgroup('All');
+                        }}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition flex items-center gap-1.5 ${
+                          isSelected
+                            ? 'bg-neon-cyan text-slate-950 font-black shadow-md shadow-neon-cyan/20'
+                            : 'bg-midnight-bg text-slate-400 hover:text-white border border-midnight-border'
+                        }`}
+                      >
+                        <span>{bp.icon}</span>
+                        <span>{bp.label}</span>
+                        <span className={`text-[10px] px-1.5 py-0.2 rounded-md ${
+                          isSelected ? 'bg-slate-950/20 text-slate-950 font-mono font-bold' : 'text-slate-500 font-mono'
+                        }`}>
+                          {bp.count}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
 
-                {/* Subgroups under selected muscle group */}
-                {selectedMuscle !== 'All' && MUSCLE_SUBGROUPS[selectedMuscle] && (
+                {/* Subgroups under selected body part */}
+                {selectedMuscle !== 'All' && activeSubgroups.length > 0 && (
                   <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none border-l-2 border-neon-cyan/40 pl-2">
                     <button
                       type="button"
@@ -233,7 +351,7 @@ export const AddPlanExerciseModal = ({
                     >
                       All {selectedMuscle}
                     </button>
-                    {MUSCLE_SUBGROUPS[selectedMuscle].map(sg => (
+                    {activeSubgroups.map(sg => (
                       <button
                         key={sg}
                         type="button"

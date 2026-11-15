@@ -25,6 +25,7 @@ export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, s
     isIOS,
     isAndroid,
     buttonLabel,
+    hasNativePrompt,
     isModalOpen,
     setIsModalOpen,
     promptInstall
@@ -150,10 +151,10 @@ export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, s
         {/* PWA Install Button */}
         <button
           onClick={handleInstallClick}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition active:scale-95 ${
+          className={`shrink-0 whitespace-nowrap flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition active:scale-95 shadow-sm ${
             isStandalone
-              ? 'border-neon-success/30 bg-neon-success/10 text-neon-success'
-              : 'border-midnight-border bg-midnight-card hover:bg-midnight-elevated text-slate-300 hover:text-neon-cyan hover:border-neon-cyan/40'
+              ? 'border-neon-success/30 bg-neon-success/10 text-neon-success cursor-default'
+              : 'border-midnight-border bg-midnight-card hover:bg-midnight-elevated text-slate-300 hover:text-neon-cyan hover:border-neon-cyan/40 hover:shadow-neon-cyan/10'
           }`}
           title={isStandalone ? "PlateSync is running in installed app mode" : "Install PlateSync Progressive Web App"}
         >
@@ -168,7 +169,7 @@ export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, s
         {/* Global Unit Switcher */}
         <button
           onClick={togglePreferredUnit}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-midnight-border bg-midnight-card hover:bg-midnight-elevated text-slate-200 text-xs font-bold font-mono transition"
+          className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-midnight-border bg-midnight-card hover:bg-midnight-elevated text-slate-200 text-xs font-bold font-mono transition"
           title="Toggle Global Preferred Unit (KG / LB)"
         >
           <Scale className="w-3.5 h-3.5 text-neon-cyan" />
@@ -184,7 +185,7 @@ export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, s
               setActiveTab('profile');
             }
           }}
-          className="w-8 h-8 rounded-full border border-midnight-border bg-midnight-elevated p-0.5 hover:border-neon-cyan transition flex items-center justify-center"
+          className="shrink-0 w-8 h-8 rounded-full border border-midnight-border bg-midnight-elevated p-0.5 hover:border-neon-cyan transition flex items-center justify-center"
           title={currentUser ? "Open Profile" : "Sign In to create profile"}
         >
           {currentUser ? (
@@ -209,6 +210,8 @@ export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, s
         onClose={() => setIsModalOpen(false)}
         isIOS={isIOS}
         isAndroid={isAndroid}
+        hasNativePrompt={hasNativePrompt}
+        onPromptInstall={handleInstallClick}
       />
     </header>
   );

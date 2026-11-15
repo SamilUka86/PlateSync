@@ -64,7 +64,8 @@ export const BodyWeightPage = ({ setActiveTab }) => {
         if (isMounted) {
           if (fetched && fetched.length > 0) {
             setLogs(fetched);
-          } else {
+          } else if (isDemoMode) {
+            // Seed sample log only in Demo Mode
             const baseKg = Number(userProfile?.bodyWeight) || 75;
             setLogs([
               {
@@ -78,6 +79,9 @@ export const BodyWeightPage = ({ setActiveTab }) => {
                 createdAt: new Date().toISOString()
               }
             ]);
+          } else {
+            // Real authenticated users start completely empty
+            setLogs([]);
           }
         }
       } catch (err) {
@@ -94,11 +98,12 @@ export const BodyWeightPage = ({ setActiveTab }) => {
   // Current weight in KG
   const currentWeightKg = useMemo(() => {
     if (logs.length > 0) return logs[0].weightKg;
-    return Number(userProfile?.bodyWeight) || 75;
+    return Number(userProfile?.bodyWeight) || null;
   }, [logs, userProfile?.bodyWeight]);
 
   // Display strings
   const currentWeightFormatted = useMemo(() => {
+    if (!currentWeightKg) return '--';
     if (unit === 'LB') {
       const lbs = Math.round(currentWeightKg * KG_TO_LBS * 10) / 10;
       return `${lbs} lbs`;

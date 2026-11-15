@@ -192,32 +192,77 @@ export const WorkoutProvider = ({ children }) => {
   const [stagedWeight, setStagedWeight] = useState(null);
 
   // Weekly 7-Day Routine (Monday to Sunday)
+  // For real users, starts with a completely clean blank routine (0 exercises)
   const [weeklyRoutine, setWeeklyRoutine] = useState(() => {
     try {
-      const stored = localStorage.getItem('platesync_weekly_plan');
-      return stored ? JSON.parse(stored) : DEFAULT_WEEKLY_ROUTINE;
+      if (isDemoMode) {
+        const stored = localStorage.getItem('platesync_demo_weekly_plan');
+        return stored ? JSON.parse(stored) : DEFAULT_WEEKLY_ROUTINE;
+      }
+      if (currentUser?.uid) {
+        const stored = localStorage.getItem(`platesync_weekly_plan_${currentUser.uid}`);
+        return stored ? JSON.parse(stored) : BLANK_WEEKLY_ROUTINE;
+      }
+      return BLANK_WEEKLY_ROUTINE;
     } catch (e) {
-      return DEFAULT_WEEKLY_ROUTINE;
+      return BLANK_WEEKLY_ROUTINE;
     }
   });
 
-  // Sync weekly routine from Firestore when user logs in
+  // Sync weekly routine from Firestore or user-scoped localStorage when user logs in
   useEffect(() => {
-    if (!currentUser?.uid || isDemoMode || currentUser?.isDemo) return;
+    if (!currentUser) {
+      setWeeklyRoutine(BLANK_WEEKLY_ROUTINE);
+      return;
+    }
+
+    if (isDemoMode || currentUser?.isDemo) {
+      const stored = localStorage.getItem('platesync_demo_weekly_plan');
+      setWeeklyRoutine(stored ? JSON.parse(stored) : DEFAULT_WEEKLY_ROUTINE);
+      return;
+    }
+
+    // Real authenticated user: Load user's routine or start with BLANK_WEEKLY_ROUTINE
+    let isMounted = true;
+    const userPlanKey = `platesync_weekly_plan_${currentUser.uid}`;
+    
+    // Check local storage first for instant load
+    try {
+      const localStored = localStorage.getItem(userPlanKey);
+      if (localStored && isMounted) {
+        setWeeklyRoutine(JSON.parse(localStored));
+      } else if (isMounted) {
+        setWeeklyRoutine(BLANK_WEEKLY_ROUTINE);
+      }
+    } catch (e) {
+      if (isMounted) setWeeklyRoutine(BLANK_WEEKLY_ROUTINE);
+    }
+
+    // Then check Firestore sync
     getWeeklyRoutine(currentUser.uid).then(plan => {
-      if (plan) {
+      if (plan && isMounted) {
         setWeeklyRoutine(plan);
         try {
-          localStorage.setItem('platesync_weekly_plan', JSON.stringify(plan));
+          localStorage.setItem(userPlanKey, JSON.stringify(plan));
         } catch (e) {}
       }
+    }).catch(err => {
+      console.warn('Could not load weekly routine from Firestore:', err);
     });
+
+    return () => { isMounted = false; };
   }, [currentUser, isDemoMode]);
 
   const saveWeeklyRoutineState = async (newRoutine) => {
     setWeeklyRoutine(newRoutine);
     try {
-      localStorage.setItem('platesync_weekly_plan', JSON.stringify(newRoutine));
+      if (isDemoMode || currentUser?.isDemo) {
+        localStorage.setItem('platesync_demo_weekly_plan', JSON.stringify(newRoutine));
+      } else if (currentUser?.uid) {
+        localStorage.setItem(`platesync_weekly_plan_${currentUser.uid}`, JSON.stringify(newRoutine));
+      } else {
+        localStorage.setItem('platesync_weekly_plan_guest', JSON.stringify(newRoutine));
+      }
     } catch (e) {}
 
     if (currentUser?.uid && !isDemoMode && !currentUser?.isDemo) {
@@ -333,15 +378,48 @@ export const WorkoutProvider = ({ children }) => {
     }
   };
 
-  // Saved Plate Configurations
+  // Saved Plate Configurations (The Rack)
+  // For new registered users, starts completely empty []
   const [savedConfigurations, setSavedConfigurations] = useState(() => {
     try {
-      const stored = localStorage.getItem('platesync_saved_configs');
-      return stored ? JSON.parse(stored) : DEFAULT_SAVED_CONFIGS;
+      if (isDemoMode) {
+        const stored = localStorage.getItem('platesync_demo_saved_configs');
+        return stored ? JSON.parse(stored) : DEFAULT_SAVED_CONFIGS;
+      }
+      if (currentUser?.uid) {
+        const stored = localStorage.getItem(`platesync_saved_configs_${currentUser.uid}`);
+        return stored ? JSON.parse(stored) : [];
+      }
+      return [];
     } catch (e) {
-      return DEFAULT_SAVED_CONFIGS;
+      return [];
     }
   });
+
+  // Sync saved configurations on user login / logout / demo switch
+  useEffect(() => {
+    if (!currentUser) {
+      setSavedConfigurations([]);
+      return;
+    }
+    if (isDemoMode || currentUser?.isDemo) {
+      const stored = localStorage.getItem('platesync_demo_saved_configs');
+      setSavedConfigurations(stored ? JSON.parse(stored) : DEFAULT_SAVED_CONFIGS);
+      return;
+    }
+    // Real authenticated user: clean slate unless they previously saved configs
+    try {
+      const userKey = `platesync_saved_configs_${currentUser.uid}`;
+      const stored = localStorage.getItem(userKey);
+      if (stored !== null) {
+        setSavedConfigurations(JSON.parse(stored) || []);
+      } else {
+        setSavedConfigurations([]);
+      }
+    } catch (e) {
+      setSavedConfigurations([]);
+    }
+  }, [currentUser, isDemoMode]);
 
   // Load workouts
   useEffect(() => {
@@ -395,12 +473,18 @@ export const WorkoutProvider = ({ children }) => {
     return () => { isMounted = false; };
   }, [currentUser, isDemoMode]);
 
-  // Save configurations to localStorage
+  // Save configurations to localStorage (user-scoped)
   useEffect(() => {
     try {
-      localStorage.setItem('platesync_saved_configs', JSON.stringify(savedConfigurations));
+      if (isDemoMode || currentUser?.isDemo) {
+        localStorage.setItem('platesync_demo_saved_configs', JSON.stringify(savedConfigurations));
+      } else if (currentUser?.uid) {
+        localStorage.setItem(`platesync_saved_configs_${currentUser.uid}`, JSON.stringify(savedConfigurations));
+      } else {
+        localStorage.setItem('platesync_saved_configs_guest', JSON.stringify(savedConfigurations));
+      }
     } catch (e) {}
-  }, [savedConfigurations]);
+  }, [savedConfigurations, currentUser, isDemoMode]);
 
   // Save plate configuration
   const savePlateConfiguration = (config) => {

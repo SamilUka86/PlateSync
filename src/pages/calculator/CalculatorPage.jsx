@@ -1034,12 +1034,12 @@ export const CalculatorPage = ({ setActiveTab }) => {
           </div>
 
           {/* Saved Configurations Carousel / List */}
-          {savedConfigurations && savedConfigurations.length > 0 && (
+          {savedConfigurations && savedConfigurations.length > 0 ? (
             <div className="p-4 rounded-2xl bg-midnight-card border border-midnight-border space-y-3">
               <div className="flex items-center justify-between">
                 <h4 className="text-xs font-bold text-white flex items-center gap-2">
                   <Bookmark className="w-3.5 h-3.5 text-neon-cyan" />
-                  Saved Plate Configurations
+                  Saved Plate Configurations ({savedConfigurations.length})
                 </h4>
               </div>
 
@@ -1074,6 +1074,16 @@ export const CalculatorPage = ({ setActiveTab }) => {
                   </div>
                 ))}
               </div>
+            </div>
+          ) : (
+            <div className="p-4 rounded-2xl bg-midnight-card/50 border border-midnight-border/60 text-center space-y-1.5">
+              <div className="w-7 h-7 rounded-lg bg-midnight-bg border border-midnight-border flex items-center justify-center text-slate-500 mx-auto">
+                <Bookmark className="w-3.5 h-3.5" />
+              </div>
+              <p className="text-xs font-bold text-white">The Rack is Empty</p>
+              <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+                Load your barbell setup and click &quot;Save Configuration&quot; above to store custom setups on your rack.
+              </p>
             </div>
           )}
 

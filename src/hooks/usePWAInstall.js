@@ -26,9 +26,10 @@ export const usePWAInstall = () => {
 
     const standalone = checkStandalone();
 
-    // 2. Platform detection
+    // 2. Platform detection (with full iPadOS 13+ support)
     const ua = window.navigator.userAgent || '';
-    const iosDevice = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+    const isIPad = (window.navigator.platform === 'MacIntel' && window.navigator.maxTouchPoints > 1) || /iPad/.test(ua);
+    const iosDevice = (/iPhone|iPod/.test(ua) || isIPad) && !window.MSStream;
     const androidDevice = /android/i.test(ua);
 
     setIsIOS(iosDevice);

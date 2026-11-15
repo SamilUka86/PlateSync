@@ -25,7 +25,7 @@ import { useWorkout } from '../../context/WorkoutContext';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
 import { DAYS_OF_WEEK } from '../../utils/routinePresets';
-import { AddPlanExerciseModal } from '../../components/planner/AddPlanExerciseModal';
+import { AddPlanExerciseModal, SIX_BODY_PARTS } from '../../components/planner/AddPlanExerciseModal';
 import { EditPlanExerciseModal } from '../../components/planner/EditPlanExerciseModal';
 
 export const WeeklyPlannerPage = ({ setActiveTab }) => {
@@ -52,8 +52,14 @@ export const WeeklyPlannerPage = ({ setActiveTab }) => {
 
   // Modals state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [addModalInitialMuscle, setAddModalInitialMuscle] = useState('All');
   const [editingExercise, setEditingExercise] = useState(null);
   const [showTemplateDropdown, setShowTemplateDropdown] = useState(false);
+
+  const handleOpenAddModal = (muscle = 'All') => {
+    setAddModalInitialMuscle(muscle);
+    setIsAddModalOpen(true);
+  };
 
   // Active day data
   const activeDay = weeklyRoutine?.[selectedDayKey] || {
@@ -436,7 +442,7 @@ export const WeeklyPlannerPage = ({ setActiveTab }) => {
                   <>
                     <button
                       type="button"
-                      onClick={() => setIsAddModalOpen(true)}
+                      onClick={() => handleOpenAddModal('All')}
                       className="px-4 py-2 rounded-xl bg-neon-cyan hover:bg-[#29bfcd] text-slate-950 font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition active:scale-95 shadow-md shadow-neon-cyan/20"
                     >
                       <Plus className="w-4 h-4" />
@@ -536,7 +542,7 @@ export const WeeklyPlannerPage = ({ setActiveTab }) => {
 
                 <button
                   type="button"
-                  onClick={() => setIsAddModalOpen(true)}
+                  onClick={() => handleOpenAddModal('All')}
                   className="text-xs font-bold text-neon-cyan hover:underline flex items-center gap-1"
                 >
                   <Plus className="w-3.5 h-3.5" />
@@ -545,27 +551,103 @@ export const WeeklyPlannerPage = ({ setActiveTab }) => {
               </div>
 
               {(!activeDay.exercises || activeDay.exercises.length === 0) ? (
-                <div className="bg-midnight-card border border-midnight-border rounded-3xl p-10 text-center space-y-4">
-                  <div className="w-14 h-14 rounded-2xl bg-midnight-bg border border-midnight-border flex items-center justify-center text-slate-500 mx-auto">
-                    <Dumbbell className="w-7 h-7" />
-                  </div>
-                  <div className="space-y-1">
-                    <h4 className="text-base font-bold text-white">No Exercises in {activeDay.dayName}&apos;s Routine Yet</h4>
-                    <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                      Build your workout using 160+ database exercises or create your own custom exercise.
+                /* Empty Day State: 6 Clickable Body Part Cards */
+                <div className="bg-midnight-card border border-midnight-border rounded-3xl p-6 md:p-8 space-y-6">
+                  <div className="text-center space-y-2 max-w-xl mx-auto">
+                    <div className="w-12 h-12 rounded-2xl bg-neon-cyan/10 border border-neon-cyan/30 flex items-center justify-center text-neon-cyan mx-auto">
+                      <Dumbbell className="w-6 h-6" />
+                    </div>
+                    <h4 className="text-lg font-black text-white">Select Body Parts for {activeDay.dayName}</h4>
+                    <p className="text-xs text-slate-400 leading-relaxed">
+                      Choose any of the 6 core body parts below to view its specific workouts and add them to your {activeDay.dayName} routine:
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setIsAddModalOpen(true)}
-                    className="px-5 py-2.5 rounded-xl bg-neon-cyan hover:bg-[#29bfcd] text-slate-950 font-black text-xs uppercase tracking-wider transition active:scale-95 shadow-md shadow-neon-cyan/20 inline-flex items-center gap-2"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Add First Exercise</span>
-                  </button>
+
+                  {/* 6 Core Body Part Cards Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                    {SIX_BODY_PARTS.map((bp) => (
+                      <div
+                        key={bp.id}
+                        onClick={() => handleOpenAddModal(bp.id)}
+                        className="p-4 rounded-2xl bg-midnight-bg border border-midnight-border hover:border-neon-cyan/50 hover:bg-midnight-elevated/70 transition cursor-pointer group flex flex-col justify-between space-y-3"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-2.5">
+                            <span className="text-2xl p-2 rounded-xl bg-midnight-card border border-midnight-border group-hover:scale-110 transition shrink-0">
+                              {bp.icon}
+                            </span>
+                            <div>
+                              <h5 className="text-sm font-black text-white group-hover:text-neon-cyan transition">
+                                {bp.label}
+                              </h5>
+                              <span className="text-[10px] text-neon-cyan font-mono font-bold">
+                                {bp.count} movements
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
+                          {bp.description}
+                        </p>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenAddModal(bp.id);
+                          }}
+                          className="w-full py-2 px-3 rounded-xl bg-neon-cyan/10 group-hover:bg-neon-cyan text-neon-cyan group-hover:text-slate-950 font-black text-xs transition flex items-center justify-center gap-1.5"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>Add {bp.label} Workouts</span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="pt-2 text-center">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenAddModal('All')}
+                      className="text-xs text-slate-400 hover:text-neon-cyan transition font-semibold underline underline-offset-4"
+                    >
+                      Or browse all 160+ movements across all muscle groups
+                    </button>
+                  </div>
                 </div>
               ) : (
-                <div className="space-y-2.5">
+                <div className="space-y-3">
+                  {/* Quick Add by Body Part chips */}
+                  <div className="p-3.5 rounded-2xl bg-midnight-card border border-midnight-border space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-[11px] font-bold uppercase text-slate-400 font-mono tracking-wider">
+                        Add Workouts by Body Part:
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenAddModal('All')}
+                        className="text-[11px] font-bold text-neon-cyan hover:underline"
+                      >
+                        View All Movements
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                      {SIX_BODY_PARTS.map((bp) => (
+                        <button
+                          key={bp.id}
+                          type="button"
+                          onClick={() => handleOpenAddModal(bp.id)}
+                          className="px-3 py-1.5 rounded-xl bg-midnight-bg hover:bg-neon-cyan hover:text-slate-950 text-slate-300 text-xs font-semibold border border-midnight-border transition flex items-center gap-1.5 shrink-0"
+                        >
+                          <span>{bp.icon}</span>
+                          <span>+ {bp.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2.5">
                   {activeDay.exercises.map((ex, index) => (
                     <div
                       key={ex.id || index}
@@ -672,9 +754,10 @@ export const WeeklyPlannerPage = ({ setActiveTab }) => {
                     </div>
                   ))}
                 </div>
-              )}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
+        )}
 
           {/* Bottom Duplicate Helper */}
           <div className="p-4 rounded-2xl bg-midnight-card border border-midnight-border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
@@ -807,6 +890,7 @@ export const WeeklyPlannerPage = ({ setActiveTab }) => {
         dayKey={selectedDayKey}
         dayName={activeDay.dayName}
         onAddExercise={handleAddExerciseToActiveDay}
+        initialMuscle={addModalInitialMuscle}
       />
 
       {/* Edit Exercise Modal */}
