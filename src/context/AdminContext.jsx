@@ -28,10 +28,32 @@ export const AdminProvider = ({ children }) => {
         return;
       }
 
+      // If saved session email is not the admin email, purge it immediately
+      const savedEmail = savedSession.email?.toLowerCase();
+      if (savedEmail !== 'platesync86@gmail.com' && savedEmail !== 'samilplatesync@gmail.com') {
+        logoutAdmin();
+        if (isMounted) {
+          setAdminSession(null);
+          setAdminLoading(false);
+        }
+        return;
+      }
+
       // Verify active user with Firebase Auth if available
       if (isFirebaseConfigured() && auth) {
         const currentUser = auth.currentUser;
         if (currentUser) {
+          const userEmail = currentUser.email?.toLowerCase();
+          // If the logged-in user is an athlete (not platesync86@gmail.com), purge admin session
+          if (userEmail !== 'platesync86@gmail.com' && userEmail !== 'samilplatesync@gmail.com') {
+            logoutAdmin();
+            if (isMounted) {
+              setAdminSession(null);
+              setAdminLoading(false);
+            }
+            return;
+          }
+
           const authInfo = await verifyAdminPrivileges(currentUser);
           if (authInfo && isMounted) {
             setAdminSession({
@@ -53,6 +75,26 @@ export const AdminProvider = ({ children }) => {
 
     checkSession();
 
+    // Invalidate admin session whenever an athlete user signs in
+    let authUnsubscribe = null;
+    if (isFirebaseConfigured() && auth) {
+      try {
+        authUnsubscribe = auth.onAuthStateChanged((user) => {
+          if (user) {
+            const userEmail = user.email?.toLowerCase();
+            if (userEmail !== 'platesync86@gmail.com' && userEmail !== 'samilplatesync@gmail.com') {
+              logoutAdmin();
+              if (isMounted) {
+                setAdminSession(null);
+              }
+            }
+          }
+        });
+      } catch (e) {
+        console.debug('Auth state monitor notice:', e);
+      }
+    }
+
     // Session expiration timer: check every 60 seconds
     const interval = setInterval(() => {
       const current = getActiveAdminSession();
@@ -64,6 +106,7 @@ export const AdminProvider = ({ children }) => {
     return () => {
       isMounted = false;
       clearInterval(interval);
+      if (authUnsubscribe) authUnsubscribe();
     };
   }, []);
 

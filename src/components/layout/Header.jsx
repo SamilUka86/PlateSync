@@ -33,12 +33,12 @@ export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, s
   const { isAdmin, adminSession } = useAdmin();
   const { addNotification } = useNotification();
 
-  // Switch to admin portal & admin features available strictly if logged in with admin email / admin session
+  // Switch to admin portal & admin features available strictly ONLY if logged-in user email is platesync86@gmail.com
   const isAdminUser = Boolean(
-    currentUser?.email?.toLowerCase() === 'platesync86@gmail.com' ||
-    currentUser?.email?.toLowerCase() === 'samilplatesync@gmail.com' ||
-    adminSession?.email?.toLowerCase() === 'platesync86@gmail.com' ||
-    adminSession?.email?.toLowerCase() === 'samilplatesync@gmail.com'
+    currentUser &&
+    !isDemoMode &&
+    (currentUser.email?.toLowerCase() === 'platesync86@gmail.com' ||
+     currentUser.email?.toLowerCase() === 'samilplatesync@gmail.com')
   );
 
   // Integrated PWA Installation Hook with Android, iOS and Desktop support

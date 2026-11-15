@@ -82,7 +82,7 @@ export const AuthPage = ({ onClose, onSuccess, onActivateAdminPortal }) => {
   const passwordsMismatch = confirmPassword.length > 0 && password !== confirmPassword;
 
   const { loginGoogle, loginEmail, registerEmail, loginAsDemo, isFirebaseReady, isDevTester } = useAuth();
-  const { loginAdminAccount } = useAdmin();
+  const { loginAdminAccount, logoutAdminAccount } = useAdmin();
   const { addNotification } = useNotification();
 
   // Load remembered email
@@ -196,6 +196,9 @@ export const AuthPage = ({ onClose, onSuccess, onActivateAdminPortal }) => {
     }
 
     try {
+      // Clear any prior administrative session when an athlete logs in
+      if (logoutAdminAccount) logoutAdminAccount();
+
       if (isSignUp) {
         await registerEmail(email.trim(), password, name.trim());
         addNotification('Athlete account registered successfully! Welcome to PlateSync.', 'success');
@@ -248,7 +251,11 @@ export const AuthPage = ({ onClose, onSuccess, onActivateAdminPortal }) => {
     setErrorMessage('');
 
     try {
-      await loginGoogle();
+      const gUser = await loginGoogle();
+      const gEmail = gUser?.email?.toLowerCase();
+      if (gEmail !== 'platesync86@gmail.com' && gEmail !== 'samilplatesync@gmail.com') {
+        if (logoutAdminAccount) logoutAdminAccount();
+      }
       addNotification('Signed in with Google successfully!', 'success');
       if (onSuccess) {
         onSuccess();

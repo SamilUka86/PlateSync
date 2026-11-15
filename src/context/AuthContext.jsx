@@ -452,6 +452,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('platesync_demo_access_mode');
     localStorage.removeItem('platesync_demo_workouts');
     localStorage.removeItem('platesync_google_user');
+    localStorage.removeItem('platesync_admin_session_v1');
     setIsDemoMode(false);
     setDemoAccessMode('calculator-only');
 
@@ -469,6 +470,7 @@ export const AuthProvider = ({ children }) => {
   const loginAsDemo = (mode = 'calculator-only') => {
     localStorage.setItem('platesync_demo_active', 'true');
     localStorage.setItem('platesync_demo_access_mode', mode);
+    localStorage.removeItem('platesync_admin_session_v1');
     setDemoAccessMode(mode);
     setCurrentUser(DEMO_USER);
     setUserProfile(DEMO_PROFILE);
