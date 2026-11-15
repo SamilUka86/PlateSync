@@ -55,6 +55,36 @@ const MainAppLayout = () => {
     } catch (e) {}
   }, [activeTab]);
 
+  // Guaranteed scroll-to-top whenever activeTab changes (phone navigation / redirect)
+  useEffect(() => {
+    const scrollToTop = () => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      if (document.documentElement) document.documentElement.scrollTop = 0;
+      if (document.body) document.body.scrollTop = 0;
+    };
+
+    // 1. Immediate scroll
+    scrollToTop();
+
+    // 2. Immediate animation frame scroll
+    const rafId = requestAnimationFrame(scrollToTop);
+
+    // 3. Fallback for mobile browser address bar / layout changes
+    const timerId = setTimeout(scrollToTop, 60);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      clearTimeout(timerId);
+    };
+  }, [activeTab]);
+
+  const handleSetActiveTab = (newTab) => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
+    setActiveTab(newTab);
+  };
+
   // If a guest user lands on 'dashboard', automatically direct them to 'calculator'
   useEffect(() => {
     if (!loading && !currentUser && !isDemoMode) {
@@ -89,7 +119,7 @@ const MainAppLayout = () => {
       {/* Desktop & Mobile Drawer Sidebar */}
       <Sidebar
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={handleSetActiveTab}
         isMobileOpen={isMobileOpen}
         setIsMobileOpen={setIsMobileOpen}
         collapsed={collapsed}
@@ -102,7 +132,7 @@ const MainAppLayout = () => {
         {/* Top Header */}
         <Header
           activeTab={activeTab}
-          setActiveTab={setActiveTab}
+          setActiveTab={handleSetActiveTab}
           onOpenMobileMenu={() => setIsMobileOpen(true)}
           collapsed={collapsed}
           setCollapsed={setCollapsed}
@@ -114,22 +144,22 @@ const MainAppLayout = () => {
           {isTabLocked ? (
             <DemoRestrictedView 
               activeTab={activeTab} 
-              setActiveTab={setActiveTab} 
+              setActiveTab={handleSetActiveTab} 
               onOpenAuth={() => setShowAuthModal(true)}
             />
           ) : (
             <>
-              {activeTab === 'dashboard' && <DashboardPage setActiveTab={setActiveTab} />}
-              {activeTab === 'calculator' && <CalculatorPage setActiveTab={setActiveTab} />}
-              {activeTab === 'tracker' && <WorkoutTrackerPage setActiveTab={setActiveTab} />}
-              {activeTab === 'planner' && <WeeklyPlannerPage setActiveTab={setActiveTab} />}
-              {activeTab === 'library' && <ExerciseLibraryPage setActiveTab={setActiveTab} />}
-              {activeTab === 'history' && <WorkoutHistoryPage setActiveTab={setActiveTab} />}
-              {activeTab === 'analytics' && <AnalyticsPage setActiveTab={setActiveTab} />}
-              {activeTab === 'records' && <PersonalRecordsPage setActiveTab={setActiveTab} />}
-              {activeTab === 'bodyweight' && <BodyWeightPage setActiveTab={setActiveTab} />}
-              {activeTab === 'profile' && <ProfilePage setActiveTab={setActiveTab} />}
-              {activeTab === 'settings' && <SettingsPage setActiveTab={setActiveTab} />}
+              {activeTab === 'dashboard' && <DashboardPage setActiveTab={handleSetActiveTab} />}
+              {activeTab === 'calculator' && <CalculatorPage setActiveTab={handleSetActiveTab} />}
+              {activeTab === 'tracker' && <WorkoutTrackerPage setActiveTab={handleSetActiveTab} />}
+              {activeTab === 'planner' && <WeeklyPlannerPage setActiveTab={handleSetActiveTab} />}
+              {activeTab === 'library' && <ExerciseLibraryPage setActiveTab={handleSetActiveTab} />}
+              {activeTab === 'history' && <WorkoutHistoryPage setActiveTab={handleSetActiveTab} />}
+              {activeTab === 'analytics' && <AnalyticsPage setActiveTab={handleSetActiveTab} />}
+              {activeTab === 'records' && <PersonalRecordsPage setActiveTab={handleSetActiveTab} />}
+              {activeTab === 'bodyweight' && <BodyWeightPage setActiveTab={handleSetActiveTab} />}
+              {activeTab === 'profile' && <ProfilePage setActiveTab={handleSetActiveTab} />}
+              {activeTab === 'settings' && <SettingsPage setActiveTab={handleSetActiveTab} />}
             </>
           )}
         </main>
@@ -148,7 +178,7 @@ const MainAppLayout = () => {
       {/* Mobile Bottom Navigation Bar */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-midnight-card/95 border-t border-midnight-border px-3 py-2 flex items-center justify-around backdrop-blur-xl">
         <button
-          onClick={() => setActiveTab('dashboard')}
+          onClick={() => handleSetActiveTab('dashboard')}
           className={`flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition ${
             activeTab === 'dashboard' ? 'text-neon-cyan' : 'text-slate-400 hover:text-white'
           }`}
@@ -161,7 +191,7 @@ const MainAppLayout = () => {
         </button>
 
         <button
-          onClick={() => setActiveTab('calculator')}
+          onClick={() => handleSetActiveTab('calculator')}
           className={`flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition ${
             activeTab === 'calculator' ? 'text-neon-cyan' : 'text-slate-400 hover:text-white'
           }`}
@@ -171,7 +201,7 @@ const MainAppLayout = () => {
         </button>
 
         <button
-          onClick={() => setActiveTab('tracker')}
+          onClick={() => handleSetActiveTab('tracker')}
           className={`flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition ${
             activeTab === 'tracker' ? 'text-neon-cyan' : 'text-slate-400 hover:text-white'
           }`}
@@ -184,7 +214,7 @@ const MainAppLayout = () => {
         </button>
 
         <button
-          onClick={() => setActiveTab('library')}
+          onClick={() => handleSetActiveTab('library')}
           className={`flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition ${
             activeTab === 'library' ? 'text-neon-cyan' : 'text-slate-400 hover:text-white'
           }`}
@@ -197,7 +227,7 @@ const MainAppLayout = () => {
         </button>
 
         <button
-          onClick={() => setActiveTab('planner')}
+          onClick={() => handleSetActiveTab('planner')}
           className={`flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition ${
             activeTab === 'planner' ? 'text-neon-cyan' : 'text-slate-400 hover:text-white'
           }`}

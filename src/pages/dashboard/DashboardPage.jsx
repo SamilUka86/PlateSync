@@ -37,6 +37,14 @@ export const DashboardPage = ({ setActiveTab }) => {
   const athleteName = userProfile?.name || currentUser?.displayName || 'Athlete';
   const preferredUnit = userProfile?.preferredUnit || 'KG';
 
+  // Smooth top navigation helper to ensure phone screens always start from the top
+  const navigateTo = (tab) => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
+    if (setActiveTab) setActiveTab(tab);
+  };
+
   // Determine current day of week key
   const todayKey = useMemo(() => {
     const dayMap = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
@@ -134,7 +142,7 @@ export const DashboardPage = ({ setActiveTab }) => {
           <div className="flex flex-col items-center justify-center shrink-0 pt-2 md:pt-0">
             <button
               type="button"
-              onClick={() => setActiveTab('tracker')}
+              onClick={() => navigateTo('tracker')}
               className="relative group focus:outline-none flex flex-col items-center cursor-pointer transition-all duration-300 active:scale-95 hover:scale-105"
               aria-label="Start Workout Session"
               title="Start Today's Workout Session"
@@ -334,7 +342,7 @@ export const DashboardPage = ({ setActiveTab }) => {
             <div className="flex items-center gap-2 shrink-0 sm:self-center">
               <button
                 type="button"
-                onClick={() => setActiveTab('planner')}
+                onClick={() => navigateTo('planner')}
                 className="px-4 py-2.5 rounded-xl border border-midnight-border bg-midnight-bg hover:bg-midnight-elevated text-slate-200 hover:text-white text-xs font-bold transition"
               >
                 Customize Split
@@ -343,7 +351,10 @@ export const DashboardPage = ({ setActiveTab }) => {
               {!todayPlan.isRestDay && (todayPlan.exercises?.length > 0) && (
                 <button
                   type="button"
-                  onClick={() => startRoutineDayWorkout(todayKey, setActiveTab)}
+                  onClick={() => {
+                    navigateTo('tracker');
+                    startRoutineDayWorkout(todayKey, navigateTo);
+                  }}
                   className="px-5 py-2.5 rounded-xl bg-neon-cyan hover:bg-[#29bfcd] text-slate-950 font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition active:scale-95 shadow-md shadow-neon-cyan/25"
                 >
                   <Play className="w-3.5 h-3.5 fill-current" />
@@ -433,7 +444,7 @@ export const DashboardPage = ({ setActiveTab }) => {
                 Strength Overview
               </h3>
               <button
-                onClick={() => setActiveTab('analytics')}
+                onClick={() => navigateTo('analytics')}
                 className="text-xs text-neon-cyan hover:underline font-semibold flex items-center gap-1"
               >
                 Analytics <ArrowRight className="w-3 h-3" />
@@ -452,7 +463,7 @@ export const DashboardPage = ({ setActiveTab }) => {
                   </p>
                 </div>
                 <button
-                  onClick={() => setActiveTab('tracker')}
+                  onClick={() => navigateTo('tracker')}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neon-cyan/10 hover:bg-neon-cyan/20 border border-neon-cyan/30 text-neon-cyan text-xs font-bold transition"
                 >
                   <Plus className="w-3.5 h-3.5" />
@@ -495,7 +506,7 @@ export const DashboardPage = ({ setActiveTab }) => {
 
           <div className="mt-4 pt-3 border-t border-midnight-border">
             <button
-              onClick={() => setActiveTab('records')}
+              onClick={() => navigateTo('records')}
               className="w-full py-2 px-3 rounded-xl bg-midnight-elevated hover:bg-[#1e2f50] text-neon-gold text-xs font-bold flex items-center justify-center gap-2 transition"
             >
               <Trophy className="w-3.5 h-3.5" />
@@ -523,7 +534,7 @@ export const DashboardPage = ({ setActiveTab }) => {
             </div>
 
             <button
-              onClick={() => setActiveTab('history')}
+              onClick={() => navigateTo('history')}
               className="text-xs text-neon-cyan hover:underline font-semibold flex items-center gap-1"
             >
               Full History <ChevronRight className="w-3.5 h-3.5" />
@@ -543,14 +554,14 @@ export const DashboardPage = ({ setActiveTab }) => {
               </div>
               <div className="pt-2 flex flex-wrap justify-center gap-3">
                 <button
-                  onClick={() => setActiveTab('tracker')}
+                  onClick={() => navigateTo('tracker')}
                   className="inline-flex items-center gap-1.5 px-4 py-2 bg-neon-cyan text-slate-950 font-black text-xs rounded-xl shadow-md shadow-neon-cyan/20 hover:bg-[#29bfcd] transition"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Start First Workout</span>
                 </button>
                 <button
-                  onClick={() => setActiveTab('calculator')}
+                  onClick={() => navigateTo('calculator')}
                   className="inline-flex items-center gap-1.5 px-4 py-2 bg-midnight-elevated text-slate-200 hover:text-white border border-midnight-border font-bold text-xs rounded-xl transition"
                 >
                   <Calculator className="w-4 h-4 text-neon-cyan" />
@@ -625,7 +636,7 @@ export const DashboardPage = ({ setActiveTab }) => {
 
           <div className="space-y-2.5">
             <button
-              onClick={() => setActiveTab('tracker')}
+              onClick={() => navigateTo('tracker')}
               className="w-full p-3 rounded-2xl bg-midnight-elevated hover:bg-[#1f2f50] border border-midnight-border text-left flex items-center justify-between transition group"
             >
               <div className="flex items-center gap-3">
@@ -643,7 +654,7 @@ export const DashboardPage = ({ setActiveTab }) => {
             </button>
 
             <button
-              onClick={() => setActiveTab('calculator')}
+              onClick={() => navigateTo('calculator')}
               className="w-full p-3 rounded-2xl bg-midnight-elevated hover:bg-[#1f2f50] border border-midnight-border text-left flex items-center justify-between transition group"
             >
               <div className="flex items-center gap-3">
@@ -661,7 +672,7 @@ export const DashboardPage = ({ setActiveTab }) => {
             </button>
 
             <button
-              onClick={() => setActiveTab('history')}
+              onClick={() => navigateTo('history')}
               className="w-full p-3 rounded-2xl bg-midnight-elevated hover:bg-[#1f2f50] border border-midnight-border text-left flex items-center justify-between transition group"
             >
               <div className="flex items-center gap-3">
@@ -679,7 +690,7 @@ export const DashboardPage = ({ setActiveTab }) => {
             </button>
 
             <button
-              onClick={() => setActiveTab('analytics')}
+              onClick={() => navigateTo('analytics')}
               className="w-full p-3 rounded-2xl bg-midnight-elevated hover:bg-[#1f2f50] border border-midnight-border text-left flex items-center justify-between transition group"
             >
               <div className="flex items-center gap-3">

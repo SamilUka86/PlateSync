@@ -24,6 +24,13 @@ export const WorkoutHistoryPage = ({ setActiveTab }) => {
   const { addNotification } = useNotification();
   const preferredUnit = userProfile?.preferredUnit || 'KG';
 
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
+  }, []);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedWorkout, setSelectedWorkout] = useState(null);
   const [shareWorkout, setShareWorkout] = useState(null);

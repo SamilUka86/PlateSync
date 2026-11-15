@@ -60,6 +60,13 @@ export const WorkoutTrackerPage = ({ setActiveTab }) => {
   const { stagedWeight, setStagedWeight, saveWorkout } = useWorkout();
   const { addNotification } = useNotification();
 
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
+  }, []);
+
   // Active workout session state
   const [activeSession, setActiveSession] = useState(() => {
     try {

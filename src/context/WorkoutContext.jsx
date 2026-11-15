@@ -372,6 +372,9 @@ export const WorkoutProvider = ({ children }) => {
     localStorage.setItem('platesync_live_workout', JSON.stringify(newSession));
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('platesync_load_workout_session', { detail: newSession }));
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      if (document.documentElement) document.documentElement.scrollTop = 0;
+      if (document.body) document.body.scrollTop = 0;
     }
     if (setActiveTabCallback) {
       setActiveTabCallback('tracker');

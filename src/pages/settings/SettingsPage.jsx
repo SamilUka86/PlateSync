@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Settings as SettingsIcon, 
   Flame, 
@@ -21,6 +21,13 @@ export const SettingsPage = () => {
   const { currentUser, userProfile, updateProfile, logout, isDemoMode, loginAsDemo } = useAuth();
   const { addNotification } = useNotification();
   const [showConfigModal, setShowConfigModal] = useState(false);
+
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
+  }, []);
 
   const handleUnitToggle = (unit) => {
     updateProfile({ preferredUnit: unit });

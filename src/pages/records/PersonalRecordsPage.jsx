@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Trophy, Award, Flame, Dumbbell, Calendar, ArrowUpRight } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useAuth } from '../../context/AuthContext';
@@ -8,6 +8,13 @@ export const PersonalRecordsPage = () => {
   const { metrics } = useWorkout();
   const { userProfile } = useAuth();
   const preferredUnit = userProfile?.preferredUnit || 'KG';
+
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
+  }, []);
 
   const prEntries = Object.entries(metrics.personalRecords || {});
 

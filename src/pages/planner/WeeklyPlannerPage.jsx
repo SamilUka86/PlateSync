@@ -38,6 +38,13 @@ export const WeeklyPlannerPage = ({ setActiveTab }) => {
   } = useWorkout();
   const { addNotification } = useNotification();
 
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
+  }, []);
+
   // Find today's day key (Mon - Sun)
   const currentDayKey = useMemo(() => {
     const dayMap = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];

@@ -51,6 +51,13 @@ export const CalculatorPage = ({ setActiveTab }) => {
   const [customBarbellWeight, setCustomBarbellWeight] = useState(20);
   const [customBarbellUnit, setCustomBarbellUnit] = useState('KG');
 
+  // Ensure screen always starts from the top on mobile and desktop
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
+  }, []);
+
   useEffect(() => {
     if (stagedWeight?.isLegPress45) {
       setSelectedBarbellId('leg-press-45');
