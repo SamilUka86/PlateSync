@@ -9,18 +9,22 @@ import {
   CheckCircle2, 
   AlertTriangle,
   RotateCcw,
-  Check
+  Check,
+  Vibrate,
+  Volume2
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
 import { FirebaseSetupModal } from '../../components/auth/FirebaseSetupModal';
 import { isFirebaseConfigured } from '../../services/firebase/config';
 import { KG_TO_LBS } from '../../utils/weightCalculations';
+import { trigger5SecVibration, stopVibration } from '../../utils/audioHaptics';
 
 export const SettingsPage = () => {
   const { currentUser, userProfile, updateProfile, logout, isDemoMode, loginAsDemo } = useAuth();
   const { addNotification } = useNotification();
   const [showConfigModal, setShowConfigModal] = useState(false);
+  const [isVibrating, setIsVibrating] = useState(false);
 
   // Scroll to top on mount
   useEffect(() => {
@@ -32,6 +36,19 @@ export const SettingsPage = () => {
   const handleUnitToggle = (unit) => {
     updateProfile({ preferredUnit: unit });
     addNotification(`Global preferred unit set to ${unit}`, 'success');
+  };
+
+  const handleTest5SecVibration = () => {
+    trigger5SecVibration();
+    setIsVibrating(true);
+    addNotification('Triggering 5-second vibration buzzer...', 'info');
+    setTimeout(() => setIsVibrating(false), 5000);
+  };
+
+  const handleStopVibration = () => {
+    stopVibration();
+    setIsVibrating(false);
+    addNotification('Vibration stopped', 'info');
   };
 
   return (
@@ -119,6 +136,49 @@ export const SettingsPage = () => {
               Imperial (LB)
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* Phone Haptics & Rest Timer Vibration (5 Seconds) */}
+      <div className="bg-midnight-card border border-midnight-border rounded-3xl p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <Vibrate className="w-4 h-4 text-neon-cyan" />
+              Phone Vibration & Rest Timer Haptics
+            </h3>
+            <p className="text-xs text-slate-400">
+              Vibration duration is configured for up to 5 full seconds of pulsating buzzer for maximum awareness on the gym floor.
+            </p>
+          </div>
+          <span className="px-2.5 py-1 rounded-full bg-neon-cyan/10 border border-neon-cyan/30 text-neon-cyan text-[10px] font-mono font-bold shrink-0">
+            5s Buzzer Active
+          </span>
+        </div>
+
+        <div className="pt-2 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={handleTest5SecVibration}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition active:scale-95 ${
+              isVibrating
+                ? 'bg-neon-cyan text-slate-950 animate-pulse shadow-lg shadow-neon-cyan/30'
+                : 'bg-neon-cyan/15 hover:bg-neon-cyan text-neon-cyan hover:text-slate-950 border border-neon-cyan/30'
+            }`}
+          >
+            <Vibrate className="w-4 h-4" />
+            <span>{isVibrating ? 'Vibrating (5s)...' : 'Test 5-Second Vibration'}</span>
+          </button>
+
+          {isVibrating && (
+            <button
+              type="button"
+              onClick={handleStopVibration}
+              className="px-4 py-2.5 rounded-xl bg-midnight-bg hover:bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-bold transition"
+            >
+              Stop Vibration
+            </button>
+          )}
         </div>
       </div>
 

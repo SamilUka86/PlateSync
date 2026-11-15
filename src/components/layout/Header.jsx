@@ -150,20 +150,21 @@ export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, s
 
         {/* PWA Install Button */}
         <button
+          type="button"
           onClick={handleInstallClick}
-          className={`shrink-0 whitespace-nowrap flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition active:scale-95 shadow-sm ${
+          className={`shrink-0 whitespace-nowrap flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition active:scale-95 cursor-pointer shadow-sm ${
             isStandalone
-              ? 'border-neon-success/30 bg-neon-success/10 text-neon-success cursor-default'
-              : 'border-midnight-border bg-midnight-card hover:bg-midnight-elevated text-slate-300 hover:text-neon-cyan hover:border-neon-cyan/40 hover:shadow-neon-cyan/10'
+              ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 hover:border-emerald-400 shadow-emerald-500/10'
+              : 'border-neon-cyan/40 bg-neon-cyan/10 text-neon-cyan hover:bg-neon-cyan hover:text-slate-950 hover:shadow-neon-cyan/25 shadow-neon-cyan/10'
           }`}
-          title={isStandalone ? "PlateSync is running in installed app mode" : "Install PlateSync Progressive Web App"}
+          title={isStandalone ? "PlateSync is running in installed app mode (Click for details)" : "Install PlateSync Progressive Web App (iOS, Android, Desktop)"}
         >
           {isStandalone ? (
-            <CheckCircle2 className="w-3.5 h-3.5 text-neon-success" />
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
           ) : (
-            <Download className="w-3.5 h-3.5 text-neon-cyan" />
+            <Download className="w-3.5 h-3.5 shrink-0" />
           )}
-          <span className="hidden sm:inline">{buttonLabel}</span>
+          <span className="text-xs font-bold">{buttonLabel}</span>
         </button>
 
         {/* Global Unit Switcher */}
@@ -208,6 +209,7 @@ export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, s
       <PWAInstallModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        isStandalone={isStandalone}
         isIOS={isIOS}
         isAndroid={isAndroid}
         hasNativePrompt={hasNativePrompt}

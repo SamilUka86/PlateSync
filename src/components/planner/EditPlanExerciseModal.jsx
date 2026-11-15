@@ -61,7 +61,7 @@ export const EditPlanExerciseModal = ({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+              <label className="block text-xs font-bold text-slate-200 mb-1">
                 Target Sets
               </label>
               <input
@@ -70,31 +70,31 @@ export const EditPlanExerciseModal = ({
                 max="20"
                 value={targetSets}
                 onChange={(e) => setTargetSets(e.target.value)}
-                className="w-full px-3 py-2 bg-midnight-bg border border-midnight-border rounded-xl text-white text-xs font-mono focus:outline-none focus:border-neon-cyan"
+                className="w-full px-3 py-2 bg-midnight-bg border border-slate-700 rounded-xl text-white text-xs md:text-sm font-bold font-mono focus:outline-none focus:border-neon-cyan"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+              <label className="block text-xs font-bold text-slate-200 mb-1">
                 Target Reps
               </label>
               <input
                 type="text"
                 value={targetReps}
                 onChange={(e) => setTargetReps(e.target.value)}
-                className="w-full px-3 py-2 bg-midnight-bg border border-midnight-border rounded-xl text-white text-xs font-mono focus:outline-none focus:border-neon-cyan"
+                className="w-full px-3 py-2 bg-midnight-bg border border-slate-700 rounded-xl text-white text-xs md:text-sm font-bold font-mono focus:outline-none focus:border-neon-cyan"
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="text-[11px] font-semibold text-slate-300">
+                <label className="text-xs font-bold text-slate-200">
                   Target Weight
                 </label>
                 <button
                   type="button"
                   onClick={() => setTargetUnit(prev => prev === 'KG' ? 'LB' : 'KG')}
-                  className="text-[10px] font-mono font-bold text-neon-cyan hover:underline"
+                  className="text-xs font-mono font-bold text-neon-cyan hover:underline"
                 >
                   {targetUnit}
                 </button>
@@ -106,9 +106,9 @@ export const EditPlanExerciseModal = ({
                   min="0"
                   value={targetWeight}
                   onChange={(e) => setTargetWeight(e.target.value)}
-                  className="w-full px-3 py-2 bg-midnight-bg border border-midnight-border rounded-xl text-white text-xs font-mono focus:outline-none focus:border-neon-cyan"
+                  className="w-full px-3 py-2 bg-midnight-bg border border-slate-700 rounded-xl text-white text-xs md:text-sm font-bold font-mono focus:outline-none focus:border-neon-cyan"
                 />
-                <span className="absolute right-2.5 top-2 text-[10px] text-slate-400 font-mono pointer-events-none">
+                <span className="absolute right-2.5 top-2 text-xs text-slate-400 font-mono pointer-events-none font-bold">
                   {targetUnit}
                 </span>
               </div>
@@ -116,14 +116,14 @@ export const EditPlanExerciseModal = ({
           </div>
 
           <div>
-            <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+            <label className="block text-xs font-bold text-slate-200 mb-1">
               Routine Notes / Cues
             </label>
             <textarea
               rows="2"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="w-full px-3 py-2 bg-midnight-bg border border-midnight-border rounded-xl text-white text-xs placeholder-slate-600 focus:outline-none focus:border-neon-cyan resize-none"
+              className="w-full px-3.5 py-2.5 bg-midnight-bg border border-slate-700 rounded-xl text-white text-xs placeholder-slate-500 focus:outline-none focus:border-neon-cyan resize-none"
             />
           </div>
 

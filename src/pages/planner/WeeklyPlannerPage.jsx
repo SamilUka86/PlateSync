@@ -705,14 +705,14 @@ export const WeeklyPlannerPage = ({ setActiveTab }) => {
                             )}
                           </div>
 
-                          <div className="flex items-center gap-2 text-[11px] text-slate-400 flex-wrap">
-                            <span className="text-slate-300 font-semibold">{ex.muscle}</span>
+                          <div className="flex items-center gap-2 text-xs text-slate-300 flex-wrap">
+                            <span className="text-neon-cyan font-bold">{ex.muscle}</span>
                             <span>•</span>
-                            <span>{ex.equipment}</span>
+                            <span className="font-medium text-slate-200">{ex.equipment}</span>
                             {ex.notes && (
                               <>
                                 <span>•</span>
-                                <span className="text-slate-500 italic truncate max-w-xs">{ex.notes}</span>
+                                <span className="text-slate-400 italic truncate max-w-xs">{ex.notes}</span>
                               </>
                             )}
                           </div>
@@ -723,15 +723,15 @@ export const WeeklyPlannerPage = ({ setActiveTab }) => {
                       <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-midnight-border">
                         {/* Target Stats Box */}
                         <div className="flex items-center gap-2 text-right">
-                          <div className="px-3 py-1.5 rounded-xl bg-midnight-bg border border-midnight-border font-mono text-center">
-                            <p className="text-[10px] text-slate-500 uppercase font-bold">Sets × Reps</p>
-                            <p className="text-xs font-bold text-white">{ex.targetSets} × {ex.targetReps}</p>
+                          <div className="px-3.5 py-1.5 rounded-xl bg-midnight-bg border border-slate-700/80 font-mono text-center">
+                            <p className="text-[10px] text-slate-300 uppercase font-bold tracking-wider">Sets × Reps</p>
+                            <p className="text-xs sm:text-sm font-black text-white">{ex.targetSets} × {ex.targetReps}</p>
                           </div>
 
                           {Number(ex.targetWeight) > 0 && (
-                            <div className="px-3 py-1.5 rounded-xl bg-midnight-bg border border-midnight-border font-mono text-center">
-                              <p className="text-[10px] text-slate-500 uppercase font-bold">Target Wt</p>
-                              <p className="text-xs font-bold text-neon-cyan">
+                            <div className="px-3.5 py-1.5 rounded-xl bg-midnight-bg border border-slate-700/80 font-mono text-center">
+                              <p className="text-[10px] text-slate-300 uppercase font-bold tracking-wider">Target Wt</p>
+                              <p className="text-xs sm:text-sm font-black text-neon-cyan">
                                 {ex.targetWeight} {ex.unit || 'KG'}
                               </p>
                             </div>

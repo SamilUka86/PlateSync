@@ -370,9 +370,9 @@ export const AddPlanExerciseModal = ({
               </div>
 
               {/* List of Filtered Exercises */}
-              <div className="border border-midnight-border rounded-2xl bg-midnight-bg/60 overflow-hidden divide-y divide-midnight-border max-h-56 overflow-y-auto">
+              <div className="border border-midnight-border rounded-2xl bg-midnight-bg/80 overflow-hidden divide-y divide-midnight-border max-h-[380px] md:max-h-[460px] overflow-y-auto">
                 {filteredExercises.length === 0 ? (
-                  <div className="p-6 text-center text-slate-500 text-xs">
+                  <div className="p-8 text-center text-slate-400 text-xs font-medium">
                     No matching exercises found. Try searching another term or build a custom one!
                   </div>
                 ) : (
@@ -382,43 +382,43 @@ export const AddPlanExerciseModal = ({
                       <div
                         key={ex.id}
                         onClick={() => handleSelectLibraryItem(ex)}
-                        className={`p-3 flex items-center justify-between cursor-pointer transition ${
+                        className={`p-3.5 flex items-center justify-between cursor-pointer transition ${
                           isSelected
                             ? 'bg-neon-cyan/15 border-l-4 border-l-neon-cyan'
                             : 'hover:bg-midnight-elevated'
                         }`}
                       >
                         <div className="min-w-0 pr-3">
-                          <p className={`text-xs font-bold truncate ${isSelected ? 'text-neon-cyan' : 'text-white'}`}>
+                          <p className={`text-sm font-bold truncate ${isSelected ? 'text-neon-cyan' : 'text-white'}`}>
                             {ex.name}
                           </p>
-                          <div className="flex items-center gap-2 mt-0.5 text-[10px] text-slate-400">
-                            <span className="px-1.5 py-0.5 rounded bg-midnight-card border border-midnight-border text-slate-300">
+                          <div className="flex flex-wrap items-center gap-2 mt-1 text-xs">
+                            <span className="px-2 py-0.5 rounded-md bg-neon-cyan/10 border border-neon-cyan/30 text-neon-cyan font-bold text-[11px]">
                               {ex.muscle}
                             </span>
                             {ex.subgroup && (
-                              <span className="px-1.5 py-0.5 rounded bg-neon-violet/10 text-neon-violet border border-neon-violet/20 font-semibold">
+                              <span className="px-2 py-0.5 rounded-md bg-neon-violet/15 text-neon-violet border border-neon-violet/30 font-bold text-[11px]">
                                 {ex.subgroup}
                               </span>
                             )}
-                            <span>•</span>
-                            <span>{ex.equipment}</span>
+                            <span className="text-slate-300 font-medium text-[11px]">
+                              {ex.equipment}
+                            </span>
                             {ex.type && (
-                              <>
-                                <span>•</span>
-                                <span className="text-slate-400">{ex.type}</span>
-                              </>
+                              <span className="text-slate-400 text-[11px]">
+                                • {ex.type}
+                              </span>
                             )}
                           </div>
                         </div>
 
                         <div className="shrink-0">
                           {isSelected ? (
-                            <span className="w-6 h-6 rounded-full bg-neon-cyan text-slate-950 flex items-center justify-center font-bold">
-                              <Check className="w-3.5 h-3.5" />
+                            <span className="w-7 h-7 rounded-full bg-neon-cyan text-slate-950 flex items-center justify-center font-black shadow-md shadow-neon-cyan/30">
+                              <Check className="w-4 h-4" />
                             </span>
                           ) : (
-                            <span className="px-2.5 py-1 rounded-lg bg-midnight-card hover:bg-neon-cyan hover:text-slate-950 border border-midnight-border text-slate-300 text-[10px] font-bold transition">
+                            <span className="px-3.5 py-1.5 rounded-xl bg-neon-cyan/10 hover:bg-neon-cyan hover:text-slate-950 border border-neon-cyan/30 text-neon-cyan text-xs font-black transition active:scale-95">
                               Select
                             </span>
                           )}
@@ -444,7 +444,7 @@ export const AddPlanExerciseModal = ({
 
                   <div className="grid grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                      <label className="block text-xs font-bold text-slate-200 mb-1">
                         Target Sets
                       </label>
                       <input
@@ -453,12 +453,12 @@ export const AddPlanExerciseModal = ({
                         max="20"
                         value={targetSets}
                         onChange={(e) => setTargetSets(e.target.value)}
-                        className="w-full px-3 py-2 bg-midnight-bg border border-midnight-border rounded-xl text-white text-xs font-mono focus:outline-none focus:border-neon-cyan"
+                        className="w-full px-3 py-2 bg-midnight-bg border border-slate-700 rounded-xl text-white text-xs md:text-sm font-bold font-mono focus:outline-none focus:border-neon-cyan"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                      <label className="block text-xs font-bold text-slate-200 mb-1">
                         Target Reps
                       </label>
                       <input
@@ -466,19 +466,19 @@ export const AddPlanExerciseModal = ({
                         value={targetReps}
                         onChange={(e) => setTargetReps(e.target.value)}
                         placeholder="e.g. 8-10 or 12"
-                        className="w-full px-3 py-2 bg-midnight-bg border border-midnight-border rounded-xl text-white text-xs font-mono focus:outline-none focus:border-neon-cyan"
+                        className="w-full px-3 py-2 bg-midnight-bg border border-slate-700 rounded-xl text-white text-xs md:text-sm font-bold font-mono focus:outline-none focus:border-neon-cyan"
                       />
                     </div>
 
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <label className="text-[11px] font-semibold text-slate-300">
+                        <label className="text-xs font-bold text-slate-200">
                           Target Weight
                         </label>
                         <button
                           type="button"
                           onClick={() => setTargetUnit(prev => prev === 'KG' ? 'LB' : 'KG')}
-                          className="text-[10px] font-mono font-bold text-neon-cyan hover:underline"
+                          className="text-xs font-mono font-bold text-neon-cyan hover:underline"
                         >
                           {targetUnit}
                         </button>
@@ -490,9 +490,9 @@ export const AddPlanExerciseModal = ({
                           min="0"
                           value={targetWeight}
                           onChange={(e) => setTargetWeight(e.target.value)}
-                          className="w-full px-3 py-2 bg-midnight-bg border border-midnight-border rounded-xl text-white text-xs font-mono focus:outline-none focus:border-neon-cyan"
+                          className="w-full px-3 py-2 bg-midnight-bg border border-slate-700 rounded-xl text-white text-xs md:text-sm font-bold font-mono focus:outline-none focus:border-neon-cyan"
                         />
-                        <span className="absolute right-3 top-2.5 text-[10px] text-slate-400 font-mono pointer-events-none">
+                        <span className="absolute right-3 top-2 text-xs text-slate-400 font-mono pointer-events-none font-bold">
                           {targetUnit}
                         </span>
                       </div>
@@ -500,7 +500,7 @@ export const AddPlanExerciseModal = ({
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                    <label className="block text-xs font-bold text-slate-200 mb-1">
                       Routine Notes / Rest Guidance (Optional)
                     </label>
                     <input
@@ -508,7 +508,7 @@ export const AddPlanExerciseModal = ({
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                       placeholder="e.g. 2 min rest, focus on slow eccentric"
-                      className="w-full px-3 py-2 bg-midnight-bg border border-midnight-border rounded-xl text-white text-xs placeholder-slate-600 focus:outline-none focus:border-neon-cyan"
+                      className="w-full px-3.5 py-2.5 bg-midnight-bg border border-slate-700 rounded-xl text-white text-xs placeholder-slate-500 focus:outline-none focus:border-neon-cyan"
                     />
                   </div>
                 </div>

@@ -234,7 +234,8 @@ export const WorkoutTrackerPage = ({ setActiveTab }) => {
       }
       const vibrateOn = localStorage.getItem('platesync_timer_vibrate') !== 'false';
       if (vibrateOn) {
-        triggerVibration([300, 100, 300, 100, 500]);
+        // Vibrates up to 5 full seconds for gym floor awareness
+        triggerVibration([800, 200, 800, 200, 800, 200, 800, 200, 1000]);
       }
       addNotification('Rest period complete! Get ready for your next set.', 'info', 4000);
       return;
@@ -833,7 +834,7 @@ export const WorkoutTrackerPage = ({ setActiveTab }) => {
                               min="0"
                               value={set.weight}
                               onChange={(e) => handleUpdateSet(exIdx, setIdx, 'weight', parseFloat(e.target.value) || 0)}
-                              className="w-24 px-2.5 py-1.5 bg-midnight-bg border border-midnight-border rounded-lg text-white font-mono text-xs focus:outline-none focus:border-neon-cyan"
+                              className="w-24 px-2.5 py-1.5 bg-midnight-bg border border-slate-700 rounded-lg text-white font-mono text-xs sm:text-sm font-bold focus:outline-none focus:border-neon-cyan"
                             />
                             {stagedWeight && (
                               <button
@@ -852,7 +853,7 @@ export const WorkoutTrackerPage = ({ setActiveTab }) => {
                           <select
                             value={set.unit}
                             onChange={(e) => handleUpdateSet(exIdx, setIdx, 'unit', e.target.value)}
-                            className="px-2 py-1.5 bg-midnight-bg border border-midnight-border rounded-lg text-white text-xs font-mono font-bold focus:outline-none focus:border-neon-cyan"
+                            className="px-2 py-1.5 bg-midnight-bg border border-slate-700 rounded-lg text-white text-xs sm:text-sm font-mono font-bold focus:outline-none focus:border-neon-cyan"
                           >
                             <option value="KG">KG</option>
                             <option value="LB">LB</option>
@@ -865,7 +866,7 @@ export const WorkoutTrackerPage = ({ setActiveTab }) => {
                             min="1"
                             value={set.reps}
                             onChange={(e) => handleUpdateSet(exIdx, setIdx, 'reps', parseInt(e.target.value, 10) || 0)}
-                            className="w-16 px-2.5 py-1.5 bg-midnight-bg border border-midnight-border rounded-lg text-white font-mono text-xs focus:outline-none focus:border-neon-cyan"
+                            className="w-16 px-2.5 py-1.5 bg-midnight-bg border border-slate-700 rounded-lg text-white font-mono text-xs sm:text-sm font-bold focus:outline-none focus:border-neon-cyan"
                           />
                         </td>
 
@@ -1261,33 +1262,33 @@ export const WorkoutTrackerPage = ({ setActiveTab }) => {
                       >
                         <div className="min-w-0 pr-3">
                           <div className="flex items-center gap-2">
-                            <h4 className="text-xs font-bold text-white group-hover:text-neon-cyan transition truncate">
+                            <h4 className="text-sm font-bold text-white group-hover:text-neon-cyan transition truncate">
                               {ex.name}
                             </h4>
                             {ex.isLegPress45 && (
-                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/30 font-semibold shrink-0">
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-neon-cyan/15 text-neon-cyan border border-neon-cyan/40 font-bold shrink-0">
                                 45° Sled 0 kg
                               </span>
                             )}
                             {ex.type && (
-                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-midnight-elevated text-slate-400 font-medium shrink-0">
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-midnight-elevated text-slate-300 font-semibold shrink-0">
                                 {ex.type}
                               </span>
                             )}
                           </div>
-                          <div className="flex flex-wrap items-center gap-1.5 mt-1 text-[11px] text-slate-400">
-                            <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/20">
+                          <div className="flex flex-wrap items-center gap-2 mt-1 text-xs">
+                            <span className="text-xs font-bold px-2 py-0.5 rounded bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/30">
                               {ex.muscle}
                             </span>
                             {ex.subgroup && (
-                              <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-neon-violet/10 text-neon-violet border border-neon-violet/20">
+                              <span className="text-xs font-semibold px-2 py-0.5 rounded bg-neon-violet/15 text-neon-violet border border-neon-violet/30">
                                 {ex.subgroup}
                               </span>
                             )}
-                            <span>&bull;</span>
-                            <span className="font-mono text-[10px] text-slate-300">{ex.equipment}</span>
-                            <span>&bull;</span>
-                            <span className="text-[10px]">{ex.difficulty}</span>
+                            <span className="text-slate-300 font-medium">{ex.equipment}</span>
+                            {ex.difficulty && (
+                              <span className="text-slate-400 font-medium">• {ex.difficulty}</span>
+                            )}
                           </div>
                         </div>
 

@@ -89,12 +89,31 @@ export const playCountdownTick = () => {
 
 /**
  * Trigger device vibration (Haptic feedback)
- * Typical gym rest buzzer: 2 short pulses then 1 long pulse
+ * Heavy gym buzzer: 5 full seconds of pulsating haptic buzzes
+ * (800ms on, 200ms pause, 800ms on, 200ms pause, 800ms on, 200ms pause, 800ms on, 200ms pause, 1000ms on = 5000ms total)
  */
-export const triggerVibration = (pattern = [300, 100, 300, 100, 500]) => {
+export const triggerVibration = (pattern = [800, 200, 800, 200, 800, 200, 800, 200, 1000]) => {
   if (typeof window !== 'undefined' && typeof navigator !== 'undefined' && 'vibrate' in navigator) {
     try {
       navigator.vibrate(pattern);
+    } catch (e) {}
+  }
+};
+
+/**
+ * Explicit 5-second long vibration
+ */
+export const trigger5SecVibration = () => {
+  triggerVibration([800, 200, 800, 200, 800, 200, 800, 200, 1000]);
+};
+
+/**
+ * Cancel any ongoing vibration
+ */
+export const stopVibration = () => {
+  if (typeof window !== 'undefined' && typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+    try {
+      navigator.vibrate(0);
     } catch (e) {}
   }
 };
@@ -105,7 +124,7 @@ export const triggerVibration = (pattern = [300, 100, 300, 100, 500]) => {
 export const triggerShortHaptic = () => {
   if (typeof window !== 'undefined' && typeof navigator !== 'undefined' && 'vibrate' in navigator) {
     try {
-      navigator.vibrate(40);
+      navigator.vibrate(60);
     } catch (e) {}
   }
 };

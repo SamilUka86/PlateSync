@@ -93,7 +93,8 @@ export const usePWAInstall = () => {
   // Trigger installation or open guidance modal
   const promptInstall = useCallback(async (onSuccess, onError) => {
     if (isStandalone) {
-      if (onSuccess) onSuccess('PlateSync is already installed on your device!');
+      if (onSuccess) onSuccess('PlateSync is installed on your device!');
+      setIsModalOpen(true);
       return;
     }
 
@@ -111,7 +112,8 @@ export const usePWAInstall = () => {
           if (onSuccess) onSuccess('PlateSync successfully installed!');
         } else {
           setInstallStatus('can_prompt');
-          if (onError) onError('Installation dismissed.');
+          if (onError) onError('Installation prompt dismissed.');
+          setIsModalOpen(true);
         }
       } catch (err) {
         setInstallStatus('how_to_install');
@@ -120,23 +122,17 @@ export const usePWAInstall = () => {
       return;
     }
 
-    // Otherwise show step-by-step instructions modal (iOS, or Android without prompt)
+    // Otherwise show step-by-step instructions modal (iOS, or Android/Desktop without prompt)
     setIsModalOpen(true);
   }, [deferredPrompt, isStandalone]);
 
-  // Derived button text according to specification
+  // Derived button text
   const getButtonLabel = () => {
     if (isStandalone || installStatus === 'installed') {
       return 'Installed';
     }
     if (installStatus === 'installing') {
       return 'Installing...';
-    }
-    if (deferredPrompt) {
-      return 'Install App';
-    }
-    if (isIOS) {
-      return 'How to Install';
     }
     return 'Install App';
   };
