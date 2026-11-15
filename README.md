@@ -89,17 +89,30 @@
 | **Visual Analytics** | [Recharts 2.15](https://recharts.org/) | Responsive SVG line, bar, and area charts for workout volume and PR trends |
 | **Iconography** | [Lucide React](https://lucide.dev/) | Clean, scalable vector icons |
 | **Security & Crypto** | [Web Crypto API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API) | Client-side SHA-256 cryptographic one-way hashing for secure administration |
-| **Deployment** | [Vercel](https://platesyncapp.vercel.app/) | Edge hosting, global CDN caching, and automated deployment pipelines |
-
----
-
-
+| **Deployment** | [Vercel](https://vercel.com/) | Edge hosting, global CDN caching, and automated deployment pipelines |
 
 ---
 
 ## 🌐 Live Website
 
 PlateSync is deployed and accessible worldwide:
-- **Official Website**: [https://platesync.vercel.app](https://platesyncapp.vercel.app)
+- **Official Website**: [https://platesync.vercel.app](https://platesync.vercel.app)
+- **Direct App Link**: [https://platesyncapp.vercel.app](https://platesyncapp.vercel.app)
 
 ---
+
+## 👨‍💻 Author & Connect
+
+**Samil Uka**  
+*Full Stack Developer & Fitness Enthusiast*
+
+- 🐙 **GitHub**: [@SamilUka86](https://github.com/SamilUka86)
+- 💼 **LinkedIn**: [Samil Uka](https://www.linkedin.com/in/samil-uka-53049b359)
+- 📸 **Instagram**: [@_.samil._86](https://www.instagram.com/_.samil._86)
+- ✉️ **Contact Support**: [platesync86@gmail.com](mailto:platesync86@gmail.com)
+
+---
+
+## 📄 License
+
+This project is open-source and available under the **MIT License**.
