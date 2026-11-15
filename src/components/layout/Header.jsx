@@ -8,12 +8,21 @@ import {
   ShieldCheck,
   ChevronRight,
   LogIn,
-  CheckCircle2
+  CheckCircle2,
+  Globe,
+  ChevronDown,
+  Search,
+  Check
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
 import { usePWAInstall } from '../../hooks/usePWAInstall';
 import { PWAInstallModal } from '../pwa/PWAInstallModal';
+import { 
+  SUPPORTED_LANGUAGES, 
+  getCurrentLanguage, 
+  changeWebsiteLanguage 
+} from '../../services/translation/websiteTranslator';
 
 export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, setCollapsed, onOpenAuth }) => {
   const { currentUser, userProfile, updateProfile, isDemoMode, isDevTester, demoAccessMode, toggleDemoAccessMode, logout } = useAuth();
@@ -36,6 +45,27 @@ export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, s
       (msg) => addNotification(msg, 'success'),
       (err) => addNotification(err, 'info')
     );
+  };
+
+  // Global Website Language Translation State
+  const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
+  const [langSearch, setLangSearch] = useState('');
+  const [currentLang, setCurrentLang] = useState(getCurrentLanguage);
+
+  useEffect(() => {
+    setCurrentLang(getCurrentLanguage());
+  }, []);
+
+  const handleSelectLanguage = (lang) => {
+    setIsLangMenuOpen(false);
+    setCurrentLang(lang);
+    addNotification(
+      lang.code === 'en' 
+        ? 'Restored English original language' 
+        : `Translating whole website to ${lang.name} (${lang.nativeName})...`,
+      'info'
+    );
+    changeWebsiteLanguage(lang.code);
   };
 
   const currentUnit = (userProfile?.preferredUnit === 'LB' || userProfile?.preferredUnit === 'LBS') ? 'LBS' : 'KG';
@@ -166,6 +196,105 @@ export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, s
           )}
           <span className="text-xs font-bold">{buttonLabel}</span>
         </button>
+
+        {/* Global Website Translation Button (Left to KG) */}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setIsLangMenuOpen(prev => !prev)}
+            className="shrink-0 flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border border-midnight-border bg-midnight-card hover:bg-midnight-elevated text-slate-200 text-xs font-bold transition active:scale-95 shadow-sm"
+            title="Translate website / entire app to any language"
+            aria-label="Translate whole website"
+          >
+            <Globe className="w-3.5 h-3.5 text-neon-cyan shrink-0" />
+            <span className="text-[13px] leading-none shrink-0">{currentLang.flag}</span>
+            <span className="hidden sm:inline font-mono text-xs">{currentLang.shortCode || currentLang.code.toUpperCase()}</span>
+            <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
+          </button>
+
+          {/* Full-screen Backdrop for click-outside */}
+          {isLangMenuOpen && (
+            <div 
+              className="fixed inset-0 z-40" 
+              onClick={() => setIsLangMenuOpen(false)} 
+            />
+          )}
+
+          {/* Dropdown Menu */}
+          {isLangMenuOpen && (
+            <div className="absolute right-0 sm:right-auto sm:left-0 mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-2xl bg-midnight-card/95 backdrop-blur-xl border border-midnight-border shadow-2xl z-50 p-3 space-y-2.5 animate-in fade-in zoom-in-95 duration-150">
+              <div className="flex items-center justify-between pb-2 border-b border-midnight-border">
+                <div className="flex items-center gap-2">
+                  <Globe className="w-4 h-4 text-neon-cyan" />
+                  <span className="text-xs font-bold text-white">Translate Website</span>
+                </div>
+                {currentLang.code !== 'en' && (
+                  <button
+                    type="button"
+                    onClick={() => handleSelectLanguage(SUPPORTED_LANGUAGES[0])}
+                    className="text-[10px] text-neon-cyan hover:underline font-semibold"
+                  >
+                    Reset (EN)
+                  </button>
+                )}
+              </div>
+
+              {/* Search input */}
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Search language..."
+                  value={langSearch}
+                  onChange={(e) => setLangSearch(e.target.value)}
+                  className="w-full pl-8 pr-3 py-1.5 bg-midnight-bg border border-midnight-border rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-neon-cyan"
+                  autoFocus
+                />
+              </div>
+
+              {/* Language list */}
+              <div className="max-h-60 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
+                {SUPPORTED_LANGUAGES.filter(l => 
+                  !langSearch || 
+                  l.name.toLowerCase().includes(langSearch.toLowerCase()) || 
+                  l.nativeName.toLowerCase().includes(langSearch.toLowerCase()) ||
+                  l.code.toLowerCase().includes(langSearch.toLowerCase())
+                ).map(lang => {
+                  const isSelected = lang.code === currentLang.code;
+                  return (
+                    <button
+                      key={lang.code}
+                      type="button"
+                      onClick={() => handleSelectLanguage(lang)}
+                      className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs transition text-left ${
+                        isSelected 
+                          ? 'bg-neon-cyan/15 text-neon-cyan font-bold border border-neon-cyan/30' 
+                          : 'text-slate-300 hover:bg-midnight-elevated hover:text-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span className="text-base shrink-0">{lang.flag}</span>
+                        <div className="min-w-0 truncate">
+                          <span className="block truncate font-medium text-white text-xs">{lang.name}</span>
+                          <span className="block text-[10px] text-slate-400 font-normal">{lang.nativeName}</span>
+                        </div>
+                      </div>
+                      {isSelected && (
+                        <Check className="w-3.5 h-3.5 text-neon-cyan shrink-0 ml-2" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="pt-2 border-t border-midnight-border text-center">
+                <p className="text-[10px] text-slate-400">
+                  Translates all pages & components across PlateSync
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Global Unit Switcher */}
         <button

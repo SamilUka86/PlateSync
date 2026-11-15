@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   User, 
   Mail, 
@@ -8,13 +8,19 @@ import {
   Save, 
   Check, 
   Calendar,
-  Sparkles
+  Sparkles,
+  Star,
+  ChevronRight,
+  Flame,
+  ExternalLink
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
 import { KG_TO_LBS } from '../../utils/weightCalculations';
+import { EXERCISE_DATABASE } from '../../utils/exerciseData';
+import { ExerciseDetailModal } from '../../components/library/ExerciseDetailModal';
 
-export const ProfilePage = () => {
+export const ProfilePage = ({ setActiveTab }) => {
   const { userProfile, currentUser, updateProfile, isDemoMode } = useAuth();
   const { addNotification } = useNotification();
 
@@ -24,6 +30,47 @@ export const ProfilePage = () => {
     if (document.documentElement) document.documentElement.scrollTop = 0;
     if (document.body) document.body.scrollTop = 0;
   }, []);
+
+  // Favorite Workouts & Exercises State
+  const [favoriteIds, setFavoriteIds] = useState(() => {
+    try {
+      const stored = localStorage.getItem('platesync_favorite_exercises');
+      return stored ? JSON.parse(stored) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const [selectedExerciseForModal, setSelectedExerciseForModal] = useState(null);
+
+  const handleRemoveFavorite = (exerciseId, e) => {
+    if (e) e.stopPropagation();
+    const updated = favoriteIds.filter(id => id !== exerciseId);
+    setFavoriteIds(updated);
+    try {
+      localStorage.setItem('platesync_favorite_exercises', JSON.stringify(updated));
+    } catch (err) {}
+    addNotification('Removed workout from favorites', 'info');
+  };
+
+  const handleToggleFavoriteFromModal = (exerciseId) => {
+    if (favoriteIds.includes(exerciseId)) {
+      handleRemoveFavorite(exerciseId);
+    } else {
+      const updated = [...favoriteIds, exerciseId];
+      setFavoriteIds(updated);
+      try {
+        localStorage.setItem('platesync_favorite_exercises', JSON.stringify(updated));
+      } catch (err) {}
+      addNotification('Added workout to favorites ⭐', 'success');
+    }
+  };
+
+  const favoriteWorkouts = useMemo(() => {
+    return favoriteIds
+      .map(id => EXERCISE_DATABASE.find(ex => ex.id === id))
+      .filter(Boolean);
+  }, [favoriteIds]);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -239,6 +286,112 @@ export const ProfilePage = () => {
           </button>
         </div>
       </form>
+
+      {/* Favorite Workouts & Exercises Section */}
+      <div className="bg-midnight-card border border-midnight-border rounded-3xl p-6 md:p-8 space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-midnight-border pb-4">
+          <div className="space-y-1">
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
+              Favorite Workouts & Exercises
+              <span className="px-2.5 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/30 text-amber-400 text-xs font-mono font-bold ml-1.5">
+                {favoriteWorkouts.length}
+              </span>
+            </h3>
+            <p className="text-xs text-slate-400">
+              Quick access to your bookmarked benchmark lifts, compound routines, and training movements.
+            </p>
+          </div>
+
+          {setActiveTab && (
+            <button
+              type="button"
+              onClick={() => setActiveTab('library')}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-midnight-border bg-midnight-bg hover:bg-midnight-elevated text-neon-cyan hover:text-white text-xs font-bold transition shrink-0 self-start sm:self-auto"
+            >
+              <Dumbbell className="w-3.5 h-3.5" />
+              <span>Browse Exercise Library</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
+        {/* Favorite Workouts Grid or Empty State */}
+        {favoriteWorkouts.length === 0 ? (
+          <div className="p-8 rounded-2xl bg-midnight-bg border border-dashed border-midnight-border text-center space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-amber-400/10 border border-amber-400/20 text-amber-400 flex items-center justify-center mx-auto">
+              <Star className="w-6 h-6" />
+            </div>
+            <div className="space-y-1">
+              <h4 className="text-sm font-bold text-white">No Favorite Workouts Added Yet</h4>
+              <p className="text-xs text-slate-400 max-w-md mx-auto">
+                While browsing the Exercise Library or logging workouts in the Tracker, tap the ⭐ star icon on any movement to save it here for rapid access.
+              </p>
+            </div>
+            {setActiveTab && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('library')}
+                className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-neon-cyan text-slate-950 text-xs font-bold hover:bg-[#29bfcd] transition shadow-md shadow-neon-cyan/20"
+              >
+                <Dumbbell className="w-4 h-4" />
+                <span>Explore Exercise Library</span>
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            {favoriteWorkouts.map((workout) => (
+              <div
+                key={workout.id}
+                onClick={() => setSelectedExerciseForModal(workout)}
+                className="group p-4 rounded-2xl bg-midnight-bg border border-midnight-border hover:border-neon-cyan/50 hover:bg-midnight-secondary/60 transition cursor-pointer flex flex-col justify-between space-y-3 relative shadow-sm"
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-bold font-mono uppercase bg-neon-cyan/10 border border-neon-cyan/30 text-neon-cyan">
+                      {workout.muscle}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={(e) => handleRemoveFavorite(workout.id, e)}
+                      className="p-1 rounded-lg text-amber-400 hover:text-rose-400 hover:bg-rose-500/10 transition"
+                      title="Remove from favorites"
+                    >
+                      <Star className="w-4 h-4 fill-amber-400" />
+                    </button>
+                  </div>
+
+                  <h4 className="text-sm font-bold text-white group-hover:text-neon-cyan transition line-clamp-1">
+                    {workout.name}
+                  </h4>
+                  <p className="text-[11px] text-slate-400 mt-1 line-clamp-1">
+                    {workout.subgroup || workout.category || workout.equipment}
+                  </p>
+                </div>
+
+                <div className="pt-2 border-t border-midnight-border/60 flex items-center justify-between text-[11px] text-slate-400">
+                  <span className="font-mono">{workout.equipment}</span>
+                  <span className="text-neon-cyan font-bold flex items-center gap-1 group-hover:translate-x-0.5 transition">
+                    View Guide
+                    <ChevronRight className="w-3 h-3" />
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Exercise Detail Modal with complete guides & translation support */}
+      {selectedExerciseForModal && (
+        <ExerciseDetailModal
+          exercise={selectedExerciseForModal}
+          onClose={() => setSelectedExerciseForModal(null)}
+          isFavorite={favoriteIds.includes(selectedExerciseForModal.id)}
+          onToggleFavorite={handleToggleFavoriteFromModal}
+        />
+      )}
 
     </div>
   );

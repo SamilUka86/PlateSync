@@ -10,7 +10,7 @@ export const MAIN_MUSCLE_GROUPS = [
   'Shoulders',
   'Biceps',
   'Triceps',
-  'Thighs',
+  'Legs',
   'Abs'
 ];
 
@@ -51,6 +51,13 @@ export const MUSCLE_SUBGROUPS = {
     'Long Head',
     'Lateral Head',
     'Medial Head'
+  ],
+  'Legs': [
+    'Quadriceps',
+    'Hamstrings',
+    'Adductors (Inner Thigh)',
+    'Abductors (Outer Hip)',
+    'Glutes'
   ],
   'Thighs': [
     'Quadriceps',
@@ -814,7 +821,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "romanian-deadlift",
     "name": "Romanian Deadlift",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Hamstrings & Glutes",
       "Forearms"
@@ -3007,7 +3014,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "barbell-back-squat",
     "name": "Barbell Back Squat",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Glutes",
       "Hamstrings",
@@ -3051,7 +3058,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "front-squat",
     "name": "Front Squat",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Upper Back",
       "Core",
@@ -3093,7 +3100,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "goblet-squat",
     "name": "Goblet Squat",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Glutes",
       "Core"
@@ -3131,7 +3138,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "hack-squat",
     "name": "Hack Squat",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Glutes"
     ],
@@ -3167,7 +3174,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "leg-press-45-degree",
     "name": "Leg Press (45-Degree)",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Glutes",
       "Hamstrings",
@@ -3208,7 +3215,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "horizontal-leg-press",
     "name": "Horizontal Leg Press",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Glutes"
     ],
@@ -3245,7 +3252,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "leg-extension",
     "name": "Leg Extension",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Rectus Femoris"
     ],
@@ -3281,7 +3288,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "walking-lunges",
     "name": "Walking Lunges",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Glutes",
       "Hamstrings",
@@ -3321,7 +3328,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "reverse-lunges",
     "name": "Reverse Lunges",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Glutes",
       "Hamstrings"
@@ -3358,7 +3365,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "bulgarian-split-squats",
     "name": "Bulgarian Split Squats",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Glutes",
       "Hamstrings",
@@ -3397,7 +3404,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "step-ups",
     "name": "Step-ups",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Glutes",
       "Calves"
@@ -3434,7 +3441,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "sissy-squats",
     "name": "Sissy Squats",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Rectus Femoris",
       "Core"
@@ -3470,7 +3477,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "zercher-squat",
     "name": "Zercher Squat",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Upper Back",
       "Core",
@@ -3512,7 +3519,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "belt-squat",
     "name": "Belt Squat",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Glutes"
     ],
@@ -3547,7 +3554,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "stiff-legged-deadlift",
     "name": "Stiff-Legged Deadlift",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Lower Back"
     ],
@@ -3586,7 +3593,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "lying-leg-curl",
     "name": "Lying Leg Curl",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Calves"
     ],
@@ -3622,7 +3629,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "seated-leg-curl",
     "name": "Seated Leg Curl",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Calves"
     ],
@@ -3658,7 +3665,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "standing-single-leg-curl",
     "name": "Standing Single-Leg Curl",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Calves"
     ],
@@ -3693,7 +3700,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "nordic-hamstring-curl",
     "name": "Nordic Hamstring Curl",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Calves",
       "Core"
@@ -3729,7 +3736,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "good-mornings",
     "name": "Good Mornings",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Spinal Erectors",
       "Core"
@@ -3770,7 +3777,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "hip-thrust",
     "name": "Hip Thrust",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Hamstrings",
       "Core"
@@ -3810,7 +3817,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "barbell-glute-bridge",
     "name": "Barbell Glute Bridge",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Hamstrings"
     ],
@@ -3847,7 +3854,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "cable-glute-kickback",
     "name": "Cable Glute Kickback",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Hamstrings"
     ],
@@ -3919,7 +3926,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "glute-ham-raise",
     "name": "Glute Ham Raise",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Calves",
       "Spinal Erectors"
@@ -3957,7 +3964,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "cable-pull-through",
     "name": "Cable Pull-Through",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Lower Back"
     ],
@@ -3993,7 +4000,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "dumbbell-romanian-deadlift",
     "name": "Dumbbell Romanian Deadlift",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Lower Back",
       "Forearms"
@@ -4030,7 +4037,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "frog-pumps",
     "name": "Frog Pumps",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Adductors"
     ],
@@ -4065,7 +4072,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "standing-calf-raise",
     "name": "Standing Calf Raise",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Soleus"
     ],
@@ -4102,7 +4109,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "seated-calf-raise",
     "name": "Seated Calf Raise",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Gastrocnemius"
     ],
@@ -4137,7 +4144,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "leg-press-calf-raise",
     "name": "Leg Press Calf Raise",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Soleus"
     ],
@@ -4173,7 +4180,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "donkey-calf-raise",
     "name": "Donkey Calf Raise",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Soleus"
     ],
@@ -4208,7 +4215,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "single-leg-calf-raise",
     "name": "Single-Leg Calf Raise",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Ankle Stabilizers"
     ],
@@ -5158,7 +5165,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "kettlebell-swing",
     "name": "Kettlebell Swing",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Hamstrings & Glutes",
       "Lower Back",
@@ -5199,7 +5206,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "thrusters",
     "name": "Thrusters",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Quadriceps",
       "Shoulders",
@@ -5282,7 +5289,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "burpees",
     "name": "Burpees",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Chest",
       "Quadriceps",
@@ -5363,7 +5370,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "tire-flip",
     "name": "Tire Flip",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Legs",
       "Back",
@@ -5403,7 +5410,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "sled-push",
     "name": "Sled Push",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Quadriceps",
       "Calves",
@@ -5444,7 +5451,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "sled-pull",
     "name": "Sled Pull",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Hamstrings",
       "Glutes",
@@ -5912,7 +5919,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "curtsy-lunge",
     "name": "Curtsy Lunge",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Gluteus Medius",
       "Quadriceps"
@@ -5990,7 +5997,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "seated-dumbbell-calf-raise",
     "name": "Seated Dumbbell Calf Raise",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "secondaryMuscles": [
       "Soleus"
     ],
@@ -6567,7 +6574,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "machine-adductor",
     "name": "Seated Machine Hip Adduction",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "subgroup": "Adductors (Inner Thigh)",
     "subgroups": [
       "Adductors (Inner Thigh)"
@@ -6607,7 +6614,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "cable-hip-adduction",
     "name": "Standing Cable Hip Adduction",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "subgroup": "Adductors (Inner Thigh)",
     "subgroups": [
       "Adductors (Inner Thigh)"
@@ -6647,7 +6654,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "copenhagen-plank",
     "name": "Copenhagen Plank (Inner Thigh & Core)",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "subgroup": "Adductors (Inner Thigh)",
     "subgroups": [
       "Adductors (Inner Thigh)",
@@ -6688,7 +6695,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "sumo-squat",
     "name": "Wide-Stance Barbell Sumo Squat",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "subgroup": "Adductors (Inner Thigh)",
     "subgroups": [
       "Adductors (Inner Thigh)",
@@ -6732,7 +6739,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "machine-abductor",
     "name": "Seated Machine Hip Abduction",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "subgroup": "Abductors (Outer Hip)",
     "subgroups": [
       "Abductors (Outer Hip)",
@@ -6773,7 +6780,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "cable-hip-abduction",
     "name": "Standing Cable Hip Abduction",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "subgroup": "Abductors (Outer Hip)",
     "subgroups": [
       "Abductors (Outer Hip)"
@@ -6812,7 +6819,7 @@ export const EXERCISE_DATABASE = [
   {
     "id": "lateral-band-walk",
     "name": "Lateral Resistance Band Walk",
-    "muscle": "Thighs",
+    "muscle": "Legs",
     "subgroup": "Abductors (Outer Hip)",
     "subgroups": [
       "Abductors (Outer Hip)",
@@ -7259,7 +7266,7 @@ export const EXERCISE_DATABASE = [
   {
   "id": "barbell-box-squat",
   "name": "Barbell Box Squat",
-  "muscle": "Thighs",
+  "muscle": "Legs",
   "subgroup": "Quadriceps",
   "subgroups": [
     "Quadriceps"
@@ -7296,7 +7303,7 @@ export const EXERCISE_DATABASE = [
   {
   "id": "single-leg-barbell-hip-thrust",
   "name": "Single-Leg Barbell Hip Thrust",
-  "muscle": "Thighs",
+  "muscle": "Legs",
   "subgroup": "Glutes",
   "subgroups": [
     "Glutes"
@@ -7333,7 +7340,7 @@ export const EXERCISE_DATABASE = [
   {
   "id": "kettlebell-sumo-deadlift-glutes",
   "name": "Kettlebell Sumo Deadlift (Glute Focus)",
-  "muscle": "Thighs",
+  "muscle": "Legs",
   "subgroup": "Glutes",
   "subgroups": [
     "Glutes"
@@ -7370,7 +7377,7 @@ export const EXERCISE_DATABASE = [
   {
   "id": "banded-lateral-monster-walk",
   "name": "Banded Lateral Monster Walk",
-  "muscle": "Thighs",
+  "muscle": "Legs",
   "subgroup": "Glutes",
   "subgroups": [
     "Glutes"

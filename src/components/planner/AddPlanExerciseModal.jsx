@@ -51,7 +51,7 @@ export const SIX_BODY_PARTS = [
   },
   { 
     id: 'Legs', 
-    label: 'Legs (Thighs)', 
+    label: 'Legs', 
     icon: '🦵', 
     count: EXERCISE_DATABASE.filter(e => e.muscle === 'Thighs' || e.muscle === 'Legs' || e.category === 'Legs').length, 
     description: 'Quads, Hamstrings, Glutes & Adductors' 

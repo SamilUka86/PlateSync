@@ -11,7 +11,8 @@ import {
   RotateCcw,
   Check,
   Vibrate,
-  Volume2
+  Volume2,
+  Globe
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
@@ -19,12 +20,33 @@ import { FirebaseSetupModal } from '../../components/auth/FirebaseSetupModal';
 import { isFirebaseConfigured } from '../../services/firebase/config';
 import { KG_TO_LBS } from '../../utils/weightCalculations';
 import { trigger5SecVibration, stopVibration } from '../../utils/audioHaptics';
+import { 
+  SUPPORTED_LANGUAGES, 
+  getCurrentLanguage, 
+  changeWebsiteLanguage 
+} from '../../services/translation/websiteTranslator';
 
 export const SettingsPage = () => {
   const { currentUser, userProfile, updateProfile, logout, isDemoMode, loginAsDemo } = useAuth();
   const { addNotification } = useNotification();
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [isVibrating, setIsVibrating] = useState(false);
+  const [currentLang, setCurrentLang] = useState(getCurrentLanguage);
+
+  useEffect(() => {
+    setCurrentLang(getCurrentLanguage());
+  }, []);
+
+  const handleLanguageSelect = (lang) => {
+    setCurrentLang(lang);
+    addNotification(
+      lang.code === 'en'
+        ? 'Restored English original language'
+        : `Translating website to ${lang.name} (${lang.nativeName})...`,
+      'info'
+    );
+    changeWebsiteLanguage(lang.code);
+  };
 
   // Scroll to top on mount
   useEffect(() => {
@@ -135,6 +157,45 @@ export const SettingsPage = () => {
             >
               Imperial (LBS)
             </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Website Language Translation */}
+      <div className="bg-midnight-card border border-midnight-border rounded-3xl p-6 space-y-4">
+        <div className="space-y-1">
+          <h3 className="text-sm font-bold text-white flex items-center gap-2">
+            <Globe className="w-4 h-4 text-neon-cyan" />
+            Website Language & Translation
+          </h3>
+          <p className="text-xs text-slate-400">
+            Translate all pages, exercise descriptions, and workout logging into your preferred language.
+          </p>
+        </div>
+
+        <div className="pt-1">
+          <label className="block text-xs font-semibold text-slate-300 mb-2">
+            Select Language
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {SUPPORTED_LANGUAGES.map(lang => {
+              const isSelected = lang.code === currentLang.code;
+              return (
+                <button
+                  key={lang.code}
+                  type="button"
+                  onClick={() => handleLanguageSelect(lang)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition active:scale-95 ${
+                    isSelected
+                      ? 'bg-neon-cyan text-slate-950 font-black shadow-md shadow-neon-cyan/20'
+                      : 'bg-midnight-bg border border-midnight-border text-slate-300 hover:text-white hover:border-slate-500'
+                  }`}
+                >
+                  <span className="text-sm">{lang.flag}</span>
+                  <span>{lang.name}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>

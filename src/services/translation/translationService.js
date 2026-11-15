@@ -37,6 +37,7 @@ export const HINDI_VOCABULARY = {
   'Shoulders': 'कंधे (Shoulders)',
   'Biceps': 'बाइसेप्स (Biceps)',
   'Triceps': 'ट्राइसेप्स (Triceps)',
+  'Legs': 'पैर (Legs)',
   'Thighs': 'जांघें और पैर (Thighs & Legs)',
   'Abs': 'एब्स और कोर (Abs & Core)',
 
