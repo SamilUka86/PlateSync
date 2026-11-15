@@ -23,7 +23,7 @@ import { FirebaseSetupModal } from '../../components/auth/FirebaseSetupModal';
 import { GoogleAuthSetupModal } from '../../components/auth/GoogleAuthSetupModal';
 import { Footer } from '../../components/layout/Footer';
 
-export const AuthPage = ({ onClose }) => {
+export const AuthPage = ({ onClose, onSuccess }) => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -179,7 +179,11 @@ export const AuthPage = ({ onClose }) => {
         }
       }
 
-      if (onClose) onClose();
+      if (onSuccess) {
+        onSuccess();
+      } else if (onClose) {
+        onClose();
+      }
     } catch (err) {
       console.error('Auth submit error:', err);
       let msg = err.message || 'Authentication failed.';
@@ -206,7 +210,11 @@ export const AuthPage = ({ onClose }) => {
     try {
       await loginGoogle();
       addNotification('Signed in with Google successfully!', 'success');
-      if (onClose) onClose();
+      if (onSuccess) {
+        onSuccess();
+      } else if (onClose) {
+        onClose();
+      }
     } catch (err) {
       if (err.message === 'GOOGLE_AUTH_NOT_CONFIGURED' || err.message === 'FIREBASE_NOT_CONFIGURED') {
         setShowGoogleAuthModal(true);
@@ -284,7 +292,11 @@ export const AuthPage = ({ onClose }) => {
           <button
             onClick={() => {
               loginAsDemo();
-              if (onClose) onClose();
+              if (onSuccess) {
+                onSuccess();
+              } else if (onClose) {
+                onClose();
+              }
             }}
             className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-neon-cyan/10 hover:bg-neon-cyan/20 border border-neon-cyan/30 text-neon-cyan transition text-xs font-bold"
           >
@@ -682,7 +694,11 @@ export const AuthPage = ({ onClose }) => {
               type="button"
               onClick={() => {
                 loginAsDemo('calculator-only');
-                if (onClose) onClose();
+                if (onSuccess) {
+                  onSuccess();
+                } else if (onClose) {
+                  onClose();
+                }
               }}
               className="w-full py-2.5 px-3 rounded-xl border border-neon-cyan/40 bg-neon-cyan/10 hover:bg-neon-cyan/20 text-neon-cyan text-xs font-bold flex items-center justify-center gap-2 transition active:scale-95 shadow-md shadow-neon-cyan/5"
             >

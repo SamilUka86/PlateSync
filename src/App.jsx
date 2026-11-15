@@ -171,7 +171,13 @@ const MainAppLayout = () => {
       {/* Auth Modal Overlay */}
       {showAuthModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-midnight-bg/95 backdrop-blur-xl animate-in fade-in">
-          <AuthPage onClose={() => setShowAuthModal(false)} />
+          <AuthPage 
+            onClose={() => setShowAuthModal(false)}
+            onSuccess={() => {
+              setShowAuthModal(false);
+              handleSetActiveTab('dashboard');
+            }}
+          />
         </div>
       )}
 

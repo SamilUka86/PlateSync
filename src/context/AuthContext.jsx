@@ -150,9 +150,11 @@ export const AuthProvider = ({ children }) => {
       }
     });
 
-    // 1. Check saved demo mode
+    // 1. Initial cached state (optimistic instant load for zero-flicker UI render)
     const savedDemo = localStorage.getItem('platesync_demo_active');
     const cachedUnit = localStorage.getItem('platesync_preferred_unit');
+    const storedUser = getStoredGoogleUser();
+
     if (savedDemo === 'true') {
       setCurrentUser(DEMO_USER);
       setUserProfile({
@@ -163,12 +165,7 @@ export const AuthProvider = ({ children }) => {
       const savedMode = localStorage.getItem('platesync_demo_access_mode') || 'calculator-only';
       setDemoAccessMode(savedMode);
       setLoading(false);
-      return;
-    }
-
-    // 2. Check saved Google / Local authenticated user session
-    const storedUser = getStoredGoogleUser();
-    if (storedUser) {
+    } else if (storedUser) {
       setCurrentUser(storedUser);
       setIsDemoMode(false);
       getUserProfile(storedUser.uid).then(async (prof) => {
@@ -179,14 +176,14 @@ export const AuthProvider = ({ children }) => {
             photoURL: storedUser.photoURL
           });
         }
-        const savedUnit = localStorage.getItem('platesync_preferred_unit');
-        if (savedUnit && finalProf) {
-          finalProf = { ...finalProf, preferredUnit: savedUnit };
+        if (cachedUnit && finalProf) {
+          finalProf = { ...finalProf, preferredUnit: cachedUnit };
         }
         setUserProfile(finalProf);
         setLoading(false);
+      }).catch(() => {
+        setLoading(false);
       });
-      return;
     }
 
     if (!ready) {
@@ -197,6 +194,14 @@ export const AuthProvider = ({ children }) => {
     // Check redirect auth result (for mobile redirect flow)
     checkRedirectAuthResult().then((user) => {
       if (user) {
+        const sessionUser = {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName || user.email?.split('@')[0] || 'Athlete',
+          photoURL: user.photoURL || null,
+          provider: 'google.com'
+        };
+        localStorage.setItem('platesync_google_user', JSON.stringify(sessionUser));
         setCurrentUser(user);
         setIsDemoMode(false);
         localStorage.removeItem('platesync_demo_active');
@@ -210,8 +215,17 @@ export const AuthProvider = ({ children }) => {
       }
     });
 
+    // Authoritative Firebase Auth state listener
     const unsubscribe = subscribeToAuthChanges(async (user) => {
       if (user) {
+        const sessionUser = {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName || user.email?.split('@')[0] || 'Athlete',
+          photoURL: user.photoURL || null,
+          provider: user.providerData?.[0]?.providerId || 'password'
+        };
+        localStorage.setItem('platesync_google_user', JSON.stringify(sessionUser));
         setCurrentUser(user);
         setIsDemoMode(false);
         localStorage.removeItem('platesync_demo_active');
@@ -219,10 +233,13 @@ export const AuthProvider = ({ children }) => {
         try {
           let profile = await getUserProfile(user.uid);
           if (!profile) {
-            profile = await createUserProfileDocument(user);
+            profile = await createUserProfileDocument(user, {
+              displayName: user.displayName || user.email?.split('@')[0],
+              email: user.email
+            });
           }
           const savedUnit = localStorage.getItem('platesync_preferred_unit');
-          if (savedUnit) {
+          if (savedUnit && profile) {
             profile = { ...profile, preferredUnit: savedUnit };
           }
           setUserProfile(profile);
@@ -230,7 +247,15 @@ export const AuthProvider = ({ children }) => {
           console.error('Profile sync notice:', err);
         }
       } else {
-        if (!getStoredGoogleUser()) {
+        const isDemo = localStorage.getItem('platesync_demo_active') === 'true';
+        const cached = getStoredGoogleUser();
+        if (cached && (cached.uid?.startsWith('local_user_') || cached.provider === 'google.com')) {
+          setCurrentUser(cached);
+          setIsDemoMode(false);
+        } else if (isDemo) {
+          setCurrentUser(DEMO_USER);
+          setIsDemoMode(true);
+        } else {
           setCurrentUser(null);
           setUserProfile(null);
         }
@@ -248,15 +273,18 @@ export const AuthProvider = ({ children }) => {
         const user = await signInWithGoogleIdentity();
         if (user) {
           setCurrentUser(user);
+          setIsDemoMode(false);
+          localStorage.removeItem('platesync_demo_active');
+          localStorage.removeItem('platesync_demo_workouts');
+
           // Always create or update the athlete profile in Cloud Firestore (users/{uid})
           const profile = await createUserProfileDocument(user, {
             displayName: user.displayName,
             photoURL: user.photoURL,
             email: user.email
           });
-          setUserProfile(profile);
-          setIsDemoMode(false);
-          localStorage.removeItem('platesync_demo_active');
+          const savedUnit = localStorage.getItem('platesync_preferred_unit');
+          setUserProfile(savedUnit && profile ? { ...profile, preferredUnit: savedUnit } : profile);
           return user;
         }
         throw new Error('Google authentication was cancelled.');
@@ -274,25 +302,68 @@ export const AuthProvider = ({ children }) => {
     try {
       if (isFirebaseConfigured()) {
         const user = await fbLoginWithEmail(email, password);
-        const profile = await getUserProfile(user.uid);
-        setUserProfile(profile);
+        
+        // 1. Immediate synchronous state updates for instant UI transition
+        setCurrentUser(user);
         setIsDemoMode(false);
         localStorage.removeItem('platesync_demo_active');
+        localStorage.removeItem('platesync_demo_workouts');
+
+        // 2. Cache user session in localStorage for instant restore
+        const sessionUser = {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName || email.split('@')[0],
+          photoURL: user.photoURL || null,
+          provider: 'password'
+        };
+        localStorage.setItem('platesync_google_user', JSON.stringify(sessionUser));
+
+        // 3. Load or create profile in Cloud Firestore
+        try {
+          let profile = await getUserProfile(user.uid);
+          if (!profile) {
+            profile = await createUserProfileDocument(user, {
+              displayName: user.displayName || email.split('@')[0],
+              email: user.email
+            });
+          }
+          const savedUnit = localStorage.getItem('platesync_preferred_unit');
+          if (savedUnit && profile) {
+            profile = { ...profile, preferredUnit: savedUnit };
+          }
+          setUserProfile(profile);
+        } catch (profErr) {
+          console.warn('Profile sync notice during email login:', profErr);
+          setUserProfile({
+            uid: user.uid,
+            name: user.displayName || email.split('@')[0],
+            email: user.email,
+            preferredUnit: localStorage.getItem('platesync_preferred_unit') || 'KG'
+          });
+        }
+
         return user;
       }
 
       // Zero-Firebase standalone email login
       const user = loginLocalUser(email, password);
       setCurrentUser(user);
+      setIsDemoMode(false);
+      localStorage.removeItem('platesync_demo_active');
+      localStorage.removeItem('platesync_demo_workouts');
+
       let profile = await getUserProfile(user.uid);
       if (!profile) {
         profile = await createUserProfileDocument(user, {
           displayName: user.displayName
         });
       }
+      const savedUnit = localStorage.getItem('platesync_preferred_unit');
+      if (savedUnit && profile) {
+        profile = { ...profile, preferredUnit: savedUnit };
+      }
       setUserProfile(profile);
-      setIsDemoMode(false);
-      localStorage.removeItem('platesync_demo_active');
       return user;
     } catch (error) {
       console.error('Email Login Error:', error);
@@ -304,22 +375,62 @@ export const AuthProvider = ({ children }) => {
     try {
       if (isFirebaseConfigured()) {
         const user = await fbRegisterWithEmail(email, password, displayName);
-        const profile = await getUserProfile(user.uid);
-        setUserProfile(profile);
+        
+        // 1. Immediate synchronous state updates
+        setCurrentUser(user);
         setIsDemoMode(false);
         localStorage.removeItem('platesync_demo_active');
+        localStorage.removeItem('platesync_demo_workouts');
+
+        // 2. Cache user session in localStorage
+        const sessionUser = {
+          uid: user.uid,
+          email: user.email,
+          displayName: displayName || user.displayName || email.split('@')[0],
+          photoURL: user.photoURL || null,
+          provider: 'password'
+        };
+        localStorage.setItem('platesync_google_user', JSON.stringify(sessionUser));
+
+        // 3. Sync or create profile
+        try {
+          let profile = await getUserProfile(user.uid);
+          if (!profile) {
+            profile = await createUserProfileDocument(user, {
+              displayName: displayName || email.split('@')[0],
+              email: user.email
+            });
+          }
+          const savedUnit = localStorage.getItem('platesync_preferred_unit');
+          if (savedUnit && profile) {
+            profile = { ...profile, preferredUnit: savedUnit };
+          }
+          setUserProfile(profile);
+        } catch (profErr) {
+          console.warn('Profile sync notice during registration:', profErr);
+          setUserProfile({
+            uid: user.uid,
+            name: displayName || email.split('@')[0],
+            email: user.email,
+            preferredUnit: localStorage.getItem('platesync_preferred_unit') || 'KG'
+          });
+        }
+
         return user;
       }
 
       // Zero-Firebase standalone email registration
       const user = registerLocalUser(email, password, displayName);
       setCurrentUser(user);
+      setIsDemoMode(false);
+      localStorage.removeItem('platesync_demo_active');
+      localStorage.removeItem('platesync_demo_workouts');
+
       const profile = await createUserProfileDocument(user, {
         displayName: displayName || email.split('@')[0]
       });
-      setUserProfile(profile);
-      setIsDemoMode(false);
-      localStorage.removeItem('platesync_demo_active');
+      const savedUnit = localStorage.getItem('platesync_preferred_unit');
+      setUserProfile(savedUnit && profile ? { ...profile, preferredUnit: savedUnit } : profile);
       return user;
     } catch (error) {
       console.error('Email Registration Error:', error);
@@ -337,18 +448,19 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     signOutGoogleUser();
-    if (isDemoMode) {
-      localStorage.removeItem('platesync_demo_active');
-      localStorage.removeItem('platesync_demo_access_mode');
-      localStorage.removeItem('platesync_demo_workouts');
-      setIsDemoMode(false);
-      setDemoAccessMode('calculator-only');
-      setCurrentUser(null);
-      setUserProfile(null);
-      return;
-    }
+    localStorage.removeItem('platesync_demo_active');
+    localStorage.removeItem('platesync_demo_access_mode');
+    localStorage.removeItem('platesync_demo_workouts');
+    localStorage.removeItem('platesync_google_user');
+    setIsDemoMode(false);
+    setDemoAccessMode('calculator-only');
+
     if (isFirebaseConfigured()) {
-      await fbLogout();
+      try {
+        await fbLogout();
+      } catch (e) {
+        console.warn('Firebase logout notice:', e);
+      }
     }
     setCurrentUser(null);
     setUserProfile(null);
