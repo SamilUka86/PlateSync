@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
-  loginWithGoogle as fbLoginWithGoogle,
   loginWithEmail as fbLoginWithEmail,
   registerWithEmail as fbRegisterWithEmail,
   resetUserPassword as fbResetPassword,
@@ -21,7 +20,9 @@ import {
   getStoredGoogleUser, 
   signOutGoogleUser,
   registerLocalUser,
-  loginLocalUser
+  loginLocalUser,
+  loadGoogleIdentityScript,
+  parseGoogleJwt
 } from '../services/auth/googleAuthService';
 
 const AuthContext = createContext({});
@@ -98,6 +99,50 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const ready = isFirebaseConfigured();
     setIsFirebaseReady(ready);
+
+    // Initialize Google Identity Services (GIS) directly with Client ID
+    loadGoogleIdentityScript().then((loaded) => {
+      if (loaded && window.google?.accounts?.id) {
+        const cid = getGoogleClientId();
+        if (cid) {
+          try {
+            window.google.accounts.id.initialize({
+              client_id: cid,
+              callback: async (response) => {
+                if (response?.credential) {
+                  const payload = parseGoogleJwt(response.credential);
+                  if (payload) {
+                    const user = {
+                      uid: `google_${payload.sub}`,
+                      email: payload.email,
+                      displayName: payload.name || payload.given_name || 'Athlete',
+                      photoURL: payload.picture || null,
+                      provider: 'google.com'
+                    };
+                    localStorage.setItem('platesync_google_user', JSON.stringify(user));
+                    setCurrentUser(user);
+                    setIsDemoMode(false);
+                    localStorage.removeItem('platesync_demo_active');
+                    let profile = await getUserProfile(user.uid);
+                    if (!profile) {
+                      profile = await createUserProfileDocument(user, {
+                        displayName: user.displayName,
+                        photoURL: user.photoURL
+                      });
+                    }
+                    setUserProfile(profile);
+                  }
+                }
+              },
+              auto_select: false,
+              cancel_on_tap_outside: true
+            });
+          } catch (e) {
+            console.debug('GIS initialization notice:', e);
+          }
+        }
+      }
+    });
 
     // 1. Check saved demo mode
     const savedDemo = localStorage.getItem('platesync_demo_active');
@@ -192,50 +237,27 @@ export const AuthProvider = ({ children }) => {
 
   const loginGoogle = async () => {
     try {
-      // 1. If Google OAuth Client ID is configured, use Google Identity Services (GIS)
+      // 1. Direct Google Identity Services (GIS) - completely bypassing Firebase's firebaseapp.com popup
       if (isGoogleAuthConfigured()) {
-        try {
-          const user = await signInWithGoogleIdentity();
-          if (user) {
-            setCurrentUser(user);
-            let profile = await getUserProfile(user.uid);
-            if (!profile) {
-              profile = await createUserProfileDocument(user, {
-                displayName: user.displayName,
-                photoURL: user.photoURL
-              });
-            }
-            setUserProfile(profile);
-            setIsDemoMode(false);
-            localStorage.removeItem('platesync_demo_active');
-            return user;
-          }
-        } catch (gisErr) {
-          console.warn('Google Identity Services notice:', gisErr);
-          // If popup was intentionally closed by the user, don't spam another popup
-          if (gisErr.code === 'auth/popup-closed-by-user') {
-            throw gisErr;
-          }
-          // If Firebase is not configured, rethrow GIS error
-          if (!isFirebaseConfigured()) {
-            throw gisErr;
-          }
-        }
-      }
-
-      // 2. If Firebase is configured, try Firebase Google Auth
-      if (isFirebaseConfigured()) {
-        const user = await fbLoginWithGoogle();
+        const user = await signInWithGoogleIdentity();
         if (user) {
-          const profile = await getUserProfile(user.uid);
+          setCurrentUser(user);
+          let profile = await getUserProfile(user.uid);
+          if (!profile) {
+            profile = await createUserProfileDocument(user, {
+              displayName: user.displayName,
+              photoURL: user.photoURL
+            });
+          }
           setUserProfile(profile);
           setIsDemoMode(false);
           localStorage.removeItem('platesync_demo_active');
           return user;
         }
+        throw new Error('Google authentication was cancelled.');
       }
 
-      // 3. Neither Google Client ID nor Firebase configured
+      // 2. Google Client ID is missing
       throw new Error('GOOGLE_AUTH_NOT_CONFIGURED');
     } catch (error) {
       console.error('Google Login Error:', error);

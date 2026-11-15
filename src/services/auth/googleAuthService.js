@@ -6,6 +6,7 @@
 const GOOGLE_CLIENT_ID_KEY = 'platesync_google_client_id';
 const GOOGLE_USER_SESSION_KEY = 'platesync_google_user';
 const LOCAL_USERS_KEY = 'platesync_local_users';
+export const DEFAULT_GOOGLE_CLIENT_ID = '1073911515845-eoatnga7oblfb7qkcnspsnoqjg5i73r0.apps.googleusercontent.com';
 
 /**
  * Retrieve configured Google Client ID from environment or localStorage
@@ -14,11 +15,11 @@ export const getGoogleClientId = () => {
   try {
     return (
       import.meta.env.VITE_GOOGLE_CLIENT_ID ||
-      localStorage.getItem(GOOGLE_CLIENT_ID_KEY) ||
-      ''
+      (typeof localStorage !== 'undefined' ? localStorage.getItem(GOOGLE_CLIENT_ID_KEY) : '') ||
+      DEFAULT_GOOGLE_CLIENT_ID
     );
   } catch (e) {
-    return '';
+    return DEFAULT_GOOGLE_CLIENT_ID;
   }
 };
 
@@ -68,13 +69,28 @@ export const loadGoogleIdentityScript = () => {
   return new Promise((resolve) => {
     if (typeof window === 'undefined') return resolve(false);
 
-    if (window.google?.accounts?.id) {
+    if (window.google?.accounts?.id || window.google?.accounts?.oauth2) {
       return resolve(true);
     }
 
-    const existingScript = document.getElementById('google-identity-services');
+    const existingScript = 
+      document.getElementById('google-identity-services') ||
+      document.querySelector('script[src*="accounts.google.com/gsi/client"]');
+    
     if (existingScript) {
+      if (window.google?.accounts) return resolve(true);
       existingScript.addEventListener('load', () => resolve(true));
+      let count = 0;
+      const poll = setInterval(() => {
+        count++;
+        if (window.google?.accounts) {
+          clearInterval(poll);
+          resolve(true);
+        } else if (count > 25) {
+          clearInterval(poll);
+          resolve(Boolean(window.google?.accounts));
+        }
+      }, 100);
       return;
     }
 
