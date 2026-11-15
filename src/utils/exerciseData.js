@@ -6966,6 +6966,516 @@ export const EXERCISE_DATABASE = [
     "recommendedReps": "20-30s hold",
     "recommendedRest": 45
   }
+,
+  {
+  "id": "smith-machine-flat-bench-press",
+  "name": "Smith Machine Flat Bench Press",
+  "muscle": "Chest",
+  "subgroup": "Middle Chest",
+  "subgroups": [
+    "Middle Chest"
+  ],
+  "primaryMuscles": [
+    "Sternal Pectoralis Major"
+  ],
+  "secondaryMuscles": [
+    "Anterior Deltoids",
+    "Triceps Brachii"
+  ],
+  "equipment": "Smith Machine",
+  "difficulty": "Beginner",
+  "type": "Compound",
+  "movementPattern": "Horizontal Push",
+  "startingPosition": "Lie flat on bench positioned directly under the Smith machine barbell. Rotate bar to unhook from safety latches.",
+  "instructions": "Lower bar in a controlled path to your mid-chest. Press upward smoothly without locking out elbows aggressively at the top.",
+  "technique": "Take advantage of the fixed rail path to maximize chest tension without stabilizer fatigue.",
+  "breathing": "Inhale lowering to chest; exhale pressing upward.",
+  "commonMistakes": [
+    "Bouncing bar off chest",
+    "Flaring elbows 90 degrees outward"
+  ],
+  "safetyNotes": "Always engage safety stop pins at chest level.",
+  "alternatives": [
+    "Flat Barbell Bench Press",
+    "Machine Chest Press"
+  ],
+  "recommendedSets": "3-4",
+  "recommendedReps": "8-12",
+  "recommendedRest": 90
+},
+  {
+  "id": "neutral-grip-dumbbell-press",
+  "name": "Neutral-Grip Dumbbell Press",
+  "muscle": "Chest",
+  "subgroup": "Middle Chest",
+  "subgroups": [
+    "Middle Chest"
+  ],
+  "primaryMuscles": [
+    "Sternal Pectoralis Major"
+  ],
+  "secondaryMuscles": [
+    "Anterior Deltoids",
+    "Triceps Brachii"
+  ],
+  "equipment": "Dumbbells",
+  "difficulty": "Beginner",
+  "type": "Compound",
+  "movementPattern": "Horizontal Push",
+  "startingPosition": "Lie flat on bench with dumbbells held with palms facing inward toward each other (neutral grip).",
+  "instructions": "Lower dumbbells while keeping elbows tucked close to ribcage. Press back up powerfully while squeezing chest together.",
+  "technique": "Palms facing inward protects the rotator cuff and increases triceps and sternal chest recruitment.",
+  "breathing": "Inhale down; exhale pressing up.",
+  "commonMistakes": [
+    "Letting elbows drift wide",
+    "Arching back excessively"
+  ],
+  "safetyNotes": "Safely bring weights to knees before sitting up.",
+  "alternatives": [
+    "Flat Dumbbell Press",
+    "Close-Grip Bench Press"
+  ],
+  "recommendedSets": "3-4",
+  "recommendedReps": "10-12",
+  "recommendedRest": 90
+},
+  {
+  "id": "converging-chest-press-machine",
+  "name": "Converging Chest Press Machine",
+  "muscle": "Chest",
+  "subgroup": "Middle Chest",
+  "subgroups": [
+    "Middle Chest"
+  ],
+  "primaryMuscles": [
+    "Sternal Pectoralis Major"
+  ],
+  "secondaryMuscles": [
+    "Anterior Deltoids",
+    "Triceps Brachii"
+  ],
+  "equipment": "Selectorized Machines",
+  "difficulty": "Beginner",
+  "type": "Compound",
+  "movementPattern": "Horizontal Push",
+  "startingPosition": "Adjust seat so handles align with mid-chest. Plant feet firmly and press back firmly against pad.",
+  "instructions": "Press handles forward along converging arc until arms are extended. Slowly return to deep stretch.",
+  "technique": "The converging path matches natural pectoral fiber alignment for peak peak contraction.",
+  "breathing": "Exhale forward; inhale back.",
+  "commonMistakes": [
+    "Allowing shoulders to roll forward at full extension"
+  ],
+  "safetyNotes": "Adjust weight stack pin securely before pressing.",
+  "alternatives": [
+    "Machine Chest Press",
+    "Cable Chest Fly"
+  ],
+  "recommendedSets": "3-4",
+  "recommendedReps": "10-15",
+  "recommendedRest": 60
+},
+  {
+  "id": "isometric-pushup-hold",
+  "name": "Isometric Push-up Hold (Mid-Point)",
+  "muscle": "Chest",
+  "subgroup": "Middle Chest",
+  "subgroups": [
+    "Middle Chest"
+  ],
+  "primaryMuscles": [
+    "Sternal Pectoralis Major",
+    "Core"
+  ],
+  "secondaryMuscles": [
+    "Anterior Deltoids",
+    "Triceps Brachii"
+  ],
+  "equipment": "Bodyweight",
+  "difficulty": "Intermediate",
+  "type": "Compound",
+  "movementPattern": "Horizontal Push",
+  "startingPosition": "Begin in standard push-up position with hands slightly wider than shoulders and core locked.",
+  "instructions": "Lower yourself to mid-point (elbows at 90 degrees) and hold rigidly for target duration without sagging.",
+  "technique": "Keep glutes squeezed and neck neutral throughout hold.",
+  "breathing": "Maintain controlled diaphragmatic breathing while holding.",
+  "commonMistakes": [
+    "Sagging hips",
+    "Lifting head up"
+  ],
+  "safetyNotes": "Drop to knees if form deteriorates.",
+  "alternatives": [
+    "Push-ups",
+    "Plank"
+  ],
+  "recommendedSets": "3",
+  "recommendedReps": "20-40s hold",
+  "recommendedRest": 60
+},
+  {
+  "id": "barbell-pin-press",
+  "name": "Barbell Pin Press (Chest Level)",
+  "muscle": "Chest",
+  "subgroup": "Middle Chest",
+  "subgroups": [
+    "Middle Chest"
+  ],
+  "primaryMuscles": [
+    "Sternal Pectoralis Major",
+    "Triceps Brachii"
+  ],
+  "secondaryMuscles": [
+    "Anterior Deltoids"
+  ],
+  "equipment": "Barbell",
+  "difficulty": "Advanced",
+  "type": "Compound",
+  "movementPattern": "Horizontal Push",
+  "startingPosition": "Set power rack safety pins 2-3 inches above chest. Lie flat under bar with barbell resting on pins.",
+  "instructions": "From a dead-stop on the pins, press bar explosively upward to full extension. Lower back under control to rest on pins.",
+  "technique": "Eliminates stretch-reflex to build pure concentric starting strength.",
+  "breathing": "Brace core and inhale before pressing; exhale on ascent.",
+  "commonMistakes": [
+    "Bouncing bar off pins",
+    "Uneven push"
+  ],
+  "safetyNotes": "Ensure both safety pins are at identical height.",
+  "alternatives": [
+    "Flat Barbell Bench Press",
+    "Floor Press"
+  ],
+  "recommendedSets": "4",
+  "recommendedReps": "4-6",
+  "recommendedRest": 120
+},
+  {
+  "id": "lean-away-cable-lateral-raise",
+  "name": "Lean-Away Cable Lateral Raise",
+  "muscle": "Shoulders",
+  "subgroup": "Side Delts (Lateral Deltoids)",
+  "subgroups": [
+    "Side Delts (Lateral Deltoids)"
+  ],
+  "primaryMuscles": [
+    "Lateral Deltoids"
+  ],
+  "secondaryMuscles": [
+    "Supraspinatus",
+    "Trapezius"
+  ],
+  "equipment": "Cable Machine",
+  "difficulty": "Intermediate",
+  "type": "Isolation",
+  "movementPattern": "Vertical Push",
+  "startingPosition": "Hold low cable handle in outer hand, holding cable tower post with inner hand and leaning outward at a 15-20 degree angle.",
+  "instructions": "Raise arm outward to shoulder level leading with elbow. Pause briefly at the top and lower with a controlled 3-second negative.",
+  "technique": "The lean-away angle places peak tension on lateral deltoid at initial portion of movement.",
+  "breathing": "Exhale raising arm; inhale lowering.",
+  "commonMistakes": [
+    "Swinging torso",
+    "Shrugging trap"
+  ],
+  "safetyNotes": "Keep wrist neutral and do not swing weight.",
+  "alternatives": [
+    "Cable Lateral Raise",
+    "Dumbbell Lateral Raise"
+  ],
+  "recommendedSets": "3-4",
+  "recommendedReps": "12-15",
+  "recommendedRest": 60
+},
+  {
+  "id": "incline-prone-rear-delt-raise",
+  "name": "Incline Prone Dumbbell Rear Delt Raise",
+  "muscle": "Shoulders",
+  "subgroup": "Rear Delts (Posterior Deltoids)",
+  "subgroups": [
+    "Rear Delts (Posterior Deltoids)"
+  ],
+  "primaryMuscles": [
+    "Posterior Deltoids"
+  ],
+  "secondaryMuscles": [
+    "Infraspinatus",
+    "Rhomboids"
+  ],
+  "equipment": "Dumbbells",
+  "difficulty": "Intermediate",
+  "type": "Isolation",
+  "movementPattern": "Horizontal Pull",
+  "startingPosition": "Lie chest-down on a 30-degree incline bench holding light dumbbells hanging toward floor.",
+  "instructions": "Raise dumbbells outward in a wide sweeping arc keeping elbows slightly bent. Squeeze rear delts at top.",
+  "technique": "Chest support prevents hip momentum and isolates the posterior delts.",
+  "breathing": "Exhale raising outward; inhale lowering.",
+  "commonMistakes": [
+    "Using heavy weights and turning into row",
+    "Shrugging traps"
+  ],
+  "safetyNotes": "Focus on mind-muscle connection rather than load.",
+  "alternatives": [
+    "Rear Delt Fly",
+    "Face Pulls"
+  ],
+  "recommendedSets": "3-4",
+  "recommendedReps": "12-15",
+  "recommendedRest": 60
+},
+  {
+  "id": "kettlebell-bottoms-up-press",
+  "name": "Kettlebell Bottoms-Up Shoulder Press",
+  "muscle": "Shoulders",
+  "subgroup": "Rotator Cuff",
+  "subgroups": [
+    "Rotator Cuff"
+  ],
+  "primaryMuscles": [
+    "Rotator Cuff (Supraspinatus/Infraspinatus)",
+    "Anterior Deltoids"
+  ],
+  "secondaryMuscles": [
+    "Forearms",
+    "Core"
+  ],
+  "equipment": "Kettlebells",
+  "difficulty": "Advanced",
+  "type": "Compound",
+  "movementPattern": "Vertical Push",
+  "startingPosition": "Hold kettlebell inverted so heavy bell is balanced directly above handle at shoulder height.",
+  "instructions": "Maintain grip crush and press kettlebell overhead without letting bell tilt or flip. Lower slowly.",
+  "technique": "Extreme stability demand activates all four rotator cuff stabilizers reflexively.",
+  "breathing": "Inhale at shoulder; exhale pressing up.",
+  "commonMistakes": [
+    "Losing vertical wrist alignment",
+    "Rushing tempo"
+  ],
+  "safetyNotes": "Start with very light kettlebell to avoid drop.",
+  "alternatives": [
+    "Standing Barbell Shoulder Press",
+    "Dumbbell Cuban Press"
+  ],
+  "recommendedSets": "3",
+  "recommendedReps": "6-8",
+  "recommendedRest": 90
+},
+  {
+  "id": "barbell-box-squat",
+  "name": "Barbell Box Squat",
+  "muscle": "Thighs",
+  "subgroup": "Quadriceps",
+  "subgroups": [
+    "Quadriceps"
+  ],
+  "primaryMuscles": [
+    "Quadriceps",
+    "Gluteus Maximus"
+  ],
+  "secondaryMuscles": [
+    "Hamstrings",
+    "Spinal Erectors"
+  ],
+  "equipment": "Barbell",
+  "difficulty": "Intermediate",
+  "type": "Compound",
+  "movementPattern": "Squat",
+  "startingPosition": "Position a box behind you at parallel height. Unrack bar across upper back and step back.",
+  "instructions": "Squat down by pushing hips back until seated on box for 1 second without rocking. Drive through feet to stand.",
+  "technique": "Do not collapse on box; maintain full core tension throughout pause.",
+  "breathing": "Inhale descending; exhale driving upward.",
+  "commonMistakes": [
+    "Bouncing off box",
+    "Relaxing spinal erectors when seated"
+  ],
+  "safetyNotes": "Always use safety pins set just below box height.",
+  "alternatives": [
+    "Barbell Back Squat",
+    "Front Squat"
+  ],
+  "recommendedSets": "3-4",
+  "recommendedReps": "6-8",
+  "recommendedRest": 120
+},
+  {
+  "id": "single-leg-barbell-hip-thrust",
+  "name": "Single-Leg Barbell Hip Thrust",
+  "muscle": "Thighs",
+  "subgroup": "Glutes",
+  "subgroups": [
+    "Glutes"
+  ],
+  "primaryMuscles": [
+    "Gluteus Maximus",
+    "Gluteus Medius"
+  ],
+  "secondaryMuscles": [
+    "Hamstrings",
+    "Core"
+  ],
+  "equipment": "Barbell",
+  "difficulty": "Intermediate",
+  "type": "Isolation",
+  "movementPattern": "Hinge",
+  "startingPosition": "Upper back against bench with padded bar on hips. Plant one foot and lift opposite leg.",
+  "instructions": "Drive through planted heel to extend hips upward until torso is parallel to floor. Squeeze working glute hard.",
+  "technique": "Keeps pelvis level and cures bilateral glute imbalances.",
+  "breathing": "Exhale at top extension; inhale lowering.",
+  "commonMistakes": [
+    "Tilting pelvis to one side",
+    "Overextending lumbar spine"
+  ],
+  "safetyNotes": "Use thick barbell foam pad on hip crease.",
+  "alternatives": [
+    "Hip Thrust",
+    "Barbell Glute Bridge"
+  ],
+  "recommendedSets": "3",
+  "recommendedReps": "8-12 per leg",
+  "recommendedRest": 90
+},
+  {
+  "id": "kettlebell-sumo-deadlift-glutes",
+  "name": "Kettlebell Sumo Deadlift (Glute Focus)",
+  "muscle": "Thighs",
+  "subgroup": "Glutes",
+  "subgroups": [
+    "Glutes"
+  ],
+  "primaryMuscles": [
+    "Gluteus Maximus",
+    "Adductor Magnus"
+  ],
+  "secondaryMuscles": [
+    "Hamstrings",
+    "Quadriceps"
+  ],
+  "equipment": "Kettlebells",
+  "difficulty": "Beginner",
+  "type": "Compound",
+  "movementPattern": "Hinge",
+  "startingPosition": "Stand wide in sumo stance with toes pointed out at 45 degrees over kettlebell.",
+  "instructions": "Hinge at hips, grasp kettlebell handle with both hands, and drive through heels to stand, powerfully locking glutes.",
+  "technique": "Wide stance emphasizes gluteus maximus and inner adductor recruitment.",
+  "breathing": "Inhale down; exhale standing up.",
+  "commonMistakes": [
+    "Rounding back",
+    "Squatting with knees caving in"
+  ],
+  "safetyNotes": "Keep chest lifted and spine neutral.",
+  "alternatives": [
+    "Sumo Squat",
+    "Conventional Deadlift"
+  ],
+  "recommendedSets": "3-4",
+  "recommendedReps": "10-12",
+  "recommendedRest": 60
+},
+  {
+  "id": "banded-lateral-monster-walk",
+  "name": "Banded Lateral Monster Walk",
+  "muscle": "Thighs",
+  "subgroup": "Glutes",
+  "subgroups": [
+    "Glutes"
+  ],
+  "primaryMuscles": [
+    "Gluteus Medius",
+    "Gluteus Maximus"
+  ],
+  "secondaryMuscles": [
+    "Tensor Fasciae Latae",
+    "Quadriceps"
+  ],
+  "equipment": "Resistance Bands",
+  "difficulty": "Beginner",
+  "type": "Isolation",
+  "movementPattern": "Lunge",
+  "startingPosition": "Place resistance mini-band around knees or ankles. Assume quarter-squat athletic stance.",
+  "instructions": "Take deliberate lateral steps to side while maintaining continuous outward band tension and knee alignment.",
+  "technique": "Keep feet parallel and do not drag trailing foot.",
+  "breathing": "Breathe rhythmically during lateral march.",
+  "commonMistakes": [
+    "Allowing knees to cave inward",
+    "Standing upright"
+  ],
+  "safetyNotes": "Choose band resistance that allows smooth steps without knee valgus.",
+  "alternatives": [
+    "Lateral Resistance Band Walk",
+    "Seated Machine Hip Abduction"
+  ],
+  "recommendedSets": "3",
+  "recommendedReps": "15-20 steps each direction",
+  "recommendedRest": 45
+},
+  {
+  "id": "swiss-ball-crunch",
+  "name": "Swiss Ball Crunch",
+  "muscle": "Abs",
+  "subgroup": "Upper Abs",
+  "subgroups": [
+    "Upper Abs"
+  ],
+  "primaryMuscles": [
+    "Rectus Abdominis (Upper)"
+  ],
+  "secondaryMuscles": [
+    "Obliques"
+  ],
+  "equipment": "Bodyweight",
+  "difficulty": "Beginner",
+  "type": "Isolation",
+  "movementPattern": "Isolation Pull",
+  "startingPosition": "Lie with lower-to-mid back contoured over stability ball. Plant feet wide on floor and place hands behind head.",
+  "instructions": "Allow spine to gently extend backward over curvature of ball, then crunch forward curling ribcage toward pelvis.",
+  "technique": "The ball allows extended range of motion compared to floor crunches for deeper abdominal stretch.",
+  "breathing": "Inhale in extended stretch; exhale curling forward.",
+  "commonMistakes": [
+    "Yanking neck with hands",
+    "Rolling hips on ball instead of curling spine"
+  ],
+  "safetyNotes": "Maintain stable foot footing on non-slip mat.",
+  "alternatives": [
+    "Standard Floor Crunches",
+    "Cable Crunch"
+  ],
+  "recommendedSets": "3",
+  "recommendedReps": "15-20",
+  "recommendedRest": 45
+},
+  {
+  "id": "half-kneeling-pallof-press-raise",
+  "name": "Half-Kneeling Pallof Press with Overhead Raise",
+  "muscle": "Abs",
+  "subgroup": "Deep Core / Transverse Abdominis",
+  "subgroups": [
+    "Deep Core / Transverse Abdominis"
+  ],
+  "primaryMuscles": [
+    "Transverse Abdominis",
+    "Internal Obliques"
+  ],
+  "secondaryMuscles": [
+    "Glutes",
+    "Serratus Anterior"
+  ],
+  "equipment": "Cable Machine",
+  "difficulty": "Intermediate",
+  "type": "Compound",
+  "movementPattern": "Isolation Push",
+  "startingPosition": "Half-kneel perpendicular to cable machine with inside knee down. Hold cable handle at sternum with both hands.",
+  "instructions": "Press cable straight out from chest, raise hands overhead while resisting cable pull, lower to chest level, and return.",
+  "technique": "Triple-anti core demand: anti-rotation, anti-extension, and anti-lateral flexion simultaneously.",
+  "breathing": "Exhale pressing and raising overhead; inhale returning.",
+  "commonMistakes": [
+    "Arching lower back on overhead raise",
+    "Twisting toward cable tower"
+  ],
+  "safetyNotes": "Squeeze back glute tightly to lock pelvis in place.",
+  "alternatives": [
+    "Pallof Press",
+    "Plank"
+  ],
+  "recommendedSets": "3",
+  "recommendedReps": "8-10 per side",
+  "recommendedRest": 60
+}
 ];
 
 export const PREBUILT_WORKOUT_PROGRAMS = [

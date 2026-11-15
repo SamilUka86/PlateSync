@@ -13,6 +13,7 @@ import {
   Trophy, 
   Calculator,
   ChevronDown,
+  ChevronRight,
   Sparkles,
   Copy,
   ArrowRight,
@@ -23,14 +24,21 @@ import {
   Info,
   Filter,
   Search,
-  CheckCircle2
+  CheckCircle2,
+  FolderTree,
+  Maximize2,
+  Minimize2,
+  RotateCcw,
+  Target
 } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
 import { 
   EXERCISE_DATABASE, 
+  MAIN_MUSCLE_GROUPS,
   MUSCLE_GROUPS, 
+  MUSCLE_SUBGROUPS,
   EQUIPMENT_TYPES, 
   DIFFICULTY_LEVELS, 
   EXERCISE_TYPES 
@@ -75,10 +83,41 @@ export const WorkoutTrackerPage = ({ setActiveTab }) => {
   const [isExerciseModalOpen, setIsExerciseModalOpen] = useState(false);
   const [exerciseSearch, setExerciseSearch] = useState('');
   const [selectedMuscleFilter, setSelectedMuscleFilter] = useState('All');
+  const [selectedSubgroupFilter, setSelectedSubgroupFilter] = useState('All');
+  const [expandedMusclesInModal, setExpandedMusclesInModal] = useState({ 'Chest': true });
   const [selectedEquipmentFilter, setSelectedEquipmentFilter] = useState('All Equipment');
   const [selectedTypeFilter, setSelectedTypeFilter] = useState('All Types');
   const [selectedDifficultyFilter, setSelectedDifficultyFilter] = useState('All Levels');
   const [activeSelectorTab, setActiveSelectorTab] = useState('all'); // 'all' | 'favorites' | 'recent' | 'custom'
+
+  const toggleMuscleExpandInModal = (muscle, e) => {
+    if (e) e.stopPropagation();
+    setExpandedMusclesInModal(prev => ({
+      ...prev,
+      [muscle]: !prev[muscle]
+    }));
+  };
+
+  const handleExpandAllInModal = () => {
+    const all = {};
+    MAIN_MUSCLE_GROUPS.forEach(m => { all[m] = true; });
+    setExpandedMusclesInModal(all);
+  };
+
+  const handleCollapseAllInModal = () => {
+    const all = {};
+    MAIN_MUSCLE_GROUPS.forEach(m => { all[m] = false; });
+    setExpandedMusclesInModal(all);
+  };
+
+  const handleResetModalFilters = () => {
+    setExerciseSearch('');
+    setSelectedMuscleFilter('All');
+    setSelectedSubgroupFilter('All');
+    setSelectedEquipmentFilter('All Equipment');
+    setSelectedTypeFilter('All Types');
+    setSelectedDifficultyFilter('All Levels');
+  };
 
   // Custom exercise modal state
   const [isCustomModalOpen, setIsCustomModalOpen] = useState(false);
@@ -479,19 +518,56 @@ export const WorkoutTrackerPage = ({ setActiveTab }) => {
     addNotification(`Workout completed! Total volume: ${Math.round(totalVolumeKg)} KG (${Math.round(totalVolumeKg * KG_TO_LBS)} LB)`, 'success');
   };
 
-  // Unified Exercise Catalog = Custom + 160 Built-in Exercises
+  // Unified Exercise Catalog = Custom + 194 Built-in Exercises
   const allAvailableExercises = useMemo(() => {
     return [...customExercises, ...EXERCISE_DATABASE];
   }, [customExercises]);
+
+  // Strict 1-to-1 category and subgroup counts
+  const trackerCategoryCounts = useMemo(() => {
+    const counts = {
+      total: allAvailableExercises.length,
+      muscles: {},
+      subgroups: {}
+    };
+
+    MAIN_MUSCLE_GROUPS.forEach(m => {
+      counts.muscles[m] = 0;
+      const subList = MUSCLE_SUBGROUPS[m] || [];
+      subList.forEach(sg => {
+        counts.subgroups[sg] = 0;
+      });
+    });
+
+    allAvailableExercises.forEach(ex => {
+      if (counts.muscles[ex.muscle] !== undefined) {
+        counts.muscles[ex.muscle]++;
+      }
+      if (ex.subgroup && counts.subgroups[ex.subgroup] !== undefined) {
+        counts.subgroups[ex.subgroup]++;
+      }
+    });
+
+    return counts;
+  }, [allAvailableExercises]);
 
   // Filtered exercises for the Selector Modal
   const modalFilteredExercises = useMemo(() => {
     return allAvailableExercises.filter(ex => {
       const q = exerciseSearch.toLowerCase();
-      const matchesSearch = ex.name.toLowerCase().includes(q) ||
-                            ex.muscle.toLowerCase().includes(q) ||
-                            ex.movementPattern?.toLowerCase().includes(q);
-      const matchesMuscle = selectedMuscleFilter === 'All' || ex.muscle === selectedMuscleFilter || ex.category === selectedMuscleFilter;
+      const primaryMatch = Array.isArray(ex.primaryMuscles) && ex.primaryMuscles.some(m => m.toLowerCase().includes(q));
+      const secondaryMatch = Array.isArray(ex.secondaryMuscles) && ex.secondaryMuscles.some(m => m.toLowerCase().includes(q));
+      const matchesSearch = !q ||
+        ex.name.toLowerCase().includes(q) ||
+        ex.muscle.toLowerCase().includes(q) ||
+        (ex.subgroup && ex.subgroup.toLowerCase().includes(q)) ||
+        (ex.movementPattern && ex.movementPattern.toLowerCase().includes(q)) ||
+        (ex.equipment && ex.equipment.toLowerCase().includes(q)) ||
+        primaryMatch ||
+        secondaryMatch;
+
+      const matchesMuscle = selectedMuscleFilter === 'All' || ex.muscle === selectedMuscleFilter;
+      const matchesSubgroup = selectedSubgroupFilter === 'All' || ex.subgroup === selectedSubgroupFilter;
       const matchesEquip = selectedEquipmentFilter === 'All Equipment' || ex.equipment === selectedEquipmentFilter;
       const matchesType = selectedTypeFilter === 'All Types' || ex.type === selectedTypeFilter;
       const matchesDiff = selectedDifficultyFilter === 'All Levels' || ex.difficulty === selectedDifficultyFilter;
@@ -505,12 +581,13 @@ export const WorkoutTrackerPage = ({ setActiveTab }) => {
         matchesTab = Boolean(ex.isCustom);
       }
 
-      return matchesSearch && matchesMuscle && matchesEquip && matchesType && matchesDiff && matchesTab;
+      return matchesSearch && matchesMuscle && matchesSubgroup && matchesEquip && matchesType && matchesDiff && matchesTab;
     });
   }, [
     allAvailableExercises,
     exerciseSearch,
     selectedMuscleFilter,
+    selectedSubgroupFilter,
     selectedEquipmentFilter,
     selectedTypeFilter,
     selectedDifficultyFilter,
@@ -949,12 +1026,21 @@ export const WorkoutTrackerPage = ({ setActiveTab }) => {
                 <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3 pointer-events-none" />
                 <input
                   type="text"
-                  placeholder="Search 160+ exercises by name or muscle..."
+                  placeholder="Search 190+ exercises by name, muscle, subgroup, lats..."
                   value={exerciseSearch}
                   onChange={(e) => setExerciseSearch(e.target.value)}
                   className="w-full pl-9 pr-3.5 py-2.5 bg-midnight-bg border border-midnight-border rounded-xl text-white text-xs placeholder-slate-500 focus:outline-none focus:border-neon-cyan"
                   autoFocus
                 />
+                {exerciseSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setExerciseSearch('')}
+                    className="absolute right-3 top-3 text-slate-500 hover:text-white"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
 
               {/* Sub-Filters: Equipment, Type, Difficulty */}
@@ -990,23 +1076,185 @@ export const WorkoutTrackerPage = ({ setActiveTab }) => {
                 </select>
               </div>
 
-              {/* Muscle Group Chips */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
-                {MUSCLE_GROUPS.map((grp) => (
-                  <button
-                    key={grp}
-                    type="button"
-                    onClick={() => setSelectedMuscleFilter(grp)}
-                    className={`px-3 py-1 rounded-lg font-bold whitespace-nowrap transition ${
-                      selectedMuscleFilter === grp
-                        ? 'bg-neon-cyan text-slate-950'
-                        : 'bg-midnight-elevated text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    {grp}
-                  </button>
-                ))}
+              {/* Hierarchical Accordions for 7 Main Muscle Groups & Subgroups */}
+              <div className="space-y-2 pt-2 border-t border-midnight-border">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-slate-300 flex items-center gap-1.5">
+                    <FolderTree className="w-3.5 h-3.5 text-neon-cyan" />
+                    <span>7 Muscle Groups & Subgroups:</span>
+                  </span>
+
+                  <div className="flex items-center gap-1.5 text-[11px]">
+                    <button
+                      type="button"
+                      onClick={handleExpandAllInModal}
+                      className="px-2 py-0.5 rounded bg-midnight-elevated text-slate-300 hover:text-white"
+                      title="Expand all categories"
+                    >
+                      Expand All
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCollapseAllInModal}
+                      className="px-2 py-0.5 rounded bg-midnight-elevated text-slate-400 hover:text-white"
+                      title="Collapse all categories"
+                    >
+                      Collapse All
+                    </button>
+                    {selectedMuscleFilter !== 'All' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedMuscleFilter('All');
+                          setSelectedSubgroupFilter('All');
+                        }}
+                        className="px-2 py-0.5 rounded bg-neon-cyan/15 text-neon-cyan font-bold"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* 7 Muscle Group Accordions */}
+                <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                  {MAIN_MUSCLE_GROUPS.map((mg, idx) => {
+                    const isSelected = selectedMuscleFilter === mg;
+                    const count = trackerCategoryCounts.muscles[mg] || 0;
+                    const isExpanded = Boolean(expandedMusclesInModal[mg]);
+                    const subs = MUSCLE_SUBGROUPS[mg] || [];
+
+                    return (
+                      <div
+                        key={mg}
+                        className={`rounded-xl border transition overflow-hidden text-xs ${
+                          isSelected
+                            ? 'border-neon-cyan/40 bg-neon-cyan/5'
+                            : 'border-midnight-border bg-midnight-bg/60'
+                        }`}
+                      >
+                        {/* Muscle Header Row */}
+                        <div
+                          onClick={() => {
+                            if (selectedMuscleFilter === mg && selectedSubgroupFilter === 'All') {
+                              setSelectedMuscleFilter('All');
+                              setSelectedSubgroupFilter('All');
+                            } else {
+                              setSelectedMuscleFilter(mg);
+                              setSelectedSubgroupFilter('All');
+                              setExpandedMusclesInModal(prev => ({ ...prev, [mg]: true }));
+                            }
+                          }}
+                          className="p-2.5 flex items-center justify-between cursor-pointer select-none hover:bg-white/[0.02]"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className={`w-5 h-5 rounded-md flex items-center justify-center font-bold text-[10px] ${
+                              isSelected ? 'bg-neon-cyan text-slate-950' : 'bg-midnight-elevated text-slate-300'
+                            }`}>
+                              {idx + 1}
+                            </span>
+                            <span className={`font-bold truncate ${isSelected ? 'text-neon-cyan' : 'text-white'}`}>
+                              {mg}
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-mono">
+                              ({count})
+                            </span>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={(e) => toggleMuscleExpandInModal(mg, e)}
+                            className="p-1 rounded text-slate-400 hover:text-white"
+                          >
+                            {isExpanded ? (
+                              <ChevronDown className="w-3.5 h-3.5 text-neon-cyan" />
+                            ) : (
+                              <ChevronRight className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        </div>
+
+                        {/* Subgroups Container Nested Directly Under Main Muscle Group */}
+                        {isExpanded && (
+                          <div className="px-3 pb-2.5 pt-1 border-t border-midnight-border/50 bg-midnight-card/40">
+                            <div className="border-l-2 border-neon-cyan/30 pl-2.5 space-y-1.5 mt-1">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedMuscleFilter(mg);
+                                    setSelectedSubgroupFilter('All');
+                                  }}
+                                  className={`px-2 py-0.5 rounded-lg text-[11px] font-bold transition ${
+                                    isSelected && selectedSubgroupFilter === 'All'
+                                      ? 'bg-neon-cyan text-slate-950 font-black'
+                                      : 'bg-midnight-elevated text-slate-300 hover:text-white'
+                                  }`}
+                                >
+                                  All {mg} ({count})
+                                </button>
+
+                                {subs.map(sg => {
+                                  const isSgActive = isSelected && selectedSubgroupFilter === sg;
+                                  const sgCount = trackerCategoryCounts.subgroups[sg] || 0;
+
+                                  return (
+                                    <button
+                                      key={sg}
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedMuscleFilter(mg);
+                                        setSelectedSubgroupFilter(sg);
+                                      }}
+                                      className={`px-2 py-0.5 rounded-lg text-[11px] transition flex items-center gap-1 ${
+                                        isSgActive
+                                          ? 'bg-neon-violet text-white font-bold border border-neon-violet shadow-sm'
+                                          : 'bg-midnight-elevated text-slate-300 hover:text-white'
+                                      }`}
+                                    >
+                                      <span>{sg}</span>
+                                      <span className="text-[9px] font-mono opacity-80">({sgCount})</span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
+
+              {/* Active Filter Breadcrumb */}
+              {(selectedMuscleFilter !== 'All' || selectedSubgroupFilter !== 'All' || exerciseSearch) && (
+                <div className="flex items-center justify-between text-[11px] pt-1 text-slate-400">
+                  <div className="flex items-center gap-1.5 truncate">
+                    <span>Filtering:</span>
+                    {selectedMuscleFilter !== 'All' && (
+                      <span className="font-bold text-neon-cyan">{selectedMuscleFilter}</span>
+                    )}
+                    {selectedSubgroupFilter !== 'All' && (
+                      <>
+                        <span>&gt;</span>
+                        <span className="font-bold text-neon-violet">{selectedSubgroupFilter}</span>
+                      </>
+                    )}
+                    <span>({modalFilteredExercises.length} matches)</span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleResetModalFilters}
+                    className="text-neon-cyan hover:underline shrink-0"
+                  >
+                    Reset All
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Exercise List */}
@@ -1040,9 +1288,20 @@ export const WorkoutTrackerPage = ({ setActiveTab }) => {
                             </span>
                           )}
                         </div>
-                        <p className="text-[11px] text-slate-400 mt-0.5">
-                          <span className="text-neon-violet font-semibold">{ex.muscle}</span> &bull; {ex.equipment} &bull; {ex.difficulty}
-                        </p>
+                        <div className="flex flex-wrap items-center gap-1.5 mt-1 text-[11px] text-slate-400">
+                          <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/20">
+                            {ex.muscle}
+                          </span>
+                          {ex.subgroup && (
+                            <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-neon-violet/10 text-neon-violet border border-neon-violet/20">
+                              {ex.subgroup}
+                            </span>
+                          )}
+                          <span>&bull;</span>
+                          <span className="font-mono text-[10px] text-slate-300">{ex.equipment}</span>
+                          <span>&bull;</span>
+                          <span className="text-[10px]">{ex.difficulty}</span>
+                        </div>
                       </div>
 
                       {/* Right action icons: Favorite, Info / Hindi, Add */}

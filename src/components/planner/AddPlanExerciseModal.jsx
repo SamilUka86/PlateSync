@@ -13,7 +13,9 @@ import {
 } from 'lucide-react';
 import { 
   EXERCISE_DATABASE, 
+  MAIN_MUSCLE_GROUPS,
   MUSCLE_GROUPS, 
+  MUSCLE_SUBGROUPS,
   EQUIPMENT_TYPES 
 } from '../../utils/exerciseData';
 import { useAuth } from '../../context/AuthContext';
@@ -36,6 +38,7 @@ export const AddPlanExerciseModal = ({
   // Library Search & Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMuscle, setSelectedMuscle] = useState('All');
+  const [selectedSubgroup, setSelectedSubgroup] = useState('All');
   const [selectedEquipment, setSelectedEquipment] = useState('All Equipment');
 
   // Selected Library Exercise
@@ -57,12 +60,16 @@ export const AddPlanExerciseModal = ({
   const filteredExercises = useMemo(() => {
     return EXERCISE_DATABASE.filter(ex => {
       const q = searchQuery.toLowerCase();
-      const matchesSearch = !q || ex.name.toLowerCase().includes(q) || ex.muscle.toLowerCase().includes(q);
+      const matchesSearch = !q || 
+        ex.name.toLowerCase().includes(q) || 
+        ex.muscle.toLowerCase().includes(q) ||
+        (ex.subgroup && ex.subgroup.toLowerCase().includes(q));
       const matchesMuscle = selectedMuscle === 'All' || ex.muscle === selectedMuscle || ex.category === selectedMuscle;
+      const matchesSubgroup = selectedSubgroup === 'All' || ex.subgroup === selectedSubgroup;
       const matchesEquip = selectedEquipment === 'All Equipment' || ex.equipment === selectedEquipment;
-      return matchesSearch && matchesMuscle && matchesEquip;
+      return matchesSearch && matchesMuscle && matchesSubgroup && matchesEquip;
     });
-  }, [searchQuery, selectedMuscle, selectedEquipment]);
+  }, [searchQuery, selectedMuscle, selectedSubgroup, selectedEquipment]);
 
   const handleSelectLibraryItem = (ex) => {
     setSelectedExercise(ex);
@@ -194,10 +201,13 @@ export const AddPlanExerciseModal = ({
 
                 {/* Muscle Group Horizontal Pills */}
                 <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-                  {MUSCLE_GROUPS.slice(0, 10).map((m) => (
+                  {['All', ...MAIN_MUSCLE_GROUPS].map((m) => (
                     <button
                       key={m}
-                      onClick={() => setSelectedMuscle(m)}
+                      onClick={() => {
+                        setSelectedMuscle(m);
+                        setSelectedSubgroup('All');
+                      }}
                       className={`px-3 py-1 rounded-xl text-[11px] font-medium whitespace-nowrap transition ${
                         selectedMuscle === m
                           ? 'bg-neon-cyan text-slate-950 font-bold'
@@ -208,6 +218,37 @@ export const AddPlanExerciseModal = ({
                     </button>
                   ))}
                 </div>
+
+                {/* Subgroups under selected muscle group */}
+                {selectedMuscle !== 'All' && MUSCLE_SUBGROUPS[selectedMuscle] && (
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none border-l-2 border-neon-cyan/40 pl-2">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedSubgroup('All')}
+                      className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition ${
+                        selectedSubgroup === 'All'
+                          ? 'bg-neon-cyan text-slate-950'
+                          : 'bg-midnight-elevated text-slate-300 hover:text-white'
+                      }`}
+                    >
+                      All {selectedMuscle}
+                    </button>
+                    {MUSCLE_SUBGROUPS[selectedMuscle].map(sg => (
+                      <button
+                        key={sg}
+                        type="button"
+                        onClick={() => setSelectedSubgroup(sg)}
+                        className={`px-2.5 py-0.5 rounded-lg text-[10px] transition whitespace-nowrap ${
+                          selectedSubgroup === sg
+                            ? 'bg-neon-violet text-white font-bold border border-neon-violet'
+                            : 'bg-midnight-elevated text-slate-300 hover:text-white'
+                        }`}
+                      >
+                        {sg}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* List of Filtered Exercises */}
@@ -237,6 +278,11 @@ export const AddPlanExerciseModal = ({
                             <span className="px-1.5 py-0.5 rounded bg-midnight-card border border-midnight-border text-slate-300">
                               {ex.muscle}
                             </span>
+                            {ex.subgroup && (
+                              <span className="px-1.5 py-0.5 rounded bg-neon-violet/10 text-neon-violet border border-neon-violet/20 font-semibold">
+                                {ex.subgroup}
+                              </span>
+                            )}
                             <span>•</span>
                             <span>{ex.equipment}</span>
                             {ex.type && (
