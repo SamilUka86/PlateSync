@@ -20,7 +20,6 @@ import {
   Scale
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { SidebarWeightTracker } from './SidebarWeightTracker';
 
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -175,16 +174,6 @@ export const Sidebar = ({ activeTab, setActiveTab, isMobileOpen, setIsMobileOpen
               );
             })}
           </nav>
-
-          {/* Body Weight Tracker in Sidebar */}
-          <div className="pt-1">
-            <SidebarWeightTracker
-              collapsed={collapsed}
-              onExpandSidebar={() => setCollapsed(false)}
-              onOpenAuth={onOpenAuth}
-              onNavigateToSection={(tab) => handleSelectTab(tab)}
-            />
-          </div>
         </div>
 
         {/* Bottom: User Profile & Session Controls */}

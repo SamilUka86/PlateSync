@@ -22,7 +22,8 @@ import {
   X,
   Target,
   Maximize2,
-  Minimize2
+  Minimize2,
+  CalendarPlus
 } from 'lucide-react';
 import { 
   EXERCISE_DATABASE, 
@@ -35,6 +36,7 @@ import {
   PREBUILT_WORKOUT_PROGRAMS
 } from '../../utils/exerciseData';
 import { ExerciseDetailModal } from '../../components/library/ExerciseDetailModal';
+import { AddToPlannerModal } from '../../components/planner/AddToPlannerModal';
 import { useNotification } from '../../context/NotificationContext';
 
 export const ExerciseLibraryPage = ({ setActiveTab }) => {
@@ -104,6 +106,9 @@ export const ExerciseLibraryPage = ({ setActiveTab }) => {
 
   // Selected exercise for detail modal
   const [selectedExercise, setSelectedExercise] = useState(null);
+
+  // Selected exercise for Add to Weekly Planner modal (Day 1 - Day 7)
+  const [plannerExercise, setPlannerExercise] = useState(null);
 
   // Sync favorites
   useEffect(() => {
@@ -749,9 +754,9 @@ export const ExerciseLibraryPage = ({ setActiveTab }) => {
                       </p>
                     </div>
 
-                    {/* Card Footer: Equipment, Difficulty, Hindi Guide Link */}
+                    {/* Card Footer: Equipment, Difficulty, Hindi Guide Link & Add to Planner */}
                     <div className="pt-3 border-t border-midnight-border flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="text-[10px] text-slate-300 font-mono">
                           {ex.equipment}
                         </span>
@@ -763,11 +768,27 @@ export const ExerciseLibraryPage = ({ setActiveTab }) => {
                           </span>
                         )}
                       </div>
-                      <span className="text-neon-cyan text-xs font-bold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
-                        <Languages className="w-3 h-3" />
-                        <span>Guide & Hindi</span>
-                        <ChevronRight className="w-3.5 h-3.5" />
-                      </span>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        {/* Quick Add to Weekly Planner Button */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPlannerExercise(ex);
+                          }}
+                          className="px-2 py-1 rounded-lg bg-midnight-elevated hover:bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/30 text-[10px] font-bold flex items-center gap-1 transition active:scale-95"
+                          title="Add to Day 1 - Day 7 in Weekly Planner"
+                        >
+                          <CalendarPlus className="w-3 h-3" />
+                          <span>+ Plan</span>
+                        </button>
+
+                        <span className="text-neon-cyan text-xs font-bold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+                          <Languages className="w-3 h-3" />
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </span>
+                      </div>
                     </div>
                   </div>
                 );
@@ -883,8 +904,17 @@ export const ExerciseLibraryPage = ({ setActiveTab }) => {
         isOpen={Boolean(selectedExercise)}
         onClose={() => setSelectedExercise(null)}
         onAddToWorkout={handleAddToWorkout}
+        onAddToPlanner={(ex) => setPlannerExercise(ex)}
         isFavorite={selectedExercise ? favorites.includes(selectedExercise.id) : false}
         onToggleFavorite={handleToggleFavorite}
+      />
+
+      {/* Add To Weekly Planner (Day 1 - Day 7) Modal */}
+      <AddToPlannerModal
+        isOpen={Boolean(plannerExercise)}
+        onClose={() => setPlannerExercise(null)}
+        exercise={plannerExercise}
+        setActiveTab={setActiveTab}
       />
 
       {/* Create Custom Exercise Modal */}

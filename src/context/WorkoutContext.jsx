@@ -233,6 +233,50 @@ export const WorkoutProvider = ({ children }) => {
     await saveWeeklyRoutineState(nextRoutine);
   };
 
+  const addExerciseToDayPlan = async (dayKey, exerciseData) => {
+    const day = weeklyRoutine[dayKey] || {
+      id: dayKey,
+      dayName: dayKey.charAt(0).toUpperCase() + dayKey.slice(1),
+      shortName: dayKey.substring(0, 3),
+      isRestDay: false,
+      title: `${dayKey.charAt(0).toUpperCase() + dayKey.slice(1)} Workout`,
+      exercises: []
+    };
+
+    const isLegPress45 = Boolean(exerciseData.isLegPress45 || /45.*leg\s*press/i.test(exerciseData.name));
+    const defaultUnit = userProfile?.preferredUnit || 'KG';
+
+    const newExercise = {
+      id: `plan_${dayKey}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      exerciseId: exerciseData.exerciseId || exerciseData.id,
+      name: exerciseData.name,
+      muscle: exerciseData.muscle || exerciseData.category || 'Other',
+      category: exerciseData.muscle || exerciseData.category || 'Other',
+      subgroup: exerciseData.subgroup || '',
+      equipment: exerciseData.equipment || 'Barbell',
+      targetSets: Number(exerciseData.targetSets) || 3,
+      targetReps: exerciseData.targetReps || '8-10',
+      targetWeight: Number(exerciseData.targetWeight) || (isLegPress45 ? 100 : 20),
+      unit: exerciseData.unit || defaultUnit,
+      notes: exerciseData.notes || '',
+      isLegPress45
+    };
+
+    const updatedDay = {
+      ...day,
+      isRestDay: false,
+      exercises: [...(day.exercises || []), newExercise]
+    };
+
+    const nextRoutine = {
+      ...weeklyRoutine,
+      [dayKey]: updatedDay
+    };
+
+    await saveWeeklyRoutineState(nextRoutine);
+    return { dayName: day.dayName, exercise: newExercise };
+  };
+
   const resetWeeklyRoutine = async (templateKey = 'ppl') => {
     let nextRoutine = DEFAULT_WEEKLY_ROUTINE;
     if (templateKey === 'upper-lower') {
@@ -478,6 +522,7 @@ export const WorkoutProvider = ({ children }) => {
     setStagedWeight,
     weeklyRoutine,
     updateDayRoutine,
+    addExerciseToDayPlan,
     resetWeeklyRoutine,
     startRoutineDayWorkout,
     saveWeeklyRoutineState

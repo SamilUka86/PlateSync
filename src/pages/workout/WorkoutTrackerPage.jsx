@@ -45,6 +45,7 @@ import {
 } from '../../utils/exerciseData';
 import { KG_TO_LBS } from '../../utils/weightCalculations';
 import { ExerciseDetailModal } from '../../components/library/ExerciseDetailModal';
+import { AddToPlannerModal } from '../../components/planner/AddToPlannerModal';
 import { RestTimerWidget } from '../../components/workout/RestTimerWidget';
 import { WorkoutShareModal } from '../../components/workout/WorkoutShareModal';
 import { 
@@ -81,6 +82,7 @@ export const WorkoutTrackerPage = ({ setActiveTab }) => {
 
   // Exercise selector modal state
   const [isExerciseModalOpen, setIsExerciseModalOpen] = useState(false);
+  const [plannerExercise, setPlannerExercise] = useState(null);
   const [exerciseSearch, setExerciseSearch] = useState('');
   const [selectedMuscleFilter, setSelectedMuscleFilter] = useState('All');
   const [selectedSubgroupFilter, setSelectedSubgroupFilter] = useState('All');
@@ -1449,8 +1451,17 @@ export const WorkoutTrackerPage = ({ setActiveTab }) => {
           handleAddExercise(ex);
           setPreviewExercise(null);
         }}
+        onAddToPlanner={(ex) => setPlannerExercise(ex)}
         isFavorite={previewExercise ? favorites.includes(previewExercise.id) : false}
         onToggleFavorite={handleToggleFavorite}
+      />
+
+      {/* Add To Weekly Planner (Day 1 - Day 7) Modal */}
+      <AddToPlannerModal
+        isOpen={Boolean(plannerExercise)}
+        onClose={() => setPlannerExercise(null)}
+        exercise={plannerExercise}
+        setActiveTab={setActiveTab}
       />
 
       {/* 7. FLOATING REST TIMER WIDGET (AUDIO & VIBRATION) */}

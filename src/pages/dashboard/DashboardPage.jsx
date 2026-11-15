@@ -1,12 +1,12 @@
 import React, { useMemo } from 'react';
-import { 
-  Trophy, 
-  Dumbbell, 
-  Flame, 
-  TrendingUp, 
-  Calendar, 
-  Plus, 
-  Calculator, 
+import {
+  Trophy,
+  Dumbbell,
+  Flame,
+  TrendingUp,
+  Calendar,
+  Plus,
+  Calculator,
   Clock,
   ArrowRight,
   Layers,
@@ -17,14 +17,14 @@ import {
   Zap,
   Play
 } from 'lucide-react';
-import { 
-  ResponsiveContainer, 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  Tooltip, 
-  CartesianGrid 
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid
 } from 'recharts';
 import { useAuth } from '../../context/AuthContext';
 import { useWorkout } from '../../context/WorkoutContext';
@@ -60,7 +60,7 @@ export const DashboardPage = ({ setActiveTab }) => {
       const dayWorkouts = workouts.filter(w => new Date(w.date || w.createdAt).toDateString() === dateStr);
       let volume = 0;
       dayWorkouts.forEach(w => {
-        const v = preferredUnit === 'LB' 
+        const v = preferredUnit === 'LB'
           ? (w.totalVolumeLbs || (w.totalVolumeKg || w.totalVolume || 0) * KG_TO_LBS)
           : (w.totalVolumeKg || w.totalVolume || 0);
         volume += v;
@@ -97,7 +97,7 @@ export const DashboardPage = ({ setActiveTab }) => {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      
+
       {/* 1. Welcome Banner */}
       <div className="relative overflow-hidden rounded-3xl bg-midnight-card border border-midnight-border p-6 md:p-8">
         <div className="absolute top-0 right-0 w-80 h-80 bg-neon-cyan/10 rounded-full blur-[90px] pointer-events-none" />
@@ -144,13 +144,13 @@ export const DashboardPage = ({ setActiveTab }) => {
 
               {/* Concentric Rotating / Glowing Outer Ring */}
               <div className="relative w-32 h-32 sm:w-36 sm:h-36 rounded-full p-[2.5px] bg-gradient-to-tr from-neon-cyan via-neon-violet to-neon-cyan shadow-[0_0_30px_rgba(53,217,232,0.45)] group-hover:shadow-[0_0_50px_rgba(53,217,232,0.8)] transition-all duration-300">
-                
+
                 {/* Secondary Inset Bezel */}
                 <div className="w-full h-full rounded-full p-1 bg-midnight-bg/95 backdrop-blur-xl flex items-center justify-center">
-                  
+
                   {/* Innermost Core Agent Orb */}
                   <div className="w-full h-full rounded-full bg-gradient-to-br from-[#0c182e] via-[#08101f] to-[#132242] border border-neon-cyan/40 group-hover:border-neon-cyan flex flex-col items-center justify-center relative overflow-hidden transition-all duration-300 shadow-inner">
-                    
+
                     {/* Background Radial Sheen */}
                     <div className="absolute inset-0 bg-radial from-neon-cyan/20 via-transparent to-transparent opacity-60 group-hover:opacity-100 transition-opacity" />
 
@@ -186,8 +186,7 @@ export const DashboardPage = ({ setActiveTab }) => {
               {/* Status Pill Badge underneath the orb */}
               <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-midnight-bg/90 border border-midnight-border group-hover:border-neon-cyan/50 text-[10px] font-bold text-slate-300 shadow-lg transition">
                 <span className="w-1.5 h-1.5 rounded-full bg-neon-cyan animate-ping" />
-                <span className="text-white font-mono font-bold">Workout Agent</span>
-                <span className="text-neon-cyan text-[9px] uppercase tracking-wider">&bull; Tap to Start</span>
+                <span className="text-white font-mono font-bold">Tap to Start</span>
               </div>
             </button>
           </div>
@@ -196,7 +195,7 @@ export const DashboardPage = ({ setActiveTab }) => {
 
       {/* 2. Four Individual Statistic Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        
+
         {/* Card 1: Total Workouts */}
         <div className="bg-midnight-card border border-midnight-border rounded-2xl p-5 hover:border-neon-cyan/40 transition group">
           <div className="flex items-center justify-between">
@@ -358,7 +357,7 @@ export const DashboardPage = ({ setActiveTab }) => {
 
       {/* 3. Main Grid: Weekly Activity Chart (B) & Strength Overview (C) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* Weekly Activity Bar Chart (Recharts) */}
         <div className="lg:col-span-2 bg-midnight-card border border-midnight-border rounded-3xl p-6">
           <div className="flex items-center justify-between mb-6">
@@ -380,17 +379,17 @@ export const DashboardPage = ({ setActiveTab }) => {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={weeklyActivityData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#17233B" vertical={false} />
-                <XAxis 
-                  dataKey="day" 
-                  stroke="#64748B" 
-                  fontSize={11} 
-                  tickLine={false} 
-                  axisLine={{ stroke: '#26334D' }} 
+                <XAxis
+                  dataKey="day"
+                  stroke="#64748B"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={{ stroke: '#26334D' }}
                 />
-                <YAxis 
-                  stroke="#64748B" 
-                  fontSize={11} 
-                  tickLine={false} 
+                <YAxis
+                  stroke="#64748B"
+                  fontSize={11}
+                  tickLine={false}
                   axisLine={{ stroke: '#26334D' }}
                   tickFormatter={(val) => val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val}
                 />
@@ -414,10 +413,10 @@ export const DashboardPage = ({ setActiveTab }) => {
                     return null;
                   }}
                 />
-                <Bar 
-                  dataKey="volume" 
-                  fill="#35D9E8" 
-                  radius={[6, 6, 0, 0]} 
+                <Bar
+                  dataKey="volume"
+                  fill="#35D9E8"
+                  radius={[6, 6, 0, 0]}
                   maxBarSize={44}
                 />
               </BarChart>
@@ -509,7 +508,7 @@ export const DashboardPage = ({ setActiveTab }) => {
 
       {/* 4. Section A: Recent Workouts & Section E: Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* Recent Workouts (A) */}
         <div className="lg:col-span-2 bg-midnight-card border border-midnight-border rounded-3xl p-6 space-y-4">
           <div className="flex items-center justify-between">

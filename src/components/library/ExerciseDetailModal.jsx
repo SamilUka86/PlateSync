@@ -13,7 +13,8 @@ import {
   Activity,
   Star,
   Zap,
-  Repeat
+  Repeat,
+  CalendarPlus
 } from 'lucide-react';
 import { translateExerciseGuide } from '../../services/translation/translationService';
 
@@ -22,6 +23,7 @@ export const ExerciseDetailModal = ({
   isOpen,
   onClose,
   onAddToWorkout,
+  onAddToPlanner,
   isFavorite = false,
   onToggleFavorite = null
 }) => {
@@ -313,7 +315,7 @@ export const ExerciseDetailModal = ({
         </div>
 
         {/* Modal Footer CTA */}
-        <div className="p-4 border-t border-midnight-border flex items-center justify-between bg-midnight-card">
+        <div className="p-4 border-t border-midnight-border flex items-center justify-between gap-3 bg-midnight-card">
           <button
             type="button"
             onClick={onClose}
@@ -322,19 +324,32 @@ export const ExerciseDetailModal = ({
             {isHindi ? 'बंद करें (Close)' : 'Close'}
           </button>
 
-          {onAddToWorkout && (
-            <button
-              type="button"
-              onClick={() => {
-                onAddToWorkout(exercise);
-                onClose();
-              }}
-              className="px-6 py-2.5 bg-neon-cyan hover:bg-[#29bfcd] text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-neon-cyan/25 flex items-center gap-2 transition active:scale-95"
-            >
-              <Plus className="w-4 h-4" />
-              <span>{isHindi ? 'वर्कआउट में जोड़ें (Add to Workout)' : 'Add to Workout'}</span>
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {onAddToPlanner && (
+              <button
+                type="button"
+                onClick={() => onAddToPlanner(exercise)}
+                className="px-4 py-2.5 bg-midnight-elevated hover:bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/30 rounded-xl font-bold text-xs flex items-center gap-2 transition active:scale-95 shadow-sm"
+              >
+                <CalendarPlus className="w-4 h-4" />
+                <span>{isHindi ? 'साप्ताहिक योजना में जोड़ें' : 'Add to Weekly Plan (Day 1 - 7)'}</span>
+              </button>
+            )}
+
+            {onAddToWorkout && (
+              <button
+                type="button"
+                onClick={() => {
+                  onAddToWorkout(exercise);
+                  onClose();
+                }}
+                className="px-5 py-2.5 bg-neon-cyan hover:bg-[#29bfcd] text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-neon-cyan/25 flex items-center gap-2 transition active:scale-95"
+              >
+                <Plus className="w-4 h-4" />
+                <span>{isHindi ? 'वर्कआउट में जोड़ें (Add to Workout)' : 'Add to Workout'}</span>
+              </button>
+            )}
+          </div>
         </div>
 
       </div>
