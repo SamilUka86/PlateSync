@@ -210,7 +210,7 @@ export const AdminUsersTab = () => {
               ) : (
                 users.map((u) => {
                   const isUserOwner = u.email?.toLowerCase() === OWNER_EMAIL.toLowerCase();
-                  const roleBadge = isUserOwner ? 'Owner' : (u.role === 'admin' ? 'Admin' : 'Athlete');
+                  const roleBadge = isUserOwner ? 'Lead Admin' : (u.role === 'admin' ? 'Admin' : 'Athlete');
                   const isActive = (u.status || 'active') === 'active';
 
                   return (

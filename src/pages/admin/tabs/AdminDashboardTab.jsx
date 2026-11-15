@@ -119,7 +119,7 @@ export const AdminDashboardTab = ({ onNavigateTab }) => {
             )}
           </div>
           <h1 className="text-xl md:text-2xl font-black text-white tracking-tight">
-            PlateSync Owner & Operations Dashboard
+            PlateSync Admin & Operations Dashboard
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
             Real-time database metrics across athletes, logged workouts, exercise database, and cloud syncing

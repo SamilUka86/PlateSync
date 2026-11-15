@@ -66,7 +66,7 @@ export const AdminLayout = ({ onBackToApp }) => {
           </button>
           <div className="flex items-center gap-1.5">
             <Shield className="w-4 h-4 text-amber-400" />
-            <span className="font-black text-sm text-white">PlateSync Owner</span>
+            <span className="font-black text-sm text-white">PlateSync Admin</span>
           </div>
         </div>
 
@@ -98,7 +98,7 @@ export const AdminLayout = ({ onBackToApp }) => {
                 Plate<span className="text-neon-cyan">Sync</span>
               </span>
               <span className="text-[10px] text-amber-300/90 font-mono font-bold block uppercase tracking-wider">
-                {isOwner ? 'Platform Owner' : 'Administrator'}
+                Platform Administrator
               </span>
             </div>
           </div>

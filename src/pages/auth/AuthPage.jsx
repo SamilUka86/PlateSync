@@ -26,9 +26,9 @@ import { FirebaseSetupModal } from '../../components/auth/FirebaseSetupModal';
 import { GoogleAuthSetupModal } from '../../components/auth/GoogleAuthSetupModal';
 import { Footer } from '../../components/layout/Footer';
 
-export const AuthPage = ({ onClose, onSuccess, onActivateOwnerPortal }) => {
+export const AuthPage = ({ onClose, onSuccess, onActivateAdminPortal }) => {
   const [isSignUp, setIsSignUp] = useState(false);
-  const [isOwnerLogin, setIsOwnerLogin] = useState(false);
+  const [isAdminLogin, setIsAdminLogin] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
@@ -161,9 +161,9 @@ export const AuthPage = ({ onClose, onSuccess, onActivateOwnerPortal }) => {
     }
 
     const trimmedEmail = email.trim().toLowerCase();
-    const isOwnerTarget = isOwnerLogin || (!isSignUp && trimmedEmail === (OWNER_EMAIL || 'samilplatesync@gmail.com').toLowerCase());
+    const isAdminTarget = isAdminLogin || (!isSignUp && trimmedEmail === (OWNER_EMAIL || 'samilplatesync@gmail.com').toLowerCase());
 
-    if (isOwnerTarget) {
+    if (isAdminTarget) {
       try {
         await loginAdminAccount(trimmedEmail, password);
         try {
@@ -171,9 +171,9 @@ export const AuthPage = ({ onClose, onSuccess, onActivateOwnerPortal }) => {
         } catch (authErr) {
           // If standard athlete profile is not linked, admin session is already secured
         }
-        addNotification('Authenticated as Owner. Activating Owner Suite...', 'success');
-        if (onActivateOwnerPortal) {
-          onActivateOwnerPortal();
+        addNotification('Authenticated as Administrator. Activating Admin Suite...', 'success');
+        if (onActivateAdminPortal) {
+          onActivateAdminPortal();
         } else if (onSuccess) {
           onSuccess();
         } else if (onClose) {
@@ -181,12 +181,12 @@ export const AuthPage = ({ onClose, onSuccess, onActivateOwnerPortal }) => {
         }
         return;
       } catch (adminErr) {
-        console.error('Owner authentication failed:', adminErr);
-        let msg = adminErr.message || 'Invalid owner credentials.';
+        console.error('Admin authentication notice:', adminErr);
+        let msg = adminErr.message || 'Invalid administrator credentials.';
         if (adminErr.code === 'auth/unauthorized-admin') {
-          msg = 'Access Denied: This account does not possess owner administration privileges.';
+          msg = 'Access Denied: This account does not possess administrator privileges.';
         } else if (adminErr.code === 'auth/invalid-credential' || adminErr.code === 'auth/wrong-password' || adminErr.code === 'auth/user-not-found') {
-          msg = 'Invalid owner email or password. Please verify your credentials.';
+          msg = 'Invalid email or password. Please verify administrative credentials.';
         }
         setErrorMessage(msg);
         return;
@@ -361,7 +361,7 @@ export const AuthPage = ({ onClose, onSuccess, onActivateOwnerPortal }) => {
           )}
           
           {/* Header */}
-          {isOwnerLogin ? (
+          {isAdminLogin ? (
             <div className="text-center mb-6">
               <div className="w-14 h-14 mx-auto mb-3 p-0.5 rounded-2xl bg-gradient-to-tr from-amber-400 to-amber-600 shadow-lg shadow-amber-500/20">
                 <div className="w-full h-full bg-midnight-card rounded-[14px] flex items-center justify-center">
@@ -370,14 +370,14 @@ export const AuthPage = ({ onClose, onSuccess, onActivateOwnerPortal }) => {
               </div>
 
               <span className="px-2.5 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/30 text-[10px] font-bold text-amber-300 font-mono uppercase tracking-wider">
-                Owner Authentication
+                Admin Authentication
               </span>
 
               <h1 className="text-xl md:text-2xl font-black text-white tracking-tight mt-2">
-                PlateSync Owner Suite
+                PlateSync Admin Suite
               </h1>
               <p className="text-xs text-slate-400 mt-1">
-                Enter your designated owner email and password to activate the Owner Portal.
+                Enter your designated administrator email and password to activate the Admin Portal.
               </p>
             </div>
           ) : (
@@ -401,7 +401,7 @@ export const AuthPage = ({ onClose, onSuccess, onActivateOwnerPortal }) => {
           )}
 
           {/* Tab Selector */}
-          {!isOwnerLogin && (
+          {!isAdminLogin && (
             <div className="grid grid-cols-2 p-1 bg-midnight-bg rounded-xl border border-midnight-border mb-5">
               <button
                 type="button"
@@ -437,7 +437,7 @@ export const AuthPage = ({ onClose, onSuccess, onActivateOwnerPortal }) => {
           )}
 
           {/* Google Sign-In Button (Dark Elevated Card) */}
-          {!isOwnerLogin && (
+          {!isAdminLogin && (
             <>
               <button
                 type="button"
@@ -740,7 +740,7 @@ export const AuthPage = ({ onClose, onSuccess, onActivateOwnerPortal }) => {
               type="submit"
               disabled={submitting}
               className={`w-full mt-3 py-2.5 px-4 font-black text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 transition active:scale-[0.98] disabled:opacity-50 ${
-                isOwnerLogin
+                isAdminLogin
                   ? 'bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 shadow-amber-500/20'
                   : 'bg-neon-cyan hover:bg-[#29bfcd] text-slate-950 shadow-neon-cyan/25'
               }`}
@@ -750,8 +750,8 @@ export const AuthPage = ({ onClose, onSuccess, onActivateOwnerPortal }) => {
               ) : (
                 <>
                   <span>
-                    {isOwnerLogin 
-                      ? 'Authenticate & Launch Owner Suite'
+                    {isAdminLogin 
+                      ? 'Authenticate & Launch Admin Suite'
                       : isSignUp ? 'Create Athlete Account' : 'Sign In to Dashboard'}
                   </span>
                   <ArrowRight className="w-4 h-4" />
@@ -760,13 +760,13 @@ export const AuthPage = ({ onClose, onSuccess, onActivateOwnerPortal }) => {
             </button>
           </form>
 
-          {/* Owner Mode Return Switch */}
-          {isOwnerLogin ? (
+          {/* Admin Mode Return Switch */}
+          {isAdminLogin ? (
             <div className="mt-4 pt-3 border-t border-midnight-border text-center">
               <button
                 type="button"
                 onClick={() => {
-                  setIsOwnerLogin(false);
+                  setIsAdminLogin(false);
                   setEmail('');
                   setPassword('');
                   setErrorMessage('');
@@ -804,12 +804,12 @@ export const AuthPage = ({ onClose, onSuccess, onActivateOwnerPortal }) => {
                 </p>
               </div>
 
-              {/* Discreet Owner Portal Entry on Signing Page */}
+              {/* Discreet Admin Portal Entry on Signing Page */}
               <div className="pt-3 text-center">
                 <button
                   type="button"
                   onClick={() => {
-                    setIsOwnerLogin(true);
+                    setIsAdminLogin(true);
                     setIsSignUp(false);
                     setEmail(OWNER_EMAIL || 'samilplatesync@gmail.com');
                     setPassword('');
@@ -818,7 +818,7 @@ export const AuthPage = ({ onClose, onSuccess, onActivateOwnerPortal }) => {
                   className="text-[11px] text-slate-500 hover:text-amber-400 transition inline-flex items-center gap-1.5 cursor-pointer"
                 >
                   <Shield className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Owner Portal Sign In</span>
+                  <span>Admin Portal Sign In</span>
                 </button>
               </div>
             </>

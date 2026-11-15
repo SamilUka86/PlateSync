@@ -326,7 +326,7 @@ const MainAppLayout = () => {
               setShowAuthModal(false);
               handleSetActiveTab('dashboard');
             }}
-            onActivateOwnerPortal={() => {
+            onActivateAdminPortal={() => {
               setShowAuthModal(false);
               setIsAdminViewOpen(true);
             }}

@@ -141,7 +141,7 @@ export const AdminLoginPage = ({ onBackToApp }) => {
                 Plate<span className="text-neon-cyan">Sync</span>
               </span>
               <span className="px-2 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/30 text-[10px] font-black text-amber-300 font-mono tracking-wider uppercase">
-                Owner Portal
+                Admin Portal
               </span>
             </div>
             <p className="text-[10px] text-slate-400 font-mono">
@@ -176,7 +176,7 @@ export const AdminLoginPage = ({ onBackToApp }) => {
               Administrative Sign In
             </h1>
             <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
-              Authenticate with your verified PlateSync owner credentials to manage the platform
+              Authenticate with your verified PlateSync administrator credentials to manage the platform
             </p>
           </div>
 
@@ -271,10 +271,10 @@ export const AdminLoginPage = ({ onBackToApp }) => {
             </button>
           </form>
 
-          {/* First-time Owner Setup Helper */}
+          {/* First-time Admin Setup Helper */}
           <div className="mt-6 pt-4 border-t border-midnight-border text-center space-y-2">
             <p className="text-[11px] text-slate-400">
-              First time logging into the Owner Account?
+              First time logging into the Administrator Account?
             </p>
             <button
               type="button"
@@ -282,7 +282,7 @@ export const AdminLoginPage = ({ onBackToApp }) => {
               className="text-xs text-amber-400 hover:text-amber-300 font-bold flex items-center justify-center gap-1.5 mx-auto hover:underline"
             >
               <KeyRound className="w-3.5 h-3.5" />
-              <span>Owner Account Setup (samilplatesync@gmail.com)</span>
+              <span>Admin Account Setup (samilplatesync@gmail.com)</span>
             </button>
           </div>
 
@@ -350,17 +350,17 @@ export const AdminLoginPage = ({ onBackToApp }) => {
         </div>
       )}
 
-      {/* Owner Setup Modal (Configures password directly in Firebase Auth without hardcoding) */}
+      {/* Admin Setup Modal (Configures password directly in Firebase Auth without hardcoding) */}
       {showSetupModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in">
           <div className="w-full max-w-md bg-midnight-card border border-amber-400/40 rounded-3xl p-6 shadow-2xl relative">
             <div className="flex items-center gap-2 mb-2 text-amber-400">
               <Shield className="w-5 h-5" />
-              <h3 className="text-base font-bold text-white">Owner Account Initial Provisioning</h3>
+              <h3 className="text-base font-bold text-white">Admin Account Initial Provisioning</h3>
             </div>
             <p className="text-xs text-slate-400 mb-4 leading-relaxed">
-              Designated Owner Email: <span className="text-amber-300 font-mono font-bold">{OWNER_EMAIL}</span>.
-              <br />Set your secure password directly in Firebase Authentication to activate the Owner Panel.
+              Designated Admin Email: <span className="text-amber-300 font-mono font-bold">{OWNER_EMAIL}</span>.
+              <br />Set your secure password directly in Firebase Authentication to activate the Admin Panel.
             </p>
 
             {setupError && (
@@ -373,7 +373,7 @@ export const AdminLoginPage = ({ onBackToApp }) => {
             <form onSubmit={handleOwnerSetup} className="space-y-3.5">
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Create Owner Password (min. 8 characters)
+                  Create Administrator Password (min. 8 characters)
                 </label>
                 <input
                   type="password"
@@ -387,7 +387,7 @@ export const AdminLoginPage = ({ onBackToApp }) => {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Confirm Owner Password
+                  Confirm Administrator Password
                 </label>
                 <input
                   type="password"
@@ -416,7 +416,7 @@ export const AdminLoginPage = ({ onBackToApp }) => {
                   disabled={setupSubmitting}
                   className="flex-1 py-2.5 bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 rounded-xl text-xs font-black shadow-lg shadow-amber-500/20 disabled:opacity-50"
                 >
-                  {setupSubmitting ? 'Provisioning...' : 'Provision Owner Account'}
+                  {setupSubmitting ? 'Provisioning...' : 'Provision Admin Account'}
                 </button>
               </div>
             </form>
