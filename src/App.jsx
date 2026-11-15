@@ -5,6 +5,7 @@ import { NotificationProvider } from './context/NotificationContext';
 import { AuthPage } from './pages/auth/AuthPage';
 import { Sidebar } from './components/layout/Sidebar';
 import { Header } from './components/layout/Header';
+import { Footer } from './components/layout/Footer';
 import { DemoRestrictedView } from './components/layout/DemoRestrictedView';
 
 // Pages
@@ -114,6 +115,9 @@ const MainAppLayout = () => {
             </>
           )}
         </main>
+
+        {/* Global Footer */}
+        <Footer />
       </div>
 
       {/* Mobile Bottom Navigation Bar */}

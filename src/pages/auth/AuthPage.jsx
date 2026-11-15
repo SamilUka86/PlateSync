@@ -17,6 +17,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
 import { ForgotPasswordModal } from '../../components/auth/ForgotPasswordModal';
 import { FirebaseSetupModal } from '../../components/auth/FirebaseSetupModal';
+import { Footer } from '../../components/layout/Footer';
 
 export const AuthPage = () => {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -473,9 +474,7 @@ export const AuthPage = () => {
       )}
 
       {/* Footer */}
-      <footer className="px-6 py-4 border-t border-midnight-border bg-midnight-secondary/60 text-center text-xs text-slate-500">
-        PlateSync &copy; {new Date().getFullYear()} &bull; Smart Mixed-Unit Barbell & Workout Tracking Platform
-      </footer>
+      <Footer />
     </div>
   );
 };
