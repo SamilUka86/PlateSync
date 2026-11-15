@@ -41,9 +41,10 @@ export const SettingsPage = ({ onOpenFeedback, onOpenAdmin }) => {
   const { addNotification } = useNotification();
 
   const isAdminUser = Boolean(
+    currentUser?.email?.toLowerCase() === 'platesync86@gmail.com' ||
     currentUser?.email?.toLowerCase() === 'samilplatesync@gmail.com' ||
-    adminSession?.email?.toLowerCase() === 'samilplatesync@gmail.com' ||
-    isAdmin
+    adminSession?.email?.toLowerCase() === 'platesync86@gmail.com' ||
+    adminSession?.email?.toLowerCase() === 'samilplatesync@gmail.com'
   );
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [isVibrating, setIsVibrating] = useState(false);
@@ -331,7 +332,7 @@ export const SettingsPage = ({ onOpenFeedback, onOpenAdmin }) => {
                   Administrator Portal Access
                 </h3>
                 <span className="px-2 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/30 text-[10px] font-bold text-amber-300 font-mono">
-                  {currentUser?.email || 'samilplatesync@gmail.com'}
+                  {currentUser?.email || 'platesync86@gmail.com'}
                 </span>
               </div>
               <p className="text-xs text-slate-400">

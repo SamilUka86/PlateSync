@@ -282,7 +282,7 @@ export const AdminLoginPage = ({ onBackToApp }) => {
               className="text-xs text-amber-400 hover:text-amber-300 font-bold flex items-center justify-center gap-1.5 mx-auto hover:underline"
             >
               <KeyRound className="w-3.5 h-3.5" />
-              <span>Admin Account Setup (samilplatesync@gmail.com)</span>
+              <span>Admin Account Setup ({OWNER_EMAIL})</span>
             </button>
           </div>
 

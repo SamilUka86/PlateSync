@@ -28,7 +28,7 @@ service cloud.firestore {
     function isPlatformOwner() {
       return isAuthenticated() && (
         request.auth.token.owner == true ||
-        (request.auth.token.email == 'samilplatesync@gmail.com' &&
+        ((request.auth.token.email == 'platesync86@gmail.com' || request.auth.token.email == 'samilplatesync@gmail.com') &&
          exists(/databases/$(database)/documents/adminUsers/$(request.auth.uid)))
       );
     }
@@ -128,7 +128,7 @@ service cloud.firestore {
       // Only the platform owner can create, update, or remove admin privileges
       allow create, update, delete: if isPlatformOwner() || (
         // Allow initial bootstrap if owner account authenticates
-        isAuthenticated() && request.auth.token.email == 'samilplatesync@gmail.com'
+        isAuthenticated() && (request.auth.token.email == 'platesync86@gmail.com' || request.auth.token.email == 'samilplatesync@gmail.com')
       );
     }
 

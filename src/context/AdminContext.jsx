@@ -90,7 +90,7 @@ export const AdminProvider = ({ children }) => {
   const value = {
     adminSession,
     isAdmin: Boolean(adminSession?.uid && (adminSession.role === 'admin' || adminSession.role === 'owner')),
-    isOwner: Boolean(adminSession?.isOwner || adminSession?.role === 'owner' || adminSession?.email?.toLowerCase() === 'samilplatesync@gmail.com'),
+    isOwner: Boolean(adminSession?.isOwner || adminSession?.role === 'owner' || adminSession?.email?.toLowerCase() === 'platesync86@gmail.com' || adminSession?.email?.toLowerCase() === 'samilplatesync@gmail.com'),
     adminLoading,
     adminError,
     loginAdminAccount,

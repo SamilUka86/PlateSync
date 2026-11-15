@@ -1,5 +1,5 @@
 import React from 'react';
-import { Heart } from 'lucide-react';
+import { Heart, Mail } from 'lucide-react';
 
 /**
  * =========================================================================
@@ -15,7 +15,10 @@ export const SOCIAL_LINKS = {
   linkedin: 'https://www.linkedin.com/in/samil-uka-53049b359?utm_source=share_via&utm_content=profile&utm_medium=member_android',
 
   // Replace with your personal GitHub profile URL:
-  github: 'https://github.com/SamilUka86'
+  github: 'https://github.com/SamilUka86',
+
+  // Direct Contact Email:
+  email: 'mailto:platesync86@gmail.com'
 };
 
 // Scalable Vector Icons for Social Platforms
@@ -117,12 +120,27 @@ export const Footer = ({ className = "" }) => {
           >
             <GithubIcon className="w-4 h-4" />
           </a>
+
+          {/* Contact Email */}
+          <a
+            href={SOCIAL_LINKS.email}
+            aria-label="Contact via Email"
+            title="Contact Support: platesync86@gmail.com"
+            className="w-8 h-8 rounded-xl bg-midnight-bg border border-midnight-border flex items-center justify-center text-slate-400 hover:text-neon-cyan hover:border-neon-cyan/40 hover:bg-neon-cyan/10 transition duration-200 transform hover:scale-110 active:scale-95 shadow-sm"
+          >
+            <Mail className="w-4 h-4" />
+          </a>
         </div>
 
-        {/* Brand Copyright */}
-        <p className="text-[11px] text-slate-500 font-medium">
-          PlateSync &copy; {new Date().getFullYear()} &bull; Smart Mixed-Unit Barbell &amp; Workout Tracking Platform
-        </p>
+        {/* Contact Email Note & Brand Copyright */}
+        <div className="space-y-0.5">
+          <p className="text-[11.5px] text-slate-400 font-mono">
+            Contact: <a href={SOCIAL_LINKS.email} className="text-neon-cyan hover:underline">platesync86@gmail.com</a>
+          </p>
+          <p className="text-[10.5px] text-slate-500 font-medium">
+            PlateSync &copy; {new Date().getFullYear()} &bull; Smart Mixed-Unit Barbell &amp; Workout Tracking Platform
+          </p>
+        </div>
 
       </div>
     </footer>

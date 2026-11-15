@@ -161,7 +161,7 @@ export const AuthPage = ({ onClose, onSuccess, onActivateAdminPortal }) => {
     }
 
     const trimmedEmail = email.trim().toLowerCase();
-    const isAdminTarget = isAdminLogin || (!isSignUp && trimmedEmail === (OWNER_EMAIL || 'samilplatesync@gmail.com').toLowerCase());
+    const isAdminTarget = isAdminLogin || (!isSignUp && (trimmedEmail === (OWNER_EMAIL || 'platesync86@gmail.com').toLowerCase() || trimmedEmail === 'samilplatesync@gmail.com'));
 
     if (isAdminTarget) {
       try {
@@ -811,7 +811,7 @@ export const AuthPage = ({ onClose, onSuccess, onActivateAdminPortal }) => {
                   onClick={() => {
                     setIsAdminLogin(true);
                     setIsSignUp(false);
-                    setEmail(OWNER_EMAIL || 'samilplatesync@gmail.com');
+                    setEmail(OWNER_EMAIL || 'platesync86@gmail.com');
                     setPassword('');
                     setErrorMessage('');
                   }}

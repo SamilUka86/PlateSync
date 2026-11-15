@@ -336,7 +336,7 @@ export const getAdminUsersList = async (searchQuery = '', statusFilter = 'ALL') 
           }
         }
 
-        const isLeadAdmin = data.email?.toLowerCase() === 'samilplatesync@gmail.com';
+        const isLeadAdmin = data.email?.toLowerCase() === 'platesync86@gmail.com' || data.email?.toLowerCase() === 'samilplatesync@gmail.com';
         const role = isLeadAdmin ? 'owner' : (data.role || 'athlete');
 
         return {
@@ -367,7 +367,7 @@ export const getAdminUsersList = async (searchQuery = '', statusFilter = 'ALL') 
     const cur = auth.currentUser;
     const exists = list.some(u => u.uid === cur.uid || u.id === cur.uid);
     if (!exists) {
-      const isLead = cur.email?.toLowerCase() === 'samilplatesync@gmail.com';
+      const isLead = cur.email?.toLowerCase() === 'platesync86@gmail.com' || cur.email?.toLowerCase() === 'samilplatesync@gmail.com';
       list.unshift({
         id: cur.uid,
         uid: cur.uid,
@@ -513,7 +513,7 @@ export const setAccountStatus = async (userId, newStatus) => {
 export const setUserAdminRole = async (targetUserId, targetEmail, role = 'admin') => {
   if (!targetUserId) throw new Error('Target user ID required');
 
-  if (targetEmail?.toLowerCase() === 'samilplatesync@gmail.com' && role !== 'owner') {
+  if ((targetEmail?.toLowerCase() === 'platesync86@gmail.com' || targetEmail?.toLowerCase() === 'samilplatesync@gmail.com') && role !== 'owner') {
     throw new Error('The designated platform owner account cannot be downgraded.');
   }
 
@@ -545,7 +545,7 @@ export const setUserAdminRole = async (targetUserId, targetEmail, role = 'admin'
 export const safeDeleteUserAccount = async (userId, targetEmail) => {
   if (!userId) throw new Error('User ID required');
 
-  if (targetEmail?.toLowerCase() === 'samilplatesync@gmail.com') {
+  if (targetEmail?.toLowerCase() === 'platesync86@gmail.com' || targetEmail?.toLowerCase() === 'samilplatesync@gmail.com') {
     throw new Error('Safety restriction: The platform owner account cannot be deleted.');
   }
 
@@ -933,7 +933,8 @@ export const DEFAULT_PLATFORM_SETTINGS = {
   featuredExerciseId: '',
   defaultLanguage: 'en',
   defaultUnit: 'KG',
-  supportEmail: 'support@platesync.app',
+  supportEmail: 'platesync86@gmail.com',
+  adminEmail: 'platesync86@gmail.com',
   minAppVersion: '1.0.0',
   updatedAt: new Date().toISOString()
 };

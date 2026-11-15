@@ -16,7 +16,8 @@ import { auth, db, isFirebaseConfigured } from '../firebase/config';
 import { createUserProfileDocument } from '../firestore/firestoreService';
 import { logAdminAction } from './adminDataService';
 
-export const OWNER_EMAIL = 'samilplatesync@gmail.com';
+export const OWNER_EMAIL = 'platesync86@gmail.com';
+export const LEGACY_OWNER_EMAIL = 'samilplatesync@gmail.com';
 const ADMIN_SESSION_KEY = 'platesync_admin_session';
 const FAILED_ATTEMPTS_KEY = 'platesync_admin_failed_attempts';
 const MAX_FAILED_ATTEMPTS = 5;
@@ -82,7 +83,7 @@ export const verifyAdminPrivileges = async (user) => {
         uid: user.uid,
         email: user.email,
         role: tokenResult.claims.owner ? 'owner' : (tokenResult.claims.role || 'admin'),
-        isOwner: Boolean(tokenResult.claims.owner || user.email?.toLowerCase() === OWNER_EMAIL.toLowerCase()),
+        isOwner: Boolean(tokenResult.claims.owner || user.email?.toLowerCase() === OWNER_EMAIL.toLowerCase() || user.email?.toLowerCase() === LEGACY_OWNER_EMAIL.toLowerCase()),
         customClaimsVerified: true
       };
     }
@@ -99,7 +100,7 @@ export const verifyAdminPrivileges = async (user) => {
       if (adminSnap.exists()) {
         const adminData = adminSnap.data();
         if (adminData.active !== false) {
-          const isOwner = user.email?.toLowerCase() === OWNER_EMAIL.toLowerCase() || adminData.role === 'owner';
+          const isOwner = user.email?.toLowerCase() === OWNER_EMAIL.toLowerCase() || user.email?.toLowerCase() === LEGACY_OWNER_EMAIL.toLowerCase() || adminData.role === 'owner';
           return {
             uid: user.uid,
             email: user.email,
@@ -111,8 +112,8 @@ export const verifyAdminPrivileges = async (user) => {
         }
       }
 
-      // 3. Special owner bootstrap check: If authenticated user matches OWNER_EMAIL and record doesn't exist yet
-      if (user.email?.toLowerCase() === OWNER_EMAIL.toLowerCase()) {
+      // 3. Special owner bootstrap check: If authenticated user matches designated admin email and record doesn't exist yet
+      if (user.email?.toLowerCase() === OWNER_EMAIL.toLowerCase() || user.email?.toLowerCase() === LEGACY_OWNER_EMAIL.toLowerCase()) {
         const ownerPayload = {
           uid: user.uid,
           email: user.email,
@@ -150,7 +151,7 @@ export const verifyAdminPrivileges = async (user) => {
  */
 export const loginAdmin = async (email, password) => {
   const trimmedEmail = (email || '').trim().toLowerCase();
-  const isDesignatedAdmin = trimmedEmail === OWNER_EMAIL.toLowerCase();
+  const isDesignatedAdmin = trimmedEmail === OWNER_EMAIL.toLowerCase() || trimmedEmail === LEGACY_OWNER_EMAIL.toLowerCase();
 
   // If designated admin, clear any previous client lockout
   if (isDesignatedAdmin) {
@@ -181,14 +182,14 @@ export const loginAdmin = async (email, password) => {
       // If designated admin, automatically provision or authorize
       if (isDesignatedAdmin && isMasterPasswordMatch) {
         try {
-          const newCred = await createUserWithEmailAndPassword(auth, OWNER_EMAIL, password);
+          const newCred = await createUserWithEmailAndPassword(auth, trimmedEmail, password);
           user = newCred.user;
           
           if (db) {
             const adminDocRef = doc(db, 'adminUsers', user.uid);
             await setDoc(adminDocRef, {
               uid: user.uid,
-              email: OWNER_EMAIL,
+              email: trimmedEmail,
               role: 'admin',
               active: true,
               permissions: ['all'],
@@ -200,7 +201,7 @@ export const loginAdmin = async (email, password) => {
           
           adminAuthInfo = {
             uid: user.uid,
-            email: OWNER_EMAIL,
+            email: trimmedEmail,
             role: 'admin',
             isOwner: true,
             permissions: ['all']
@@ -208,8 +209,8 @@ export const loginAdmin = async (email, password) => {
         } catch (createErr) {
           console.warn('Admin auto-creation note:', createErr.code);
           adminAuthInfo = {
-            uid: auth.currentUser?.uid || 'admin_samil_root',
-            email: OWNER_EMAIL,
+            uid: auth.currentUser?.uid || 'admin_platesync_root',
+            email: trimmedEmail,
             role: 'admin',
             isOwner: true,
             permissions: ['all']
@@ -223,8 +224,8 @@ export const loginAdmin = async (email, password) => {
   } else if (isDesignatedAdmin && isMasterPasswordMatch) {
     // Local / offline fallback
     adminAuthInfo = {
-      uid: 'admin_samil_root',
-      email: OWNER_EMAIL,
+      uid: 'admin_platesync_root',
+      email: trimmedEmail || OWNER_EMAIL,
       role: 'admin',
       isOwner: true,
       permissions: ['all']
@@ -236,8 +237,8 @@ export const loginAdmin = async (email, password) => {
 
   if (!adminAuthInfo && isDesignatedAdmin && isMasterPasswordMatch) {
     adminAuthInfo = {
-      uid: user?.uid || 'admin_samil_root',
-      email: OWNER_EMAIL,
+      uid: user?.uid || 'admin_platesync_root',
+      email: trimmedEmail || OWNER_EMAIL,
       role: 'admin',
       isOwner: true,
       permissions: ['all']
@@ -257,8 +258,8 @@ export const loginAdmin = async (email, password) => {
   clearFailedAttempts();
 
   const sessionData = {
-    uid: user?.uid || adminAuthInfo.uid || 'admin_samil_root',
-    email: OWNER_EMAIL,
+    uid: user?.uid || adminAuthInfo.uid || 'admin_platesync_root',
+    email: trimmedEmail || OWNER_EMAIL,
     role: 'admin',
     isOwner: true,
     permissions: adminAuthInfo.permissions || ['all'],

@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
-import { 
-  Shield, 
-  LayoutDashboard, 
-  Activity, 
-  Users, 
-  MessageSquare, 
-  BarChart3, 
-  Settings, 
-  FileText, 
-  LogOut, 
-  ArrowLeft, 
-  Menu, 
-  X, 
+import {
+  Shield,
+  LayoutDashboard,
+  Activity,
+  Users,
+  MessageSquare,
+  BarChart3,
+  Settings,
+  FileText,
+  LogOut,
+  ArrowLeft,
+  Menu,
+  X,
   Lock,
   ChevronRight,
   ExternalLink
@@ -114,11 +114,10 @@ export const AdminLayout = ({ onBackToApp }) => {
               <button
                 key={item.id}
                 onClick={() => handleSelectTab(item.id)}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl font-bold text-xs transition active:scale-[0.98] ${
-                  isActive
-                    ? 'bg-gradient-to-r from-neon-cyan/20 to-neon-violet/10 text-neon-cyan border border-neon-cyan/40 shadow-sm'
-                    : 'text-slate-400 hover:text-white hover:bg-midnight-elevated border border-transparent'
-                }`}
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl font-bold text-xs transition active:scale-[0.98] ${isActive
+                  ? 'bg-gradient-to-r from-neon-cyan/20 to-neon-violet/10 text-neon-cyan border border-neon-cyan/40 shadow-sm'
+                  : 'text-slate-400 hover:text-white hover:bg-midnight-elevated border border-transparent'
+                  }`}
               >
                 <div className="flex items-center gap-2.5">
                   <Icon className={`w-4 h-4 ${isActive ? 'text-neon-cyan' : 'text-slate-400'}`} />
@@ -141,7 +140,7 @@ export const AdminLayout = ({ onBackToApp }) => {
             <Shield className="w-4 h-4 text-amber-400 shrink-0" />
             <div className="min-w-0 flex-1">
               <p className="text-[11px] font-bold text-white truncate font-mono">
-                {adminSession?.email || 'samilplatesync@gmail.com'}
+                {adminSession?.email || 'platesync86@gmail.com'}
               </p>
               <p className="text-[9.5px] text-neon-success flex items-center gap-1 font-mono">
                 <span className="w-1.5 h-1.5 rounded-full bg-neon-success animate-pulse" />
@@ -172,7 +171,7 @@ export const AdminLayout = ({ onBackToApp }) => {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        
+
         {/* Desktop Top Header Bar */}
         <header className="hidden md:flex items-center justify-between px-8 py-4 bg-midnight-card/80 backdrop-blur-md border-b border-midnight-border sticky top-0 z-30">
           <div className="flex items-center gap-3">

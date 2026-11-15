@@ -33,11 +33,12 @@ export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, s
   const { isAdmin, adminSession } = useAdmin();
   const { addNotification } = useNotification();
 
-  // Switch to admin portal is available strictly if logged in with admin email / admin session
+  // Switch to admin portal & admin features available strictly if logged in with admin email / admin session
   const isAdminUser = Boolean(
+    currentUser?.email?.toLowerCase() === 'platesync86@gmail.com' ||
     currentUser?.email?.toLowerCase() === 'samilplatesync@gmail.com' ||
-    adminSession?.email?.toLowerCase() === 'samilplatesync@gmail.com' ||
-    isAdmin
+    adminSession?.email?.toLowerCase() === 'platesync86@gmail.com' ||
+    adminSession?.email?.toLowerCase() === 'samilplatesync@gmail.com'
   );
 
   // Integrated PWA Installation Hook with Android, iOS and Desktop support
@@ -207,23 +208,25 @@ export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, s
           </button>
         )}
 
-        {/* PWA Install Button */}
-        <button
-          type="button"
-          onClick={handleInstallClick}
-          className={`shrink-0 whitespace-nowrap flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition active:scale-95 cursor-pointer shadow-sm ${isStandalone
-            ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 hover:border-emerald-400 shadow-emerald-500/10'
-            : 'border-neon-cyan/40 bg-neon-cyan/10 text-neon-cyan hover:bg-neon-cyan hover:text-slate-950 hover:shadow-neon-cyan/25 shadow-neon-cyan/10'
+        {/* PWA Install Button - Displayed as download icon only for person logged in with admin email */}
+        {isAdminUser && (
+          <button
+            type="button"
+            onClick={handleInstallClick}
+            className={`shrink-0 flex items-center justify-center p-2 rounded-xl border transition active:scale-95 cursor-pointer shadow-sm ${isStandalone
+              ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 hover:border-emerald-400 shadow-emerald-500/10'
+              : 'border-neon-cyan/40 bg-neon-cyan/10 text-neon-cyan hover:bg-neon-cyan hover:text-slate-950 hover:shadow-neon-cyan/25 shadow-neon-cyan/10'
             }`}
-          title={isStandalone ? "PlateSync is running in installed app mode (Click for details)" : "Install PlateSync Progressive Web App (iOS, Android, Desktop)"}
-        >
-          {isStandalone ? (
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-          ) : (
-            <Download className="w-3.5 h-3.5 shrink-0" />
-          )}
-          <span className="text-xs font-bold">{buttonLabel}</span>
-        </button>
+            title={isStandalone ? "PlateSync is running in installed app mode (Click for details)" : "Install PlateSync Progressive Web App (Download)"}
+            aria-label="Install App"
+          >
+            {isStandalone ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            ) : (
+              <Download className="w-4 h-4 shrink-0" />
+            )}
+          </button>
+        )}
 
         {/* English <-> Hindi Live Translation Button (Directly Left to KG) */}
         <button

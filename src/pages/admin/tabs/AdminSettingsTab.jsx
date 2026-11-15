@@ -37,7 +37,12 @@ export const AdminSettingsTab = () => {
         getGlobalExercises(),
         getAdminWorkoutPrograms()
       ]);
-      setSettings(cfg);
+      const normalizedCfg = {
+        ...cfg,
+        supportEmail: (cfg.supportEmail === 'support@platesync.app' || !cfg.supportEmail) ? 'platesync86@gmail.com' : cfg.supportEmail,
+        adminEmail: cfg.adminEmail || 'platesync86@gmail.com'
+      };
+      setSettings(normalizedCfg);
       setExercises(exList);
       setPrograms(progList);
     } catch (err) {
@@ -246,7 +251,7 @@ export const AdminSettingsTab = () => {
             Platform Defaults & Public Contact
           </h3>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1">
                 Default Weight Unit
@@ -276,14 +281,29 @@ export const AdminSettingsTab = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Public Support Email
+              <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center justify-between">
+                <span>Public Support Email</span>
+                <span className="text-[10px] text-neon-cyan font-mono">Contact</span>
               </label>
               <input
                 type="email"
-                value={settings.supportEmail}
+                value={settings.supportEmail || 'platesync86@gmail.com'}
                 onChange={(e) => setSettings({ ...settings, supportEmail: e.target.value })}
-                placeholder="support@platesync.app"
+                placeholder="platesync86@gmail.com"
+                className="w-full px-3 py-2 bg-midnight-bg border border-midnight-border rounded-xl text-white text-xs font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center justify-between">
+                <span>Designated Admin Email</span>
+                <span className="text-[10px] text-amber-400 font-mono">Lead Admin</span>
+              </label>
+              <input
+                type="email"
+                value={settings.adminEmail || 'platesync86@gmail.com'}
+                onChange={(e) => setSettings({ ...settings, adminEmail: e.target.value })}
+                placeholder="platesync86@gmail.com"
                 className="w-full px-3 py-2 bg-midnight-bg border border-midnight-border rounded-xl text-white text-xs font-mono"
               />
             </div>

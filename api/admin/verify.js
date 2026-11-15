@@ -40,8 +40,8 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'Token has expired' });
     }
 
-    const email = payload.email || '';
-    const isOwner = email.toLowerCase() === 'samilplatesync@gmail.com';
+    const email = (payload.email || '').toLowerCase();
+    const isOwner = email === 'platesync86@gmail.com' || email === 'samilplatesync@gmail.com';
     const isAdmin = isOwner || payload.admin === true || payload.role === 'admin';
 
     if (!isAdmin) {

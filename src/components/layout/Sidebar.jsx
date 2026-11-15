@@ -43,9 +43,10 @@ export const Sidebar = ({ activeTab, setActiveTab, isMobileOpen, setIsMobileOpen
   const [logoClicks, setLogoClicks] = useState(0);
 
   const isAdminUser = Boolean(
+    currentUser?.email?.toLowerCase() === 'platesync86@gmail.com' ||
     currentUser?.email?.toLowerCase() === 'samilplatesync@gmail.com' ||
-    adminSession?.email?.toLowerCase() === 'samilplatesync@gmail.com' ||
-    isAdmin
+    adminSession?.email?.toLowerCase() === 'platesync86@gmail.com' ||
+    adminSession?.email?.toLowerCase() === 'samilplatesync@gmail.com'
   );
 
   const handleLogoAction = () => {
