@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Search, 
   Calendar, 
@@ -18,8 +18,57 @@ import { useNotification } from '../../context/NotificationContext';
 import { KG_TO_LBS } from '../../utils/weightCalculations';
 import { WorkoutShareModal } from '../../components/workout/WorkoutShareModal';
 
+// Safe date formatter for string, Date, or Firestore Timestamp
+const formatDateSafely = (val) => {
+  if (!val) return 'Completed Session';
+  try {
+    if (typeof val === 'object' && val.seconds) {
+      return new Date(val.seconds * 1000).toLocaleDateString(undefined, {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+    }
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return 'Completed Session';
+    return d.toLocaleDateString(undefined, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  } catch (e) {
+    return 'Completed Session';
+  }
+};
+
+const formatModalDate = (val) => {
+  if (!val) return 'Completed Session';
+  try {
+    if (typeof val === 'object' && val.seconds) {
+      return new Date(val.seconds * 1000).toLocaleDateString(undefined, {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric'
+      });
+    }
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return 'Completed Session';
+    return d.toLocaleDateString(undefined, {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  } catch (e) {
+    return 'Completed Session';
+  }
+};
+
 export const WorkoutHistoryPage = ({ setActiveTab }) => {
-  const { workouts, deleteWorkout } = useWorkout();
+  const { workouts = [], deleteWorkout } = useWorkout();
   const { userProfile } = useAuth();
   const { addNotification } = useNotification();
   const preferredUnit = userProfile?.preferredUnit || 'KG';
@@ -35,15 +84,21 @@ export const WorkoutHistoryPage = ({ setActiveTab }) => {
   const [selectedWorkout, setSelectedWorkout] = useState(null);
   const [shareWorkout, setShareWorkout] = useState(null);
 
+  const safeWorkouts = useMemo(() => {
+    return Array.isArray(workouts) ? workouts : [];
+  }, [workouts]);
+
   // Filtered workouts
   const filteredWorkouts = useMemo(() => {
-    return workouts.filter((w) => {
-      const q = searchQuery.toLowerCase();
+    return safeWorkouts.filter((w) => {
+      if (!w) return false;
+      const q = (searchQuery || '').toLowerCase().trim();
+      if (!q) return true;
       const matchesTitle = (w.workoutName || w.title || '').toLowerCase().includes(q);
-      const matchesExercise = w.exercises?.some(ex => ex.name.toLowerCase().includes(q));
+      const matchesExercise = Array.isArray(w.exercises) && w.exercises.some(ex => ex?.name?.toLowerCase().includes(q));
       return matchesTitle || matchesExercise;
     });
-  }, [workouts, searchQuery]);
+  }, [safeWorkouts, searchQuery]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -58,7 +113,7 @@ export const WorkoutHistoryPage = ({ setActiveTab }) => {
             </span>
           </div>
           <h2 className="text-xl md:text-2xl font-black text-white">
-            Workout History ({workouts.length})
+            Workout History ({safeWorkouts.length})
           </h2>
           <p className="text-xs text-slate-400 mt-1">
             Review detailed set records, volume progression, and session durations.
@@ -79,8 +134,8 @@ export const WorkoutHistoryPage = ({ setActiveTab }) => {
           </div>
 
           <button
-            onClick={() => setActiveTab('tracker')}
-            className="flex items-center gap-1.5 px-4 py-2 bg-neon-cyan hover:bg-[#29bfcd] text-slate-950 font-black rounded-xl text-xs shrink-0 shadow-lg shadow-neon-cyan/20"
+            onClick={() => setActiveTab && setActiveTab('tracker')}
+            className="flex items-center gap-1.5 px-4 py-2 bg-neon-cyan hover:bg-[#29bfcd] text-slate-950 font-black rounded-xl text-xs shrink-0 shadow-lg shadow-neon-cyan/20 transition active:scale-95"
           >
             <Plus className="w-4 h-4" />
             <span className="hidden sm:inline">New Session</span>
@@ -100,41 +155,36 @@ export const WorkoutHistoryPage = ({ setActiveTab }) => {
           </div>
         ) : (
           filteredWorkouts.map((w) => {
-            const durationMin = Math.round((w.duration || 3600) / 60);
-            const dateStr = new Date(w.date || w.createdAt).toLocaleDateString(undefined, {
-              weekday: 'short',
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric'
-            });
+            const durationMin = Math.round((Number(w.duration) || 3600) / 60);
+            const dateStr = formatDateSafely(w.date || w.createdAt || w.startTime);
 
             return (
               <div
-                key={w.id}
+                key={w.id || `workout_${Math.random()}`}
                 className="bg-midnight-card border border-midnight-border hover:border-neon-cyan/40 rounded-2xl p-4 md:p-5 transition group flex flex-col md:flex-row md:items-center justify-between gap-4"
               >
                 <div 
                   onClick={() => setSelectedWorkout(w)}
                   className="cursor-pointer flex-1 space-y-1.5 min-w-0"
                 >
-                  <div className="flex items-center gap-2 text-[11px]">
-                    <span className="text-neon-cyan font-semibold flex items-center gap-1">
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="text-neon-cyan font-bold flex items-center gap-1.5">
                       <Calendar className="w-3.5 h-3.5" /> {dateStr}
                     </span>
                     <span className="text-slate-600">&bull;</span>
-                    <span className="text-slate-400 font-mono flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5" /> {durationMin} min
+                    <span className="text-slate-300 font-mono font-medium flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5 text-slate-400" /> {durationMin} min
                     </span>
                   </div>
 
-                  <h3 className="text-sm font-bold text-white group-hover:text-neon-cyan transition truncate">
+                  <h3 className="text-sm md:text-base font-bold text-white group-hover:text-neon-cyan transition truncate">
                     {w.workoutName || w.title || 'Workout Session'}
                   </h3>
 
                   <div className="flex flex-wrap gap-1.5 pt-1">
-                    {w.exercises?.map((ex, idx) => (
-                      <span key={idx} className="text-[10px] px-2 py-0.5 rounded bg-midnight-bg border border-midnight-border text-slate-300">
-                        {ex.name} ({ex.sets?.length || 0}s)
+                    {Array.isArray(w.exercises) && w.exercises.map((ex, idx) => (
+                      <span key={idx} className="text-[11px] px-2.5 py-0.5 rounded-lg bg-midnight-bg border border-midnight-border text-slate-200 font-medium">
+                        {ex?.name || 'Exercise'} ({Array.isArray(ex?.sets) ? ex.sets.length : 0}s)
                       </span>
                     ))}
                   </div>
@@ -142,7 +192,7 @@ export const WorkoutHistoryPage = ({ setActiveTab }) => {
 
                 <div className="flex items-center justify-between md:justify-end gap-6 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-midnight-border">
                   <div className="text-right">
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Volume</span>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Total Volume</span>
                     <span className="text-sm md:text-base font-black font-mono text-neon-cyan">
                       {preferredUnit === 'LB'
                         ? `${(w.totalVolumeLbs || ((w.totalVolumeKg || w.totalVolume || 0) * KG_TO_LBS)).toLocaleString()} LB`
@@ -168,7 +218,7 @@ export const WorkoutHistoryPage = ({ setActiveTab }) => {
                     <button
                       onClick={async () => {
                         if (window.confirm('Delete this workout permanently?')) {
-                          await deleteWorkout(w.id);
+                          if (deleteWorkout) await deleteWorkout(w.id);
                           addNotification('Workout record deleted', 'info');
                         }
                       }}
@@ -187,39 +237,39 @@ export const WorkoutHistoryPage = ({ setActiveTab }) => {
 
       {/* Workout Detail Modal */}
       {selectedWorkout && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-midnight-bg/80 backdrop-blur-md animate-in fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-midnight-bg/85 backdrop-blur-md animate-in fade-in">
           <div className="w-full max-w-2xl bg-midnight-card border border-midnight-border rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
             
             <div className="p-6 border-b border-midnight-border flex items-center justify-between">
               <div>
-                <span className="text-xs text-neon-cyan font-mono block mb-1">
-                  {new Date(selectedWorkout.date || selectedWorkout.createdAt).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                <span className="text-xs text-neon-cyan font-mono font-bold block mb-1">
+                  {formatModalDate(selectedWorkout.date || selectedWorkout.createdAt || selectedWorkout.startTime)}
                 </span>
-                <h3 className="text-lg font-black text-white">{selectedWorkout.workoutName || selectedWorkout.title}</h3>
+                <h3 className="text-lg font-black text-white">{selectedWorkout.workoutName || selectedWorkout.title || 'Workout Details'}</h3>
               </div>
-              <button onClick={() => setSelectedWorkout(null)} className="p-2 text-slate-400 hover:text-white rounded-lg">
+              <button onClick={() => setSelectedWorkout(null)} className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-midnight-elevated transition">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="p-6 overflow-y-auto space-y-4 text-xs">
-              {selectedWorkout.exercises?.map((ex, idx) => (
+              {Array.isArray(selectedWorkout.exercises) && selectedWorkout.exercises.map((ex, idx) => (
                 <div key={idx} className="p-4 rounded-2xl bg-midnight-bg border border-midnight-border space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <h4 className="font-bold text-white flex items-center gap-2">
-                      <span className="w-5 h-5 rounded bg-neon-cyan/20 text-neon-cyan text-[10px] font-bold flex items-center justify-center">
+                    <h4 className="font-bold text-white text-sm flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-md bg-neon-cyan/20 text-neon-cyan text-xs font-bold flex items-center justify-center">
                         {idx + 1}
                       </span>
-                      {ex.name}
+                      {ex?.name || 'Exercise'}
                     </h4>
-                    <span className="text-[10px] text-slate-400 font-mono">{ex.muscle || ex.category}</span>
+                    <span className="text-xs text-neon-cyan font-mono font-bold">{ex?.muscle || ex?.category || ''}</span>
                   </div>
 
-                  <div className="space-y-1">
-                    {ex.sets?.map((s, sIdx) => (
-                      <div key={sIdx} className="flex items-center justify-between py-1 px-3 rounded-lg bg-midnight-secondary text-[11px] font-mono">
-                        <span className="text-slate-400">Set {s.setNumber || sIdx + 1}</span>
-                        <span className="font-bold text-white">{s.weight} {s.unit} &times; {s.reps} reps</span>
+                  <div className="space-y-1.5">
+                    {Array.isArray(ex?.sets) && ex.sets.map((s, sIdx) => (
+                      <div key={sIdx} className="flex items-center justify-between py-1.5 px-3 rounded-xl bg-midnight-secondary text-xs font-mono">
+                        <span className="text-slate-300 font-bold">Set {s?.setNumber || sIdx + 1}</span>
+                        <span className="font-black text-white">{s?.weight || 0} {s?.unit || 'KG'} &times; {s?.reps || 0} reps</span>
                       </div>
                     ))}
                   </div>
@@ -244,11 +294,11 @@ export const WorkoutHistoryPage = ({ setActiveTab }) => {
                     if (window.confirm('Delete this workout permanently?')) {
                       const idToDelete = selectedWorkout.id;
                       setSelectedWorkout(null);
-                      await deleteWorkout(idToDelete);
+                      if (deleteWorkout) await deleteWorkout(idToDelete);
                       addNotification('Workout record deleted', 'info');
                     }
                   }}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-neon-error/10 hover:bg-neon-error/20 text-rose-300 border border-neon-error/30 rounded-xl text-xs font-bold transition"
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-neon-error/10 hover:bg-neon-error/20 text-rose-300 border border-neon-error/30 rounded-xl text-xs font-bold transition"
                   title="Delete this session"
                 >
                   <Trash2 className="w-3.5 h-3.5 text-neon-error" />
