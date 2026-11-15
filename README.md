@@ -4,8 +4,6 @@
 [![Vite](https://img.shields.io/badge/Vite-5.4-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![Firebase](https://img.shields.io/badge/Firebase-11.3-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://firebase.google.com/)
-[![PWA Ready](https://img.shields.io/badge/PWA-Installable-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white)](https://web.dev/progressive-web-apps/)
-[![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 
 **PlateSync** is an advanced, high-performance Progressive Web Application (PWA) crafted for strength athletes, powerlifters, bodybuilders, and fitness enthusiasts. It bridges the gap between precision barbell loading math and structured workout tracking with real-time biometric analytics, an active workout timer, a 7-day weekly planner, mixed-unit plate math (Kilograms & Pounds), bilingual support (English & Hindi), and an enterprise administrative portal with real-time user telemetry.
 
