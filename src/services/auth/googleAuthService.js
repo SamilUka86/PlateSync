@@ -1,6 +1,9 @@
+import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
+import { auth, isFirebaseConfigured } from '../firebase/config';
+
 /**
  * PlateSync - Google Auth & Google Identity Services (GIS)
- * Standard OAuth 2.0 Web Client authentication without Firebase complexity.
+ * Standard OAuth 2.0 Web Client authentication with silent Firebase Auth synchronization.
  */
 
 const GOOGLE_CLIENT_ID_KEY = 'platesync_google_client_id';
@@ -58,6 +61,26 @@ export const parseGoogleJwt = (token) => {
     return JSON.parse(jsonPayload);
   } catch (e) {
     console.error('Failed to parse Google JWT credential:', e);
+    return null;
+  }
+};
+
+/**
+ * Silently authenticate with Firebase Auth using Google OAuth credentials.
+ * This registers/updates the user in Firebase Authentication (Users tab)
+ * and sets auth.currentUser for Firestore security rules without any Firebase popup.
+ */
+export const silentSignInFirebaseWithGoogleCredential = async ({ idToken, accessToken }) => {
+  if (!isFirebaseConfigured() || !auth) {
+    return null;
+  }
+
+  try {
+    const credential = GoogleAuthProvider.credential(idToken || null, accessToken || null);
+    const userCredential = await signInWithCredential(auth, credential);
+    return userCredential.user;
+  } catch (err) {
+    console.warn('Silent Firebase Auth synchronization notice:', err);
     return null;
   }
 };
@@ -156,11 +179,18 @@ export const signInWithGoogleIdentity = () => {
                   }
                 });
                 const info = await res.json();
+
+                // Silently authenticate with Firebase Auth using the Google access token
+                const fbUser = await silentSignInFirebaseWithGoogleCredential({
+                  accessToken: tokenResponse.access_token,
+                  idToken: tokenResponse.id_token || null
+                });
+
                 const user = {
-                  uid: info.sub,
-                  email: info.email,
-                  displayName: info.name || info.given_name || 'Athlete',
-                  photoURL: info.picture || null,
+                  uid: fbUser?.uid || info.sub,
+                  email: fbUser?.email || info.email,
+                  displayName: fbUser?.displayName || info.name || info.given_name || 'Athlete',
+                  photoURL: fbUser?.photoURL || info.picture || null,
                   provider: 'google.com'
                 };
                 localStorage.setItem(GOOGLE_USER_SESSION_KEY, JSON.stringify(user));
@@ -192,17 +222,22 @@ export const signInWithGoogleIdentity = () => {
         let resolved = false;
         window.google.accounts.id.initialize({
           client_id: clientId,
-          callback: (response) => {
+          callback: async (response) => {
             if (resolved) return;
             resolved = true;
             if (response?.credential) {
               const payload = parseGoogleJwt(response.credential);
               if (payload) {
+                // Silently authenticate with Firebase Auth using Google ID token
+                const fbUser = await silentSignInFirebaseWithGoogleCredential({
+                  idToken: response.credential
+                });
+
                 const user = {
-                  uid: payload.sub,
-                  email: payload.email,
-                  displayName: payload.name || payload.given_name || 'Athlete',
-                  photoURL: payload.picture || null,
+                  uid: fbUser?.uid || payload.sub,
+                  email: fbUser?.email || payload.email,
+                  displayName: fbUser?.displayName || payload.name || payload.given_name || 'Athlete',
+                  photoURL: fbUser?.photoURL || payload.picture || null,
                   provider: 'google.com'
                 };
                 localStorage.setItem(GOOGLE_USER_SESSION_KEY, JSON.stringify(user));

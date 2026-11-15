@@ -71,7 +71,16 @@ export const createUserProfileDocument = async (user, additionalData = {}) => {
       });
       return defaultProfile;
     } else {
-      return { id: snap.id, ...snap.data() };
+      const existing = snap.data();
+      const updates = {};
+      if (user.displayName && user.displayName !== existing.name) updates.name = user.displayName;
+      if (user.photoURL && user.photoURL !== existing.profileImage) updates.profileImage = user.photoURL;
+      if (user.email && user.email !== existing.email) updates.email = user.email;
+      if (Object.keys(updates).length > 0) {
+        updates.updatedAt = serverTimestamp();
+        await updateDoc(userRef, updates);
+      }
+      return { id: snap.id, ...existing, ...updates };
     }
   } catch (error) {
     console.warn('Firestore profile access notice (offline fallback used):', error);

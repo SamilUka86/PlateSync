@@ -22,7 +22,8 @@ import {
   registerLocalUser,
   loginLocalUser,
   loadGoogleIdentityScript,
-  parseGoogleJwt
+  parseGoogleJwt,
+  silentSignInFirebaseWithGoogleCredential
 } from '../services/auth/googleAuthService';
 
 const AuthContext = createContext({});
@@ -112,24 +113,29 @@ export const AuthProvider = ({ children }) => {
                 if (response?.credential) {
                   const payload = parseGoogleJwt(response.credential);
                   if (payload) {
+                    // Silently sign into Firebase Auth with Google ID token
+                    const fbUser = await silentSignInFirebaseWithGoogleCredential({
+                      idToken: response.credential
+                    });
+
                     const user = {
-                      uid: `google_${payload.sub}`,
-                      email: payload.email,
-                      displayName: payload.name || payload.given_name || 'Athlete',
-                      photoURL: payload.picture || null,
+                      uid: fbUser?.uid || payload.sub,
+                      email: fbUser?.email || payload.email,
+                      displayName: fbUser?.displayName || payload.name || payload.given_name || 'Athlete',
+                      photoURL: fbUser?.photoURL || payload.picture || null,
                       provider: 'google.com'
                     };
                     localStorage.setItem('platesync_google_user', JSON.stringify(user));
                     setCurrentUser(user);
                     setIsDemoMode(false);
                     localStorage.removeItem('platesync_demo_active');
-                    let profile = await getUserProfile(user.uid);
-                    if (!profile) {
-                      profile = await createUserProfileDocument(user, {
-                        displayName: user.displayName,
-                        photoURL: user.photoURL
-                      });
-                    }
+
+                    // Write/update user profile in Cloud Firestore (users/{uid})
+                    const profile = await createUserProfileDocument(user, {
+                      displayName: user.displayName,
+                      photoURL: user.photoURL,
+                      email: user.email
+                    });
                     setUserProfile(profile);
                   }
                 }
@@ -242,13 +248,12 @@ export const AuthProvider = ({ children }) => {
         const user = await signInWithGoogleIdentity();
         if (user) {
           setCurrentUser(user);
-          let profile = await getUserProfile(user.uid);
-          if (!profile) {
-            profile = await createUserProfileDocument(user, {
-              displayName: user.displayName,
-              photoURL: user.photoURL
-            });
-          }
+          // Always create or update the athlete profile in Cloud Firestore (users/{uid})
+          const profile = await createUserProfileDocument(user, {
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+            email: user.email
+          });
           setUserProfile(profile);
           setIsDemoMode(false);
           localStorage.removeItem('platesync_demo_active');
