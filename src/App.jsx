@@ -268,7 +268,6 @@ const MainAppLayout = () => {
         collapsed={collapsed}
         setCollapsed={setCollapsed}
         onOpenAuth={() => setShowAuthModal(true)}
-        onOpenAdmin={() => setIsAdminViewOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -282,7 +281,6 @@ const MainAppLayout = () => {
           setCollapsed={setCollapsed}
           onOpenAuth={() => setShowAuthModal(true)}
           onOpenFeedback={() => setShowFeedbackModal(true)}
-          onOpenAdmin={() => setIsAdminViewOpen(true)}
         />
 
         {/* Tab View Container */}
@@ -309,7 +307,6 @@ const MainAppLayout = () => {
                 <SettingsPage 
                   setActiveTab={handleSetActiveTab} 
                   onOpenFeedback={() => setShowFeedbackModal(true)}
-                  onOpenAdmin={() => setIsAdminViewOpen(true)}
                 />
               )}
             </>
@@ -328,6 +325,10 @@ const MainAppLayout = () => {
             onSuccess={() => {
               setShowAuthModal(false);
               handleSetActiveTab('dashboard');
+            }}
+            onActivateOwnerPortal={() => {
+              setShowAuthModal(false);
+              setIsAdminViewOpen(true);
             }}
           />
         </div>

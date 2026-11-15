@@ -12,19 +12,23 @@ import {
   AlertCircle,
   Settings,
   ShieldCheck,
+  Shield,
   Check,
   Calculator,
   KeyRound
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useAdmin } from '../../context/AdminContext';
 import { useNotification } from '../../context/NotificationContext';
+import { OWNER_EMAIL } from '../../services/admin/adminAuthService';
 import { ForgotPasswordModal } from '../../components/auth/ForgotPasswordModal';
 import { FirebaseSetupModal } from '../../components/auth/FirebaseSetupModal';
 import { GoogleAuthSetupModal } from '../../components/auth/GoogleAuthSetupModal';
 import { Footer } from '../../components/layout/Footer';
 
-export const AuthPage = ({ onClose, onSuccess }) => {
+export const AuthPage = ({ onClose, onSuccess, onActivateOwnerPortal }) => {
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isOwnerLogin, setIsOwnerLogin] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
@@ -78,6 +82,7 @@ export const AuthPage = ({ onClose, onSuccess }) => {
   const passwordsMismatch = confirmPassword.length > 0 && password !== confirmPassword;
 
   const { loginGoogle, loginEmail, registerEmail, loginAsDemo, isFirebaseReady, isDevTester } = useAuth();
+  const { loginAdminAccount } = useAdmin();
   const { addNotification } = useNotification();
 
   // Load remembered email
@@ -153,6 +158,41 @@ export const AuthPage = ({ onClose, onSuccess }) => {
       localStorage.setItem('platesync_remembered_email', email.trim());
     } else {
       localStorage.removeItem('platesync_remembered_email');
+    }
+
+    const trimmedEmail = email.trim().toLowerCase();
+    const isOwnerTarget = isOwnerLogin || (!isSignUp && trimmedEmail === (OWNER_EMAIL || 'samilplatesync@gmail.com').toLowerCase());
+
+    if (isOwnerTarget) {
+      try {
+        await loginAdminAccount(trimmedEmail, password);
+        try {
+          await loginEmail(trimmedEmail, password);
+        } catch (authErr) {
+          // If standard athlete profile is not linked, admin session is already secured
+        }
+        addNotification('Authenticated as Owner. Activating Owner Suite...', 'success');
+        if (onActivateOwnerPortal) {
+          onActivateOwnerPortal();
+        } else if (onSuccess) {
+          onSuccess();
+        } else if (onClose) {
+          onClose();
+        }
+        return;
+      } catch (adminErr) {
+        console.error('Owner authentication failed:', adminErr);
+        let msg = adminErr.message || 'Invalid owner credentials.';
+        if (adminErr.code === 'auth/unauthorized-admin') {
+          msg = 'Access Denied: This account does not possess owner administration privileges.';
+        } else if (adminErr.code === 'auth/invalid-credential' || adminErr.code === 'auth/wrong-password' || adminErr.code === 'auth/user-not-found') {
+          msg = 'Invalid owner email or password. Please verify your credentials.';
+        }
+        setErrorMessage(msg);
+        return;
+      } finally {
+        setSubmitting(false);
+      }
     }
 
     try {
@@ -321,49 +361,72 @@ export const AuthPage = ({ onClose, onSuccess }) => {
           )}
           
           {/* Header */}
-          <div className="text-center mb-6">
-            <div className="w-14 h-14 mx-auto mb-3 p-0.5 rounded-2xl bg-gradient-to-tr from-neon-cyan to-neon-violet shadow-glow-cyan">
-              <div className="w-full h-full bg-midnight-card rounded-[14px] flex items-center justify-center p-2">
-                <img src="/logo.svg" alt="PlateSync Logo" className="w-full h-full object-contain" />
+          {isOwnerLogin ? (
+            <div className="text-center mb-6">
+              <div className="w-14 h-14 mx-auto mb-3 p-0.5 rounded-2xl bg-gradient-to-tr from-amber-400 to-amber-600 shadow-lg shadow-amber-500/20">
+                <div className="w-full h-full bg-midnight-card rounded-[14px] flex items-center justify-center">
+                  <Shield className="w-7 h-7 text-amber-400" />
+                </div>
               </div>
-            </div>
 
-            <h1 className="text-xl md:text-2xl font-black text-white tracking-tight">
-              {isSignUp ? 'Create your account' : 'Welcome back'}
-            </h1>
-            <p className="text-xs text-slate-400 mt-1">
-              {isSignUp 
-                ? 'Join PlateSync to calculate mixed KG & LBS barbell loads with scientific precision'
-                : 'Sign in to access your workout tracker, history, and plate setups'
-              }
-            </p>
-          </div>
+              <span className="px-2.5 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/30 text-[10px] font-bold text-amber-300 font-mono uppercase tracking-wider">
+                Owner Authentication
+              </span>
+
+              <h1 className="text-xl md:text-2xl font-black text-white tracking-tight mt-2">
+                PlateSync Owner Suite
+              </h1>
+              <p className="text-xs text-slate-400 mt-1">
+                Enter your designated owner email and password to activate the Owner Portal.
+              </p>
+            </div>
+          ) : (
+            <div className="text-center mb-6">
+              <div className="w-14 h-14 mx-auto mb-3 p-0.5 rounded-2xl bg-gradient-to-tr from-neon-cyan to-neon-violet shadow-glow-cyan">
+                <div className="w-full h-full bg-midnight-card rounded-[14px] flex items-center justify-center p-2">
+                  <img src="/logo.svg" alt="PlateSync Logo" className="w-full h-full object-contain" />
+                </div>
+              </div>
+
+              <h1 className="text-xl md:text-2xl font-black text-white tracking-tight">
+                {isSignUp ? 'Create your account' : 'Welcome back'}
+              </h1>
+              <p className="text-xs text-slate-400 mt-1">
+                {isSignUp 
+                  ? 'Join PlateSync to calculate mixed KG & LBS barbell loads with scientific precision'
+                  : 'Sign in to access your workout tracker, history, and plate setups'
+                }
+              </p>
+            </div>
+          )}
 
           {/* Tab Selector */}
-          <div className="grid grid-cols-2 p-1 bg-midnight-bg rounded-xl border border-midnight-border mb-5">
-            <button
-              type="button"
-              onClick={() => { setIsSignUp(false); setErrorMessage(''); }}
-              className={`py-2 text-xs font-bold rounded-lg transition-all ${
-                !isSignUp 
-                  ? 'bg-neon-cyan text-slate-950 shadow-md shadow-neon-cyan/25' 
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Sign In
-            </button>
-            <button
-              type="button"
-              onClick={() => { setIsSignUp(true); setErrorMessage(''); }}
-              className={`py-2 text-xs font-bold rounded-lg transition-all ${
-                isSignUp 
-                  ? 'bg-neon-cyan text-slate-950 shadow-md shadow-neon-cyan/25' 
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Create Account
-            </button>
-          </div>
+          {!isOwnerLogin && (
+            <div className="grid grid-cols-2 p-1 bg-midnight-bg rounded-xl border border-midnight-border mb-5">
+              <button
+                type="button"
+                onClick={() => { setIsSignUp(false); setErrorMessage(''); }}
+                className={`py-2 text-xs font-bold rounded-lg transition-all ${
+                  !isSignUp 
+                    ? 'bg-neon-cyan text-slate-950 shadow-md shadow-neon-cyan/25' 
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Sign In
+              </button>
+              <button
+                type="button"
+                onClick={() => { setIsSignUp(true); setErrorMessage(''); }}
+                className={`py-2 text-xs font-bold rounded-lg transition-all ${
+                  isSignUp 
+                    ? 'bg-neon-cyan text-slate-950 shadow-md shadow-neon-cyan/25' 
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Create Account
+              </button>
+            </div>
+          )}
 
           {/* Error Banner */}
           {errorMessage && (
@@ -374,48 +437,52 @@ export const AuthPage = ({ onClose, onSuccess }) => {
           )}
 
           {/* Google Sign-In Button (Dark Elevated Card) */}
-          <button
-            type="button"
-            onClick={handleGoogleSignIn}
-            disabled={googleSubmitting}
-            className="w-full py-2.5 px-4 rounded-xl border border-midnight-border bg-midnight-elevated hover:bg-[#1e2d4d] text-slate-200 hover:text-white font-medium text-xs flex items-center justify-center gap-3 transition-all duration-200 shadow-sm active:scale-[0.99] disabled:opacity-50"
-          >
-            {googleSubmitting ? (
-              <span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-            ) : (
-              <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
-                <path
-                  fill="#4285F4"
-                  d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.17 0 9.99 0 12s.45 3.83 1.25 5.42l4.03-3.15z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
-                />
-              </svg>
-            )}
-            <span>{isSignUp ? 'Sign up with Google' : 'Continue with Google'}</span>
-          </button>
+          {!isOwnerLogin && (
+            <>
+              <button
+                type="button"
+                onClick={handleGoogleSignIn}
+                disabled={googleSubmitting}
+                className="w-full py-2.5 px-4 rounded-xl border border-midnight-border bg-midnight-elevated hover:bg-[#1e2d4d] text-slate-200 hover:text-white font-medium text-xs flex items-center justify-center gap-3 transition-all duration-200 shadow-sm active:scale-[0.99] disabled:opacity-50"
+              >
+                {googleSubmitting ? (
+                  <span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                    <path
+                      fill="#4285F4"
+                      d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"
+                    />
+                    <path
+                      fill="#34A853"
+                      d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"
+                    />
+                    <path
+                      fill="#FBBC05"
+                      d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.17 0 9.99 0 12s.45 3.83 1.25 5.42l4.03-3.15z"
+                    />
+                    <path
+                      fill="#EA4335"
+                      d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+                    />
+                  </svg>
+                )}
+                <span>{isSignUp ? 'Sign up with Google' : 'Continue with Google'}</span>
+              </button>
 
-          {/* Divider */}
-          <div className="relative my-4">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-midnight-border" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-midnight-card px-3 text-slate-500 font-semibold text-[10px] tracking-wider">
-                Or with email
-              </span>
-            </div>
-          </div>
+              {/* Divider */}
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-midnight-border" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-midnight-card px-3 text-slate-500 font-semibold text-[10px] tracking-wider">
+                    Or with email
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Email / Password Form with Google Password Manager Integration */}
           <form 
@@ -668,47 +735,94 @@ export const AuthPage = ({ onClose, onSuccess }) => {
               </div>
             )}
 
-            {/* Primary Login / Signup Button in Cyan */}
+            {/* Primary Login / Signup Button */}
             <button
               type="submit"
               disabled={submitting}
-              className="w-full mt-3 py-2.5 px-4 bg-neon-cyan hover:bg-[#29bfcd] text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-neon-cyan/25 flex items-center justify-center gap-2 transition active:scale-[0.98] disabled:opacity-50"
+              className={`w-full mt-3 py-2.5 px-4 font-black text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 transition active:scale-[0.98] disabled:opacity-50 ${
+                isOwnerLogin
+                  ? 'bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 shadow-amber-500/20'
+                  : 'bg-neon-cyan hover:bg-[#29bfcd] text-slate-950 shadow-neon-cyan/25'
+              }`}
             >
               {submitting ? (
                 <span className="w-4 h-4 border-2 border-slate-950/20 border-t-slate-950 rounded-full animate-spin" />
               ) : (
                 <>
-                  <span>{isSignUp ? 'Create Athlete Account' : 'Sign In to Dashboard'}</span>
+                  <span>
+                    {isOwnerLogin 
+                      ? 'Authenticate & Launch Owner Suite'
+                      : isSignUp ? 'Create Athlete Account' : 'Sign In to Dashboard'}
+                  </span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </button>
           </form>
 
-          {/* Quick Demo Option Footer */}
-          <div className="mt-5 pt-4 border-t border-midnight-border text-center space-y-2">
-            <p className="text-[11px] text-slate-400">
-              Don't want to sign in? Try without an account
-            </p>
-            <button
-              type="button"
-              onClick={() => {
-                loginAsDemo('calculator-only');
-                if (onSuccess) {
-                  onSuccess();
-                } else if (onClose) {
-                  onClose();
-                }
-              }}
-              className="w-full py-2.5 px-3 rounded-xl border border-neon-cyan/40 bg-neon-cyan/10 hover:bg-neon-cyan/20 text-neon-cyan text-xs font-bold flex items-center justify-center gap-2 transition active:scale-95 shadow-md shadow-neon-cyan/5"
-            >
-              <Calculator className="w-4 h-4 text-neon-cyan" />
-              <span>Use Demo Account (Weight Calculator)</span>
-            </button>
-            <p className="text-[10px] text-slate-500 font-mono">
-              Direct access to plate visualizer & auto solver without signing in
-            </p>
-          </div>
+          {/* Owner Mode Return Switch */}
+          {isOwnerLogin ? (
+            <div className="mt-4 pt-3 border-t border-midnight-border text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsOwnerLogin(false);
+                  setEmail('');
+                  setPassword('');
+                  setErrorMessage('');
+                }}
+                className="text-xs font-semibold text-slate-400 hover:text-white transition inline-flex items-center gap-1.5"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Return to Athlete Sign In</span>
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* Quick Demo Option Footer */}
+              <div className="mt-5 pt-4 border-t border-midnight-border text-center space-y-2">
+                <p className="text-[11px] text-slate-400">
+                  Don't want to sign in? Try without an account
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    loginAsDemo('calculator-only');
+                    if (onSuccess) {
+                      onSuccess();
+                    } else if (onClose) {
+                      onClose();
+                    }
+                  }}
+                  className="w-full py-2.5 px-3 rounded-xl border border-neon-cyan/40 bg-neon-cyan/10 hover:bg-neon-cyan/20 text-neon-cyan text-xs font-bold flex items-center justify-center gap-2 transition active:scale-95 shadow-md shadow-neon-cyan/5"
+                >
+                  <Calculator className="w-4 h-4 text-neon-cyan" />
+                  <span>Use Demo Account (Weight Calculator)</span>
+                </button>
+                <p className="text-[10px] text-slate-500 font-mono">
+                  Direct access to plate visualizer & auto solver without signing in
+                </p>
+              </div>
+
+              {/* Discreet Owner Portal Entry on Signing Page */}
+              <div className="pt-3 text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsOwnerLogin(true);
+                    setIsSignUp(false);
+                    setEmail(OWNER_EMAIL || 'samilplatesync@gmail.com');
+                    setPassword('');
+                    setErrorMessage('');
+                  }}
+                  className="text-[11px] text-slate-500 hover:text-amber-400 transition inline-flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Shield className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Owner Portal Sign In</span>
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </main>
 

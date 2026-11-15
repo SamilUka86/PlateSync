@@ -34,7 +34,7 @@ import {
   changeWebsiteLanguage
 } from '../../services/translation/websiteTranslator';
 
-export const SettingsPage = ({ onOpenFeedback, onOpenAdmin }) => {
+export const SettingsPage = ({ onOpenFeedback }) => {
   const { currentUser, userProfile, updateProfile, logout, isDemoMode, loginAsDemo } = useAuth();
   const { addNotification } = useNotification();
   const [showConfigModal, setShowConfigModal] = useState(false);
@@ -308,35 +308,6 @@ export const SettingsPage = ({ onOpenFeedback, onOpenAdmin }) => {
           >
             <MessageSquare className="w-3.5 h-3.5" />
             <span>Send Feedback / Report Bug</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Owner & Administrator Operations Portal */}
-      <div className="bg-gradient-to-r from-midnight-card via-midnight-elevated to-midnight-card border border-amber-400/30 rounded-3xl p-6 space-y-3 shadow-lg shadow-amber-500/5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <Shield className="w-4 h-4 text-amber-400" />
-              <h3 className="text-sm font-black text-white">
-                Owner & Administrative Portal
-              </h3>
-              <span className="px-2 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/30 text-[10px] font-bold text-amber-300 font-mono">
-                samilplatesync@gmail.com
-              </span>
-            </div>
-            <p className="text-xs text-slate-400">
-              Access real-time database telemetry, athlete user directory, global exercise library, workout programs, and security audit logs.
-            </p>
-          </div>
-
-          <button
-            onClick={onOpenAdmin || (() => window.dispatchEvent(new CustomEvent('platesync_open_admin')))}
-            className="px-4 py-2.5 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 rounded-xl text-xs font-black shadow-md shadow-amber-500/20 transition flex items-center gap-2 active:scale-95 shrink-0"
-          >
-            <ShieldCheck className="w-4 h-4" />
-            <span>Open Admin Suite</span>
-            <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
