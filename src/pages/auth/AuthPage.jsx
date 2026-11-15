@@ -246,12 +246,29 @@ export const AuthPage = ({ onClose, onSuccess, onActivateAdminPortal }) => {
     }
   };
 
+  // Check for any redirect authentication error preserved across mobile page reload
+  useEffect(() => {
+    try {
+      const redirectErr = sessionStorage.getItem('platesync_auth_redirect_error');
+      if (redirectErr) {
+        sessionStorage.removeItem('platesync_auth_redirect_error');
+        setErrorMessage(redirectErr);
+      }
+    } catch (e) {}
+  }, []);
+
   const handleGoogleSignIn = async () => {
     setGoogleSubmitting(true);
     setErrorMessage('');
+    let isRedirecting = false;
 
     try {
       const gUser = await loginGoogle();
+      if (gUser && gUser.redirecting) {
+        isRedirecting = true;
+        // Mobile redirect is in flight; retain loading state until browser navigates
+        return;
+      }
       const gEmail = gUser?.email?.toLowerCase();
       if (gEmail !== 'platesync86@gmail.com' && gEmail !== 'samilplatesync@gmail.com') {
         if (logoutAdminAccount) logoutAdminAccount();
@@ -263,17 +280,24 @@ export const AuthPage = ({ onClose, onSuccess, onActivateAdminPortal }) => {
         onClose();
       }
     } catch (err) {
+      console.error('Google Sign-In error:', err);
       if (err.message === 'GOOGLE_AUTH_NOT_CONFIGURED' || err.message === 'FIREBASE_NOT_CONFIGURED') {
         setShowGoogleAuthModal(true);
       } else if (err.code === 'auth/popup-closed-by-user') {
-        setErrorMessage('Sign-in popup was closed before completion.');
+        setErrorMessage('Sign-in window was closed before completion.');
       } else if (err.code === 'auth/popup-blocked') {
         setErrorMessage('Popup blocked by browser. Please enable popups or retry.');
+      } else if (err.code === 'auth/unauthorized-domain') {
+        setErrorMessage(`Domain "${window.location.hostname}" is not authorized for Google Sign-In in Firebase Console. Please add "${window.location.hostname}" to Firebase Console -> Authentication -> Settings -> Authorized Domains.`);
+      } else if (err.code === 'auth/network-request-failed') {
+        setErrorMessage('Network connection lost. Please verify your internet connection and retry.');
       } else if (err.message) {
         setErrorMessage(err.message);
       }
     } finally {
-      setGoogleSubmitting(false);
+      if (!isRedirecting) {
+        setGoogleSubmitting(false);
+      }
     }
   };
 
@@ -474,7 +498,11 @@ export const AuthPage = ({ onClose, onSuccess, onActivateAdminPortal }) => {
                     />
                   </svg>
                 )}
-                <span>{isSignUp ? 'Sign up with Google' : 'Continue with Google'}</span>
+                <span>
+                  {googleSubmitting 
+                    ? 'Connecting to Google...' 
+                    : (isSignUp ? 'Sign up with Google' : 'Continue with Google')}
+                </span>
               </button>
 
               {/* Divider */}

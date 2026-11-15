@@ -209,6 +209,11 @@ export const signInWithGoogleIdentity = () => {
               err.code = 'auth/popup-closed-by-user';
               return reject(err);
             }
+            if (error?.type === 'popup_failed_to_open') {
+              const err = new Error('Sign-in popup was blocked by browser.');
+              err.code = 'auth/popup-blocked';
+              return reject(err);
+            }
             reject(new Error(error?.message || 'Google sign-in popup could not open.'));
           }
         });

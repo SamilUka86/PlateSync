@@ -1,11 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   loginWithEmail as fbLoginWithEmail,
+  loginWithGoogle as fbLoginWithGoogle,
   registerWithEmail as fbRegisterWithEmail,
   resetUserPassword as fbResetPassword,
   logoutUser as fbLogout,
   subscribeToAuthChanges,
-  checkRedirectAuthResult
+  checkRedirectAuthResult,
+  isMobileDevice
 } from '../services/auth/authService';
 import { 
   getUserProfile, 
@@ -192,8 +194,9 @@ export const AuthProvider = ({ children }) => {
     }
 
     // Check redirect auth result (for mobile redirect flow)
-    checkRedirectAuthResult().then((user) => {
-      if (user) {
+    checkRedirectAuthResult().then(async (userOrRes) => {
+      if (userOrRes && userOrRes.uid) {
+        const user = userOrRes;
         const sessionUser = {
           uid: user.uid,
           email: user.email,
@@ -206,12 +209,28 @@ export const AuthProvider = ({ children }) => {
         setIsDemoMode(false);
         localStorage.removeItem('platesync_demo_active');
         localStorage.removeItem('platesync_demo_workouts');
-        getUserProfile(user.uid).then((prof) => {
-          if (prof) {
-            const savedUnit = localStorage.getItem('platesync_preferred_unit');
-            setUserProfile(savedUnit ? { ...prof, preferredUnit: savedUnit } : prof);
+        try {
+          let prof = await getUserProfile(user.uid);
+          if (!prof) {
+            prof = await createUserProfileDocument(user, {
+              displayName: user.displayName || user.email?.split('@')[0],
+              photoURL: user.photoURL,
+              email: user.email
+            });
           }
-        });
+          const savedUnit = localStorage.getItem('platesync_preferred_unit');
+          setUserProfile(savedUnit && prof ? { ...prof, preferredUnit: savedUnit } : prof);
+        } catch (e) {
+          console.warn('Profile fetch notice after mobile redirect:', e);
+        }
+      } else if (userOrRes?.error) {
+        console.warn('Mobile redirect auth error:', userOrRes.error);
+        if (userOrRes.error.code === 'auth/unauthorized-domain') {
+          sessionStorage.setItem(
+            'platesync_auth_redirect_error', 
+            `Domain "${window.location.hostname}" is not authorized for Google Sign-In in Firebase Console. Please add it in Firebase Console -> Authentication -> Settings -> Authorized Domains.`
+          );
+        }
       }
     });
 
@@ -275,7 +294,58 @@ export const AuthProvider = ({ children }) => {
 
   const loginGoogle = async () => {
     try {
-      // 1. Direct Google Identity Services (GIS) - completely bypassing Firebase's firebaseapp.com popup
+      // 1. Primary: Official Firebase Authentication
+      // Handles both mobile redirects (phones/tablets/PWAs) and desktop popups with genuine Firebase Authenticator sync
+      if (isFirebaseConfigured()) {
+        try {
+          const result = await fbLoginWithGoogle();
+
+          // On mobile browsers and PWAs, redirect is in flight
+          if (result && result.redirecting) {
+            return { redirecting: true };
+          }
+
+          if (result && result.uid) {
+            setCurrentUser(result);
+            setIsDemoMode(false);
+            localStorage.removeItem('platesync_demo_active');
+            localStorage.removeItem('platesync_demo_workouts');
+
+            const sessionUser = {
+              uid: result.uid,
+              email: result.email,
+              displayName: result.displayName || result.email?.split('@')[0] || 'Athlete',
+              photoURL: result.photoURL || null,
+              provider: 'google.com'
+            };
+            localStorage.setItem('platesync_google_user', JSON.stringify(sessionUser));
+
+            let profile = await getUserProfile(result.uid);
+            if (!profile) {
+              profile = await createUserProfileDocument(result, {
+                displayName: result.displayName || result.email?.split('@')[0],
+                photoURL: result.photoURL,
+                email: result.email
+              });
+            }
+            const savedUnit = localStorage.getItem('platesync_preferred_unit');
+            setUserProfile(savedUnit && profile ? { ...profile, preferredUnit: savedUnit } : profile);
+            return result;
+          }
+        } catch (fbErr) {
+          // If domain is unauthorized in Firebase Console, do not silently swallow
+          if (fbErr.code === 'auth/unauthorized-domain') {
+            throw fbErr;
+          }
+          console.warn('Firebase Google Auth error, checking fallback options:', fbErr);
+          // If Google Identity Services is NOT configured, re-throw the error
+          if (!isGoogleAuthConfigured()) {
+            throw fbErr;
+          }
+        }
+      }
+
+      // 2. Secondary: Standalone Google Identity Services (GIS) fallback
       if (isGoogleAuthConfigured()) {
         const user = await signInWithGoogleIdentity();
         if (user) {
@@ -297,7 +367,7 @@ export const AuthProvider = ({ children }) => {
         throw new Error('Google authentication was cancelled.');
       }
 
-      // 2. Google Client ID is missing
+      // 3. Fallback when neither service is reachable
       throw new Error('GOOGLE_AUTH_NOT_CONFIGURED');
     } catch (error) {
       console.error('Google Login Error:', error);
