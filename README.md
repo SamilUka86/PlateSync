@@ -95,24 +95,6 @@
 
 ## 🌐 Live Website
 
-PlateSync is deployed and accessible worldwide:
-- **Official Website**: [https://platesync.vercel.app](https://platesync.vercel.app)
 - **Direct App Link**: [https://platesyncapp.vercel.app](https://platesyncapp.vercel.app)
 
 ---
-
-## 👨‍💻 Author & Connect
-
-**Samil Uka**  
-*Full Stack Developer & Fitness Enthusiast*
-
-- 🐙 **GitHub**: [@SamilUka86](https://github.com/SamilUka86)
-- 💼 **LinkedIn**: [Samil Uka](https://www.linkedin.com/in/samil-uka-53049b359)
-- 📸 **Instagram**: [@_.samil._86](https://www.instagram.com/_.samil._86)
-- ✉️ **Contact Support**: [platesync86@gmail.com](mailto:platesync86@gmail.com)
-
----
-
-## 📄 License
-
-This project is open-source and available under the **MIT License**.
