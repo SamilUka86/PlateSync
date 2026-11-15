@@ -1,6 +1,5 @@
 # 🏋️‍♂️ PlateSync – Smart Barbell Loading & Workout Analytics Platform
 
-[![Live Demo](https://img.shields.io/badge/Live_Demo-platesync.vercel.app-00df9a?style=for-the-badge&logo=vercel&logoColor=white)](https://platesync.vercel.app)
 [![React](https://img.shields.io/badge/React-18.3-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-5.4-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
