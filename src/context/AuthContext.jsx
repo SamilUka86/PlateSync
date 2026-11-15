@@ -115,6 +115,9 @@ export const AuthProvider = ({ children }) => {
     checkRedirectAuthResult().then((user) => {
       if (user) {
         setCurrentUser(user);
+        setIsDemoMode(false);
+        localStorage.removeItem('platesync_demo_active');
+        localStorage.removeItem('platesync_demo_workouts');
         getUserProfile(user.uid).then((prof) => {
           if (prof) {
             const savedUnit = localStorage.getItem('platesync_preferred_unit');
@@ -127,6 +130,9 @@ export const AuthProvider = ({ children }) => {
     const unsubscribe = subscribeToAuthChanges(async (user) => {
       if (user) {
         setCurrentUser(user);
+        setIsDemoMode(false);
+        localStorage.removeItem('platesync_demo_active');
+        localStorage.removeItem('platesync_demo_workouts');
         try {
           let profile = await getUserProfile(user.uid);
           if (!profile) {

@@ -8,6 +8,7 @@ import {
   getDocs,
   deleteDoc,
   query,
+  where,
   orderBy,
   serverTimestamp
 } from 'firebase/firestore';
@@ -128,37 +129,34 @@ export const updateUserProfile = async (userId, updates) => {
 export const saveWorkoutSession = async (userId, workoutData) => {
   if (!userId) throw new Error('User ID required');
 
+  const workoutId = workoutData.id || `w_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   const payload = {
     ...workoutData,
+    id: workoutId,
     userId,
     createdAt: workoutData.date || workoutData.createdAt || new Date().toISOString()
   };
 
+  // Immediate local cache update
+  const localList = getLocalItem(`workouts_${userId}`, []);
+  const updatedLocal = [payload, ...localList.filter(w => w.id !== workoutId)];
+  setLocalItem(`workouts_${userId}`, updatedLocal);
+
   if (!isFirebaseConfigured() || !db) {
-    const localList = getLocalItem(`workouts_${userId}`, []);
-    const tempId = workoutData.id || `local_${Date.now()}`;
-    const localSaved = { id: tempId, ...payload };
-    setLocalItem(`workouts_${userId}`, [localSaved, ...localList.filter(w => w.id !== tempId)]);
-    return localSaved;
+    return payload;
   }
 
   try {
-    const colRef = collection(db, 'users', userId, 'workouts');
-    const docRef = await addDoc(colRef, {
+    // Use setDoc so document ID in Firestore matches workoutId 100%
+    const docRef = doc(db, 'users', userId, 'workouts', workoutId);
+    await setDoc(docRef, {
       ...payload,
       createdAt: serverTimestamp()
-    });
-    const saved = { id: docRef.id, ...payload };
-    const localList = getLocalItem(`workouts_${userId}`, []);
-    setLocalItem(`workouts_${userId}`, [saved, ...localList.filter(w => w.id !== docRef.id && w.id !== workoutData.id)]);
-    return saved;
+    }, { merge: true });
+    return payload;
   } catch (err) {
-    console.warn('Firestore save notice, falling back to local:', err);
-    const localList = getLocalItem(`workouts_${userId}`, []);
-    const tempId = workoutData.id || `local_${Date.now()}`;
-    const localSaved = { id: tempId, ...payload };
-    setLocalItem(`workouts_${userId}`, [localSaved, ...localList.filter(w => w.id !== tempId)]);
-    return localSaved;
+    console.warn('Firestore save notice, preserved locally:', err);
+    return payload;
   }
 };
 
@@ -172,20 +170,32 @@ export const getUserWorkouts = async (userId) => {
 
   try {
     const colRef = collection(db, 'users', userId, 'workouts');
-    const q = query(colRef, orderBy('createdAt', 'desc'));
-    const snapshot = await getDocs(q);
+    let snapshot;
+    try {
+      const q = query(colRef, orderBy('createdAt', 'desc'));
+      snapshot = await getDocs(q);
+    } catch (indexErr) {
+      snapshot = await getDocs(colRef);
+    }
 
-    // If Firestore query succeeded and returned 0 documents, user has 0 workouts!
+    // If Firestore connected successfully and returned 0 documents, user has 0 workouts!
     if (snapshot.empty) {
       setLocalItem(`workouts_${userId}`, []);
       return [];
     }
 
-    const remoteWorkouts = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate ? doc.data().createdAt.toDate().toISOString() : doc.data().createdAt || new Date().toISOString()
-    }));
+    const remoteWorkouts = snapshot.docs.map(doc => {
+      const data = doc.data() || {};
+      return {
+        ...data,
+        // CRITICAL: id must be doc.id so deleteDoc(doc(..., id)) will always match!
+        id: doc.id,
+        createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt || new Date().toISOString()
+      };
+    });
+
+    remoteWorkouts.sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt));
+
     setLocalItem(`workouts_${userId}`, remoteWorkouts);
     return remoteWorkouts;
   } catch (err) {
@@ -196,8 +206,10 @@ export const getUserWorkouts = async (userId) => {
 
 export const deleteWorkoutSession = async (userId, workoutId) => {
   if (!userId || !workoutId) return false;
+
+  // 1. Immediately delete from local cache
   const localWorkouts = getLocalItem(`workouts_${userId}`, []);
-  const remaining = localWorkouts.filter(w => w.id !== workoutId);
+  const remaining = localWorkouts.filter(w => w.id !== workoutId && w._origId !== workoutId);
   setLocalItem(`workouts_${userId}`, remaining);
 
   // Clean any legacy keys if present
@@ -210,9 +222,21 @@ export const deleteWorkoutSession = async (userId, workoutId) => {
 
   if (!isFirebaseConfigured() || !db) return true;
 
+  // 2. Delete from Firestore
   try {
+    // Delete direct document by workoutId
     const docRef = doc(db, 'users', userId, 'workouts', workoutId);
     await deleteDoc(docRef);
+
+    // Also check and delete any document where internal id matches workoutId
+    try {
+      const colRef = collection(db, 'users', userId, 'workouts');
+      const q = query(colRef, where('id', '==', workoutId));
+      const snap = await getDocs(q);
+      const deletePromises = snap.docs.map(d => deleteDoc(d.ref));
+      await Promise.all(deletePromises);
+    } catch (subErr) {}
+
     return true;
   } catch (err) {
     console.warn('Firestore delete notice:', err);

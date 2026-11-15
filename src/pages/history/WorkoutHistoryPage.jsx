@@ -159,9 +159,9 @@ export const WorkoutHistoryPage = ({ setActiveTab }) => {
                       <Eye className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => {
+                      onClick={async () => {
                         if (window.confirm('Delete this workout permanently?')) {
-                          deleteWorkout(w.id);
+                          await deleteWorkout(w.id);
                           addNotification('Workout record deleted', 'info');
                         }
                       }}
@@ -220,7 +220,7 @@ export const WorkoutHistoryPage = ({ setActiveTab }) => {
               ))}
             </div>
 
-            <div className="p-4 border-t border-midnight-border flex items-center justify-between">
+            <div className="p-4 border-t border-midnight-border flex items-center justify-between gap-3">
               <button
                 onClick={() => {
                   setShareWorkout(selectedWorkout);
@@ -230,12 +230,30 @@ export const WorkoutHistoryPage = ({ setActiveTab }) => {
                 <Share2 className="w-4 h-4" />
                 <span>Share Summary Card</span>
               </button>
-              <button
-                onClick={() => setSelectedWorkout(null)}
-                className="px-5 py-2 bg-midnight-elevated hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition"
-              >
-                Close
-              </button>
+              
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={async () => {
+                    if (window.confirm('Delete this workout permanently?')) {
+                      const idToDelete = selectedWorkout.id;
+                      setSelectedWorkout(null);
+                      await deleteWorkout(idToDelete);
+                      addNotification('Workout record deleted', 'info');
+                    }
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-neon-error/10 hover:bg-neon-error/20 text-rose-300 border border-neon-error/30 rounded-xl text-xs font-bold transition"
+                  title="Delete this session"
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-neon-error" />
+                  <span>Delete</span>
+                </button>
+                <button
+                  onClick={() => setSelectedWorkout(null)}
+                  className="px-5 py-2 bg-midnight-elevated hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition"
+                >
+                  Close
+                </button>
+              </div>
             </div>
 
           </div>
