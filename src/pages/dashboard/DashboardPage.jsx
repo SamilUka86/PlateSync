@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   Trophy,
   Dumbbell,
@@ -15,7 +15,10 @@ import {
   BarChart3,
   Award,
   Zap,
-  Play
+  Play,
+  Scale,
+  TrendingDown,
+  Minus
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -29,13 +32,73 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { useWorkout } from '../../context/WorkoutContext';
 import { KG_TO_LBS } from '../../utils/weightCalculations';
+import { getWeightLogs } from '../../services/firestore/firestoreService';
 
 export const DashboardPage = ({ setActiveTab }) => {
-  const { userProfile, currentUser } = useAuth();
+  const { userProfile, currentUser, isDemoMode } = useAuth();
   const { workouts, metrics, weeklyRoutine, startRoutineDayWorkout } = useWorkout();
 
   const athleteName = userProfile?.name || currentUser?.displayName || 'Athlete';
-  const preferredUnit = userProfile?.preferredUnit || 'KG';
+  const rawUnit = userProfile?.preferredUnit || 'KG';
+  const preferredUnit = (rawUnit === 'LB' || rawUnit === 'LBS') ? 'LBS' : 'KG';
+
+  // Body weight trend tracking on Dashboard
+  const userId = currentUser?.uid || (isDemoMode ? 'demo_athlete_platesync' : 'guest_local');
+  const [weightLogs, setWeightLogs] = useState([]);
+
+  useEffect(() => {
+    let mounted = true;
+    getWeightLogs(userId).then(logs => {
+      if (mounted && logs) setWeightLogs(logs);
+    });
+    return () => { mounted = false; };
+  }, [userId, userProfile?.bodyWeight]);
+
+  const weightTrendData = useMemo(() => {
+    const baseKg = Number(userProfile?.bodyWeight) || 75;
+    if (!weightLogs || weightLogs.length === 0) {
+      const displayCurrent = preferredUnit === 'LBS'
+        ? `${Math.round(baseKg * KG_TO_LBS * 10) / 10} lbs`
+        : `${Math.round(baseKg * 10) / 10} kg`;
+      return {
+        current: displayCurrent,
+        trend: { type: 'neutral', value: '0.0 kg' },
+        hasLogs: false
+      };
+    }
+
+    const currentKg = weightLogs[0].weightKg;
+    const oldestKg = weightLogs[weightLogs.length - 1].weightKg;
+    const diffKg = Math.round((currentKg - oldestKg) * 10) / 10;
+
+    let trendType = 'neutral';
+    let trendValue = '0.0 kg';
+    if (Math.abs(diffKg) >= 0.05) {
+      if (diffKg > 0) {
+        trendType = 'up';
+        trendValue = preferredUnit === 'LBS'
+          ? `+${Math.round(diffKg * KG_TO_LBS * 10) / 10} lbs`
+          : `+${diffKg} kg`;
+      } else {
+        trendType = 'down';
+        trendValue = preferredUnit === 'LBS'
+          ? `${Math.round(diffKg * KG_TO_LBS * 10) / 10} lbs`
+          : `${diffKg} kg`;
+      }
+    }
+
+    const displayCurrent = preferredUnit === 'LBS'
+      ? `${(weightLogs[0].weightLb || Math.round(currentKg * KG_TO_LBS * 10) / 10)} lbs`
+      : `${Math.round(currentKg * 10) / 10} kg`;
+
+    return {
+      current: displayCurrent,
+      trend: { type: trendType, value: trendValue },
+      hasLogs: true,
+      totalLogs: weightLogs.length,
+      latestDate: weightLogs[0].date
+    };
+  }, [weightLogs, preferredUnit, userProfile?.bodyWeight]);
 
   // Smooth top navigation helper to ensure phone screens always start from the top
   const navigateTo = (tab) => {
@@ -287,6 +350,80 @@ export const DashboardPage = ({ setActiveTab }) => {
           </p>
         </div>
 
+      </div>
+
+      {/* 2.4 Athlete Body Weight & Overall Trend Card on Dashboard */}
+      <div className="bg-midnight-card border border-midnight-border rounded-3xl p-6 relative overflow-hidden shadow-xl hover:border-neon-cyan/40 transition">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-neon-cyan/10 border border-neon-cyan/30 flex items-center justify-center text-neon-cyan shrink-0 shadow-glow-cyan">
+              <Scale className="w-6 h-6" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black uppercase text-neon-cyan font-mono tracking-wider">
+                  Body Mass Tracking &bull; Overall Trajectory
+                </span>
+                <span className="px-2 py-0.5 rounded-md bg-neon-cyan/15 text-neon-cyan text-[10px] font-bold border border-neon-cyan/30">
+                  {preferredUnit} Mode Active
+                </span>
+              </div>
+
+              <h3 className="text-lg font-black text-white">
+                Athlete Body Weight &amp; Overall Trend
+              </h3>
+
+              <p className="text-xs text-slate-400">
+                Calibrate barbell tonnage and recovery nutrition with your latest body composition progression.
+              </p>
+            </div>
+          </div>
+
+          {/* Stats Chips */}
+          <div className="flex items-center gap-3 shrink-0 self-start sm:self-auto">
+            <div className="px-4 py-2.5 rounded-2xl bg-midnight-bg border border-midnight-border text-center min-w-[110px]">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block font-mono">Current Weight</span>
+              <span className="text-base font-black font-mono text-neon-cyan">{weightTrendData.current}</span>
+            </div>
+
+            <div className="px-4 py-2.5 rounded-2xl bg-midnight-bg border border-midnight-border text-center min-w-[120px]">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block font-mono">Overall Trend</span>
+              <span className={`text-base font-black font-mono flex items-center justify-center gap-1.5 ${
+                weightTrendData.trend.type === 'down' ? 'text-neon-cyan' : weightTrendData.trend.type === 'up' ? 'text-neon-violet' : 'text-slate-300'
+              }`}>
+                {weightTrendData.trend.type === 'down' && <TrendingDown className="w-4 h-4" />}
+                {weightTrendData.trend.type === 'up' && <TrendingUp className="w-4 h-4" />}
+                {weightTrendData.trend.type === 'neutral' && <Minus className="w-4 h-4" />}
+                <span>{weightTrendData.trend.value}</span>
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => navigateTo('bodyweight')}
+              className="hidden md:flex p-2.5 rounded-2xl bg-midnight-bg hover:bg-midnight-elevated border border-midnight-border text-neon-cyan hover:text-white transition cursor-pointer"
+              title="Open Body Weight Tracker"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-4 pt-3 border-t border-midnight-border/60 flex items-center justify-between text-xs text-slate-400">
+          <span className="text-[11px] font-mono">
+            {weightTrendData.hasLogs 
+              ? `Latest log: ${weightTrendData.latestDate} (${weightTrendData.totalLogs} total entries)`
+              : 'Using baseline athlete profile weight'}
+          </span>
+          <button
+            type="button"
+            onClick={() => navigateTo('bodyweight')}
+            className="text-xs font-bold text-neon-cyan hover:underline flex items-center gap-1 cursor-pointer"
+          >
+            <span>Open Weight Tracker &amp; History</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
 
       {/* 2.5 Today's Scheduled Routine Card (Monday - Sunday Split) */}

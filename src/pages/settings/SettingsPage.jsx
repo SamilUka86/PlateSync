@@ -19,7 +19,12 @@ import { useNotification } from '../../context/NotificationContext';
 import { FirebaseSetupModal } from '../../components/auth/FirebaseSetupModal';
 import { isFirebaseConfigured } from '../../services/firebase/config';
 import { KG_TO_LBS } from '../../utils/weightCalculations';
-import { trigger5SecVibration, stopVibration } from '../../utils/audioHaptics';
+import { 
+  getBuzzerDuration, 
+  setBuzzerDuration, 
+  triggerConfiguredBuzzer, 
+  stopVibration 
+} from '../../utils/audioHaptics';
 import {
   SUPPORTED_LANGUAGES,
   getCurrentLanguage,
@@ -31,46 +36,32 @@ export const SettingsPage = () => {
   const { addNotification } = useNotification();
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [isVibrating, setIsVibrating] = useState(false);
+  const [buzzerDuration, setBuzzerDurationState] = useState(() => getBuzzerDuration());
   const [currentLang, setCurrentLang] = useState(getCurrentLanguage);
 
   useEffect(() => {
     setCurrentLang(getCurrentLanguage());
+    setBuzzerDurationState(getBuzzerDuration());
   }, []);
 
-  const handleLanguageSelect = (lang) => {
-    setCurrentLang(lang);
-    addNotification(
-      lang.code === 'en'
-        ? 'Restored English original language'
-        : `Translating website to ${lang.name} (${lang.nativeName})...`,
-      'info'
-    );
-    changeWebsiteLanguage(lang.code);
+  const handleBuzzerDurationChange = (seconds) => {
+    const val = setBuzzerDuration(seconds);
+    setBuzzerDurationState(val);
+    updateProfile({ buzzerDuration: val });
+    addNotification(`Rest timer buzzer & vibration set to ${val} seconds`, 'success');
   };
 
-  // Scroll to top on mount
-  useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-    if (document.documentElement) document.documentElement.scrollTop = 0;
-    if (document.body) document.body.scrollTop = 0;
-  }, []);
-
-  const handleUnitToggle = (unit) => {
-    updateProfile({ preferredUnit: unit });
-    addNotification(`Global preferred unit set to ${unit}`, 'success');
-  };
-
-  const handleTest5SecVibration = () => {
-    trigger5SecVibration();
+  const handleTestBuzzer = () => {
+    triggerConfiguredBuzzer(buzzerDuration);
     setIsVibrating(true);
-    addNotification('Triggering 5-second vibration buzzer...', 'info');
-    setTimeout(() => setIsVibrating(false), 5000);
+    addNotification(`Triggering ${buzzerDuration}-second buzzer & vibration...`, 'info');
+    setTimeout(() => setIsVibrating(false), buzzerDuration * 1000);
   };
 
   const handleStopVibration = () => {
     stopVibration();
     setIsVibrating(false);
-    addNotification('Vibration stopped', 'info');
+    addNotification('Buzzer & vibration stopped', 'info');
   };
 
   return (
@@ -198,43 +189,98 @@ export const SettingsPage = () => {
         </div>
       </div>
 
-      {/* Phone Haptics & Rest Timer Vibration (5 Seconds) */}
-      <div className="bg-midnight-card border border-midnight-border rounded-3xl p-6 space-y-4">
-        <div className="flex items-center justify-between">
+      {/* User-Configurable Rest Timer Buzzer & Phone Vibration Duration */}
+      <div className="bg-midnight-card border border-midnight-border rounded-3xl p-6 space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="space-y-1">
             <h3 className="text-sm font-bold text-white flex items-center gap-2">
               <Vibrate className="w-4 h-4 text-neon-cyan" />
-              Phone Vibration & Rest Timer Haptics
+              Rest Timer Buzzer &amp; Phone Vibration Time
             </h3>
             <p className="text-xs text-slate-400">
-              Vibration duration is configured for up to 5 full seconds of pulsating buzzer for maximum awareness on the gym floor.
+              Customize the exact duration you want the audible buzzer and device vibration to pulse when your rest timer finishes.
             </p>
           </div>
-          <span className="px-2.5 py-1 rounded-full bg-neon-cyan/10 border border-neon-cyan/30 text-neon-cyan text-[10px] font-mono font-bold shrink-0">
-            5s Buzzer Active
+          <span className="px-2.5 py-1 rounded-full bg-neon-cyan/10 border border-neon-cyan/30 text-neon-cyan text-[10px] font-mono font-bold shrink-0 self-start sm:self-auto">
+            {buzzerDuration}s Buzzer Active
           </span>
         </div>
 
-        <div className="pt-2 flex flex-wrap items-center gap-3">
+        {/* Preset Duration Buttons */}
+        <div>
+          <label className="block text-xs font-semibold text-slate-300 mb-2">
+            Preset Duration (Seconds)
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {[1, 2, 3, 5, 8, 10, 15].map((sec) => {
+              const isSelected = buzzerDuration === sec;
+              return (
+                <button
+                  key={sec}
+                  type="button"
+                  onClick={() => handleBuzzerDurationChange(sec)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold transition active:scale-95 ${
+                    isSelected
+                      ? 'bg-neon-cyan text-slate-950 shadow-md shadow-neon-cyan/20 border border-neon-cyan'
+                      : 'bg-midnight-bg border border-midnight-border text-slate-300 hover:text-white hover:border-slate-500'
+                  }`}
+                >
+                  {sec}s {sec === 5 && <span className="text-[10px] opacity-80">(Default)</span>}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Custom Range Slider & Input */}
+        <div className="bg-midnight-bg border border-midnight-border rounded-2xl p-4 space-y-2">
+          <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
+            <span>Fine-Tune Buzzer Time</span>
+            <span className="font-mono text-neon-cyan font-bold">{buzzerDuration} Seconds</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <input
+              type="range"
+              min="1"
+              max="20"
+              step="1"
+              value={buzzerDuration}
+              onChange={(e) => handleBuzzerDurationChange(Number(e.target.value))}
+              className="w-full accent-[#35D9E8] h-2 bg-midnight-elevated rounded-lg cursor-pointer"
+            />
+            <input
+              type="number"
+              min="1"
+              max="30"
+              value={buzzerDuration}
+              onChange={(e) => handleBuzzerDurationChange(Number(e.target.value))}
+              className="w-16 px-2.5 py-1 bg-midnight-card border border-midnight-border rounded-lg text-white text-xs font-mono font-bold text-center focus:outline-none focus:border-neon-cyan"
+            />
+          </div>
+        </div>
+
+        {/* Test Buzzer & Vibration Controls */}
+        <div className="pt-1 flex flex-wrap items-center gap-3">
           <button
             type="button"
-            onClick={handleTest5SecVibration}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition active:scale-95 ${isVibrating
-              ? 'bg-neon-cyan text-slate-950 animate-pulse shadow-lg shadow-neon-cyan/30'
-              : 'bg-neon-cyan/15 hover:bg-neon-cyan text-neon-cyan hover:text-slate-950 border border-neon-cyan/30'
-              }`}
+            onClick={handleTestBuzzer}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition active:scale-95 cursor-pointer ${
+              isVibrating
+                ? 'bg-neon-cyan text-slate-950 animate-pulse shadow-lg shadow-neon-cyan/30'
+                : 'bg-neon-cyan/15 hover:bg-neon-cyan text-neon-cyan hover:text-slate-950 border border-neon-cyan/30'
+            }`}
           >
             <Vibrate className="w-4 h-4" />
-            <span>{isVibrating ? 'Vibrating (5s)...' : 'Test 5-Second Vibration'}</span>
+            <span>{isVibrating ? `Buzzer Active (${buzzerDuration}s)...` : `Test ${buzzerDuration}-Second Buzzer & Vibration`}</span>
           </button>
 
           {isVibrating && (
             <button
               type="button"
               onClick={handleStopVibration}
-              className="px-4 py-2.5 rounded-xl bg-midnight-bg hover:bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-bold transition"
+              className="px-4 py-2.5 rounded-xl bg-midnight-bg hover:bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-bold transition cursor-pointer"
             >
-              Stop Vibration
+              Stop Buzzer
             </button>
           )}
         </div>

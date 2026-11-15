@@ -88,9 +88,111 @@ export const playCountdownTick = () => {
 };
 
 /**
+ * Get configured buzzer and vibration duration in seconds (default 5s)
+ */
+export const getBuzzerDuration = () => {
+  if (typeof window === 'undefined') return 5;
+  const stored = localStorage.getItem('platesync_buzzer_duration');
+  const num = parseInt(stored, 10);
+  return (!isNaN(num) && num >= 1 && num <= 30) ? num : 5;
+};
+
+/**
+ * Save user preferred buzzer duration in seconds (1 to 30s)
+ */
+export const setBuzzerDuration = (seconds) => {
+  if (typeof window === 'undefined') return 5;
+  const clamped = Math.max(1, Math.min(30, parseInt(seconds, 10) || 5));
+  try {
+    localStorage.setItem('platesync_buzzer_duration', String(clamped));
+  } catch (e) {}
+  return clamped;
+};
+
+/**
+ * Generate rhythmic gym buzzer vibration pattern for N seconds
+ */
+export const generateVibrationPattern = (seconds = 5) => {
+  const totalMs = Math.max(1, Math.min(30, seconds)) * 1000;
+  const pattern = [];
+  let elapsed = 0;
+  const pulseOn = 700;
+  const pulseOff = 200;
+
+  while (elapsed < totalMs) {
+    const remaining = totalMs - elapsed;
+    if (remaining <= pulseOn) {
+      pattern.push(remaining);
+      break;
+    }
+    pattern.push(pulseOn);
+    elapsed += pulseOn;
+
+    if (totalMs - elapsed <= pulseOff) {
+      break;
+    }
+    pattern.push(pulseOff);
+    elapsed += pulseOff;
+  }
+  return pattern.length > 0 ? pattern : [totalMs];
+};
+
+let activeBuzzerStopFn = null;
+
+/**
+ * Play audible gym buzzer tone pulsing for the configured duration
+ */
+export const playBuzzerSound = (durationSeconds = 5) => {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+
+    if (activeBuzzerStopFn) {
+      activeBuzzerStopFn();
+    }
+
+    const now = ctx.currentTime;
+    const totalSecs = Math.max(1, Math.min(30, durationSeconds));
+
+    // Initial chime
+    playRestFinishedChime();
+
+    // Pulsing gym buzzer tone
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(440, now);
+
+    let t = now + 0.1;
+    const endTime = now + totalSecs;
+    gain.gain.setValueAtTime(0.001, now);
+
+    while (t < endTime) {
+      const burstEnd = Math.min(t + 0.45, endTime);
+      gain.gain.setValueAtTime(0.12, t);
+      gain.gain.setValueAtTime(0.001, burstEnd);
+      t += 0.65;
+    }
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(endTime);
+
+    activeBuzzerStopFn = () => {
+      try {
+        gain.gain.setValueAtTime(0.001, ctx.currentTime);
+        osc.stop(ctx.currentTime);
+      } catch (e) {}
+      activeBuzzerStopFn = null;
+    };
+  } catch (e) {}
+};
+
+/**
  * Trigger device vibration (Haptic feedback)
- * Heavy gym buzzer: 5 full seconds of pulsating haptic buzzes
- * (800ms on, 200ms pause, 800ms on, 200ms pause, 800ms on, 200ms pause, 800ms on, 200ms pause, 1000ms on = 5000ms total)
+ * Heavy gym buzzer: pulsating haptic buzzes
  */
 export const triggerVibration = (pattern = [800, 200, 800, 200, 800, 200, 800, 200, 1000]) => {
   if (typeof window !== 'undefined' && typeof navigator !== 'undefined' && 'vibrate' in navigator) {
@@ -101,20 +203,34 @@ export const triggerVibration = (pattern = [800, 200, 800, 200, 800, 200, 800, 2
 };
 
 /**
- * Explicit 5-second long vibration
+ * Trigger buzzer and vibration for user-configured duration
  */
-export const trigger5SecVibration = () => {
-  triggerVibration([800, 200, 800, 200, 800, 200, 800, 200, 1000]);
+export const triggerConfiguredBuzzer = (customSeconds) => {
+  const duration = customSeconds || getBuzzerDuration();
+  const pattern = generateVibrationPattern(duration);
+  triggerVibration(pattern);
+  playBuzzerSound(duration);
+  return duration;
 };
 
 /**
- * Cancel any ongoing vibration
+ * Explicit 5-second long vibration (backward compatibility)
+ */
+export const trigger5SecVibration = () => {
+  triggerConfiguredBuzzer(5);
+};
+
+/**
+ * Cancel any ongoing vibration and audio buzzer
  */
 export const stopVibration = () => {
   if (typeof window !== 'undefined' && typeof navigator !== 'undefined' && 'vibrate' in navigator) {
     try {
       navigator.vibrate(0);
     } catch (e) {}
+  }
+  if (activeBuzzerStopFn) {
+    activeBuzzerStopFn();
   }
 };
 

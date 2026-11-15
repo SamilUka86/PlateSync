@@ -52,7 +52,8 @@ import {
   playRestFinishedChime, 
   playCountdownTick, 
   triggerVibration, 
-  triggerShortHaptic 
+  triggerShortHaptic,
+  triggerConfiguredBuzzer
 } from '../../utils/audioHaptics';
 
 export const WorkoutTrackerPage = ({ setActiveTab }) => {
@@ -229,13 +230,10 @@ export const WorkoutTrackerPage = ({ setActiveTab }) => {
     if (restSeconds === 0) {
       // Rest period elapsed!
       const soundOn = localStorage.getItem('platesync_timer_sound') !== 'false';
-      if (soundOn) {
-        playRestFinishedChime();
-      }
       const vibrateOn = localStorage.getItem('platesync_timer_vibrate') !== 'false';
-      if (vibrateOn) {
-        // Vibrates up to 5 full seconds for gym floor awareness
-        triggerVibration([800, 200, 800, 200, 800, 200, 800, 200, 1000]);
+      
+      if (soundOn || vibrateOn) {
+        triggerConfiguredBuzzer();
       }
       addNotification('Rest period complete! Get ready for your next set.', 'info', 4000);
       return;
