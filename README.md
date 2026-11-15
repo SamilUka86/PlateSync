@@ -89,7 +89,7 @@
 | **Visual Analytics** | [Recharts 2.15](https://recharts.org/) | Responsive SVG line, bar, and area charts for workout volume and PR trends |
 | **Iconography** | [Lucide React](https://lucide.dev/) | Clean, scalable vector icons |
 | **Security & Crypto** | [Web Crypto API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API) | Client-side SHA-256 cryptographic one-way hashing for secure administration |
-| **Deployment** | [Vercel](https://vercel.com/) | Edge hosting, global CDN caching, and automated deployment pipelines |
+| **Deployment** | [Vercel](https://platesyncapp.vercel.app/) | Edge hosting, global CDN caching, and automated deployment pipelines |
 
 ---
 
