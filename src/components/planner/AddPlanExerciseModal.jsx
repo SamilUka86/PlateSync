@@ -1,75 +1,75 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { 
-  X, 
-  Search, 
-  Dumbbell, 
-  Plus, 
-  Sparkles, 
-  Check, 
-  Filter, 
+import {
+  X,
+  Search,
+  Dumbbell,
+  Plus,
+  Sparkles,
+  Check,
+  Filter,
   Layers,
   Info,
   Scale
 } from 'lucide-react';
-import { 
-  EXERCISE_DATABASE, 
+import {
+  EXERCISE_DATABASE,
   MAIN_MUSCLE_GROUPS,
-  MUSCLE_GROUPS, 
+  MUSCLE_GROUPS,
   MUSCLE_SUBGROUPS,
-  EQUIPMENT_TYPES 
+  EQUIPMENT_TYPES
 } from '../../utils/exerciseData';
 import { useAuth } from '../../context/AuthContext';
 
 export const SIX_BODY_PARTS = [
-  { 
-    id: 'Chest', 
-    label: 'Chest', 
-    icon: '🏋️‍♂️', 
-    count: EXERCISE_DATABASE.filter(e => e.muscle === 'Chest' || e.category === 'Chest').length, 
-    description: 'Upper, Middle, Lower, Inner & Outer Pecs' 
+  {
+    id: 'Chest',
+    label: 'Chest',
+    icon: '🏋️‍♂️',
+    count: EXERCISE_DATABASE.filter(e => e.muscle === 'Chest' || e.category === 'Chest').length,
+    description: 'Upper, Middle, Lower, Inner & Outer Pecs'
   },
-  { 
-    id: 'Back', 
-    label: 'Back', 
-    icon: '🧗‍♂️', 
-    count: EXERCISE_DATABASE.filter(e => e.muscle === 'Back' || e.category === 'Back').length, 
-    description: 'Lats, Traps, Upper, Middle & Lower Back' 
+  {
+    id: 'Back',
+    label: 'Back',
+    icon: '🧗‍♂️',
+    count: EXERCISE_DATABASE.filter(e => e.muscle === 'Back' || e.category === 'Back').length,
+    description: 'Lats, Traps, Upper, Middle & Lower Back'
   },
-  { 
-    id: 'Shoulders', 
-    label: 'Shoulders', 
-    icon: '🛡️', 
-    count: EXERCISE_DATABASE.filter(e => e.muscle === 'Shoulders' || e.category === 'Shoulders').length, 
-    description: 'Front Delts, Side Delts, Rear Delts & Cuff' 
+  {
+    id: 'Shoulders',
+    label: 'Shoulders',
+    icon: '🛡️',
+    count: EXERCISE_DATABASE.filter(e => e.muscle === 'Shoulders' || e.category === 'Shoulders').length,
+    description: 'Front Delts, Side Delts, Rear Delts & Cuff'
   },
-  { 
-    id: 'Arms', 
-    label: 'Arms', 
-    icon: '💪', 
-    count: EXERCISE_DATABASE.filter(e => e.muscle === 'Biceps' || e.muscle === 'Triceps' || e.category === 'Arms').length, 
-    description: 'Biceps, Triceps, Brachialis & Forearms' 
+  {
+    id: 'Arms',
+    label: 'Arms',
+    icon: '💪',
+    count: EXERCISE_DATABASE.filter(e => e.muscle === 'Biceps' || e.muscle === 'Triceps' || e.category === 'Arms').length,
+    description: 'Biceps, Triceps, Brachialis & Forearms'
   },
-  { 
-    id: 'Legs', 
-    label: 'Legs', 
-    icon: '🦵', 
-    count: EXERCISE_DATABASE.filter(e => e.muscle === 'Thighs' || e.muscle === 'Legs' || e.category === 'Legs').length, 
-    description: 'Quads, Hamstrings, Glutes & Adductors' 
+  {
+    id: 'Legs',
+    label: 'Legs',
+    icon: '🦵',
+    count: EXERCISE_DATABASE.filter(e => e.muscle === 'Thighs' || e.muscle === 'Legs' || e.category === 'Legs').length,
+    description: 'Quads, Hamstrings, Glutes & Adductors'
   },
-  { 
-    id: 'Core', 
-    label: 'Core (Abs)', 
-    icon: '⚡', 
-    count: EXERCISE_DATABASE.filter(e => e.muscle === 'Abs' || e.muscle === 'Core' || e.category === 'Core').length, 
-    description: 'Upper Abs, Lower Abs, Obliques & Deep Core' 
+  {
+    id: 'Core',
+    label: 'Core (Abs)',
+    icon: '⚡',
+    count: EXERCISE_DATABASE.filter(e => e.muscle === 'Abs' || e.muscle === 'Core' || e.category === 'Core').length,
+    description: 'Upper Abs, Lower Abs, Obliques & Deep Core'
   }
 ];
 
-export const AddPlanExerciseModal = ({ 
-  isOpen, 
-  onClose, 
-  dayKey, 
-  dayName, 
+export const AddPlanExerciseModal = ({
+  isOpen,
+  onClose,
+  dayKey,
+  dayName,
   onAddExercise,
   initialMuscle = 'All'
 }) => {
@@ -136,8 +136,8 @@ export const AddPlanExerciseModal = ({
   const filteredExercises = useMemo(() => {
     return EXERCISE_DATABASE.filter(ex => {
       const q = searchQuery.toLowerCase();
-      const matchesSearch = !q || 
-        ex.name.toLowerCase().includes(q) || 
+      const matchesSearch = !q ||
+        ex.name.toLowerCase().includes(q) ||
         ex.muscle.toLowerCase().includes(q) ||
         (ex.subgroup && ex.subgroup.toLowerCase().includes(q));
 
@@ -216,7 +216,7 @@ export const AddPlanExerciseModal = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6 bg-midnight-bg/85 backdrop-blur-md animate-in fade-in">
       <div className="w-full max-w-3xl bg-midnight-card border border-midnight-border rounded-3xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden">
-        
+
         {/* Header */}
         <div className="p-4 md:p-6 border-b border-midnight-border flex items-center justify-between shrink-0 bg-midnight-secondary/60">
           <div className="flex items-center gap-3">
@@ -248,22 +248,20 @@ export const AddPlanExerciseModal = ({
             <button
               type="button"
               onClick={() => setActiveTab('library')}
-              className={`py-2 text-xs font-bold rounded-xl transition ${
-                activeTab === 'library'
-                  ? 'bg-neon-cyan text-slate-950 shadow-md shadow-neon-cyan/20'
-                  : 'text-slate-400 hover:text-white'
-              }`}
+              className={`py-2 text-xs font-bold rounded-xl transition ${activeTab === 'library'
+                ? 'bg-neon-cyan text-slate-950 shadow-md shadow-neon-cyan/20'
+                : 'text-slate-400 hover:text-white'
+                }`}
             >
               Existing Library (160+ Exercises)
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('custom')}
-              className={`py-2 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 ${
-                activeTab === 'custom'
-                  ? 'bg-neon-cyan text-slate-950 shadow-md shadow-neon-cyan/20'
-                  : 'text-slate-400 hover:text-white'
-              }`}
+              className={`py-2 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 ${activeTab === 'custom'
+                ? 'bg-neon-cyan text-slate-950 shadow-md shadow-neon-cyan/20'
+                : 'text-slate-400 hover:text-white'
+                }`}
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span>Create Custom Exercise</span>
@@ -296,17 +294,16 @@ export const AddPlanExerciseModal = ({
                       setSelectedMuscle('All');
                       setSelectedSubgroup('All');
                     }}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition ${
-                      selectedMuscle === 'All'
-                        ? 'bg-neon-cyan text-slate-950 font-black shadow-md shadow-neon-cyan/20'
-                        : 'bg-midnight-bg text-slate-400 hover:text-white border border-midnight-border'
-                    }`}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition ${selectedMuscle === 'All'
+                      ? 'bg-neon-cyan text-slate-950 font-black shadow-md shadow-neon-cyan/20'
+                      : 'bg-midnight-bg text-slate-400 hover:text-white border border-midnight-border'
+                      }`}
                   >
                     All Exercises
                   </button>
 
                   {SIX_BODY_PARTS.map((bp) => {
-                    const isSelected = selectedMuscle === bp.id || 
+                    const isSelected = selectedMuscle === bp.id ||
                       (bp.id === 'Arms' && (selectedMuscle === 'Biceps' || selectedMuscle === 'Triceps')) ||
                       (bp.id === 'Legs' && selectedMuscle === 'Thighs') ||
                       (bp.id === 'Core' && selectedMuscle === 'Abs');
@@ -319,17 +316,15 @@ export const AddPlanExerciseModal = ({
                           setSelectedMuscle(bp.id);
                           setSelectedSubgroup('All');
                         }}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition flex items-center gap-1.5 ${
-                          isSelected
-                            ? 'bg-neon-cyan text-slate-950 font-black shadow-md shadow-neon-cyan/20'
-                            : 'bg-midnight-bg text-slate-400 hover:text-white border border-midnight-border'
-                        }`}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition flex items-center gap-1.5 ${isSelected
+                          ? 'bg-neon-cyan text-slate-950 font-black shadow-md shadow-neon-cyan/20'
+                          : 'bg-midnight-bg text-slate-400 hover:text-white border border-midnight-border'
+                          }`}
                       >
                         <span>{bp.icon}</span>
                         <span>{bp.label}</span>
-                        <span className={`text-[10px] px-1.5 py-0.2 rounded-md ${
-                          isSelected ? 'bg-slate-950/20 text-slate-950 font-mono font-bold' : 'text-slate-500 font-mono'
-                        }`}>
+                        <span className={`text-[10px] px-1.5 py-0.2 rounded-md ${isSelected ? 'bg-slate-950/20 text-slate-950 font-mono font-bold' : 'text-slate-500 font-mono'
+                          }`}>
                           {bp.count}
                         </span>
                       </button>
@@ -343,11 +338,10 @@ export const AddPlanExerciseModal = ({
                     <button
                       type="button"
                       onClick={() => setSelectedSubgroup('All')}
-                      className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition ${
-                        selectedSubgroup === 'All'
-                          ? 'bg-neon-cyan text-slate-950'
-                          : 'bg-midnight-elevated text-slate-300 hover:text-white'
-                      }`}
+                      className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition ${selectedSubgroup === 'All'
+                        ? 'bg-neon-cyan text-slate-950'
+                        : 'bg-midnight-elevated text-slate-300 hover:text-white'
+                        }`}
                     >
                       All {selectedMuscle}
                     </button>
@@ -356,11 +350,10 @@ export const AddPlanExerciseModal = ({
                         key={sg}
                         type="button"
                         onClick={() => setSelectedSubgroup(sg)}
-                        className={`px-2.5 py-0.5 rounded-lg text-[10px] transition whitespace-nowrap ${
-                          selectedSubgroup === sg
-                            ? 'bg-neon-violet text-white font-bold border border-neon-violet'
-                            : 'bg-midnight-elevated text-slate-300 hover:text-white'
-                        }`}
+                        className={`px-2.5 py-0.5 rounded-lg text-[10px] transition whitespace-nowrap ${selectedSubgroup === sg
+                          ? 'bg-neon-violet text-white font-bold border border-neon-violet'
+                          : 'bg-midnight-elevated text-slate-300 hover:text-white'
+                          }`}
                       >
                         {sg}
                       </button>
@@ -382,11 +375,10 @@ export const AddPlanExerciseModal = ({
                       <div
                         key={ex.id}
                         onClick={() => handleSelectLibraryItem(ex)}
-                        className={`p-3.5 flex items-center justify-between cursor-pointer transition ${
-                          isSelected
-                            ? 'bg-neon-cyan/15 border-l-4 border-l-neon-cyan'
-                            : 'hover:bg-midnight-elevated'
-                        }`}
+                        className={`p-3.5 flex items-center justify-between cursor-pointer transition ${isSelected
+                          ? 'bg-neon-cyan/15 border-l-4 border-l-neon-cyan'
+                          : 'hover:bg-midnight-elevated'
+                          }`}
                       >
                         <div className="min-w-0 pr-3">
                           <p className={`text-sm font-bold truncate ${isSelected ? 'text-neon-cyan' : 'text-white'}`}>

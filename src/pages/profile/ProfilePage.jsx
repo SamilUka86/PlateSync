@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  User, 
-  Mail, 
-  Ruler, 
-  Scale, 
-  Dumbbell, 
-  Save, 
-  Check, 
+import {
+  User,
+  Mail,
+  Ruler,
+  Scale,
+  Dumbbell,
+  Save,
+  Check,
   Calendar,
   Sparkles,
   Star,
@@ -49,7 +49,7 @@ export const ProfilePage = ({ setActiveTab }) => {
     setFavoriteIds(updated);
     try {
       localStorage.setItem('platesync_favorite_exercises', JSON.stringify(updated));
-    } catch (err) {}
+    } catch (err) { }
     addNotification('Removed workout from favorites', 'info');
   };
 
@@ -61,7 +61,7 @@ export const ProfilePage = ({ setActiveTab }) => {
       setFavoriteIds(updated);
       try {
         localStorage.setItem('platesync_favorite_exercises', JSON.stringify(updated));
-      } catch (err) {}
+      } catch (err) { }
       addNotification('Added workout to favorites ⭐', 'success');
     }
   };
@@ -132,7 +132,7 @@ export const ProfilePage = ({ setActiveTab }) => {
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto animate-in fade-in duration-300">
-      
+
       {/* Top Banner */}
       <div className="bg-midnight-card border border-midnight-border rounded-3xl p-6 md:p-8 flex flex-col sm:flex-row sm:items-center gap-6">
         <img

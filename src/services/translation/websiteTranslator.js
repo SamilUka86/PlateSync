@@ -8,23 +8,7 @@
 
 export const SUPPORTED_LANGUAGES = [
   { code: 'en', name: 'English', nativeName: 'English (US)', flag: '🇺🇸', shortCode: 'EN' },
-  { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी', flag: '🇮🇳', shortCode: 'HI' },
-  { code: 'es', name: 'Spanish', nativeName: 'Español', flag: '🇪🇸', shortCode: 'ES' },
-  { code: 'fr', name: 'French', nativeName: 'Français', flag: '🇫🇷', shortCode: 'FR' },
-  { code: 'de', name: 'German', nativeName: 'Deutsch', flag: '🇩🇪', shortCode: 'DE' },
-  { code: 'ja', name: 'Japanese', nativeName: '日本語', flag: '🇯🇵', shortCode: 'JA' },
-  { code: 'zh-CN', name: 'Chinese', nativeName: '简体中文', flag: '🇨🇳', shortCode: 'ZH' },
-  { code: 'pt', name: 'Portuguese', nativeName: 'Português', flag: '🇧🇷', shortCode: 'PT' },
-  { code: 'ru', name: 'Russian', nativeName: 'Русский', flag: '🇷🇺', shortCode: 'RU' },
-  { code: 'ar', name: 'Arabic', nativeName: 'العربية', flag: '🇸🇦', shortCode: 'AR' },
-  { code: 'it', name: 'Italian', nativeName: 'Italiano', flag: '🇮🇹', shortCode: 'IT' },
-  { code: 'ko', name: 'Korean', nativeName: '한국어', flag: '🇰🇷', shortCode: 'KO' },
-  { code: 'bn', name: 'Bengali', nativeName: 'বাংলা', flag: '🇮🇳', shortCode: 'BN' },
-  { code: 'mr', name: 'Marathi', nativeName: 'मराठी', flag: '🇮🇳', shortCode: 'MR' },
-  { code: 'te', name: 'Telugu', nativeName: 'తెలుగు', flag: '🇮🇳', shortCode: 'TE' },
-  { code: 'ta', name: 'Tamil', nativeName: 'தமிழ்', flag: '🇮🇳', shortCode: 'TA' },
-  { code: 'gu', name: 'Gujarati', nativeName: 'ગુજરાતી', flag: '🇮🇳', shortCode: 'GU' },
-  { code: 'pa', name: 'Punjabi', nativeName: 'ਪੰਜਾਬੀ', flag: '🇮🇳', shortCode: 'PA' }
+  { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी', flag: '🇮🇳', shortCode: 'HI' }
 ];
 
 const STORAGE_KEY = 'platesync_app_language';
@@ -201,4 +185,14 @@ export const changeWebsiteLanguage = (langCode, onSuccess) => {
     console.error('Error changing website language:', err);
     window.location.reload();
   }
+};
+
+/**
+ * Direct 1-tap Toggle between English and Hindi
+ */
+export const toggleEnglishHindi = (onSuccess) => {
+  const current = getCurrentLanguageCode();
+  const next = current === 'hi' ? 'en' : 'hi';
+  changeWebsiteLanguage(next, onSuccess);
+  return next;
 };

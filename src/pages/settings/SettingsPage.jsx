@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Settings as SettingsIcon, 
-  Flame, 
-  Scale, 
-  Shield, 
-  LogOut, 
-  Sparkles, 
-  CheckCircle2, 
+import {
+  Settings as SettingsIcon,
+  Flame,
+  Scale,
+  Shield,
+  LogOut,
+  Sparkles,
+  CheckCircle2,
   AlertTriangle,
   RotateCcw,
   Check,
@@ -20,10 +20,10 @@ import { FirebaseSetupModal } from '../../components/auth/FirebaseSetupModal';
 import { isFirebaseConfigured } from '../../services/firebase/config';
 import { KG_TO_LBS } from '../../utils/weightCalculations';
 import { trigger5SecVibration, stopVibration } from '../../utils/audioHaptics';
-import { 
-  SUPPORTED_LANGUAGES, 
-  getCurrentLanguage, 
-  changeWebsiteLanguage 
+import {
+  SUPPORTED_LANGUAGES,
+  getCurrentLanguage,
+  changeWebsiteLanguage
 } from '../../services/translation/websiteTranslator';
 
 export const SettingsPage = () => {
@@ -75,7 +75,7 @@ export const SettingsPage = () => {
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto animate-in fade-in duration-300">
-      
+
       {/* Top Banner */}
       <div className="bg-midnight-card border border-midnight-border rounded-3xl p-6 md:p-8">
         <h2 className="text-xl md:text-2xl font-black text-white flex items-center gap-3">
@@ -139,21 +139,19 @@ export const SettingsPage = () => {
           <div className="flex gap-3">
             <button
               onClick={() => handleUnitToggle('KG')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold font-mono transition ${
-                userProfile?.preferredUnit === 'KG'
-                  ? 'bg-neon-cyan text-slate-950 shadow-md shadow-neon-cyan/20'
-                  : 'bg-midnight-bg border border-midnight-border text-slate-400 hover:text-white'
-              }`}
+              className={`px-4 py-2 rounded-xl text-xs font-bold font-mono transition ${userProfile?.preferredUnit === 'KG'
+                ? 'bg-neon-cyan text-slate-950 shadow-md shadow-neon-cyan/20'
+                : 'bg-midnight-bg border border-midnight-border text-slate-400 hover:text-white'
+                }`}
             >
               Metric (KG)
             </button>
             <button
               onClick={() => handleUnitToggle('LBS')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold font-mono transition ${
-                (userProfile?.preferredUnit === 'LB' || userProfile?.preferredUnit === 'LBS')
-                  ? 'bg-neon-cyan text-slate-950 shadow-md shadow-neon-cyan/20'
-                  : 'bg-midnight-bg border border-midnight-border text-slate-400 hover:text-white'
-              }`}
+              className={`px-4 py-2 rounded-xl text-xs font-bold font-mono transition ${(userProfile?.preferredUnit === 'LB' || userProfile?.preferredUnit === 'LBS')
+                ? 'bg-neon-cyan text-slate-950 shadow-md shadow-neon-cyan/20'
+                : 'bg-midnight-bg border border-midnight-border text-slate-400 hover:text-white'
+                }`}
             >
               Imperial (LBS)
             </button>
@@ -166,16 +164,16 @@ export const SettingsPage = () => {
         <div className="space-y-1">
           <h3 className="text-sm font-bold text-white flex items-center gap-2">
             <Globe className="w-4 h-4 text-neon-cyan" />
-            Website Language & Translation
+            Website Language &amp; Translation (English &bull; हिन्दी)
           </h3>
           <p className="text-xs text-slate-400">
-            Translate all pages, exercise descriptions, and workout logging into your preferred language.
+            Switch the entire application and website between English and Hindi.
           </p>
         </div>
 
         <div className="pt-1">
           <label className="block text-xs font-semibold text-slate-300 mb-2">
-            Select Language
+            Select Active Language
           </label>
           <div className="flex flex-wrap gap-2">
             {SUPPORTED_LANGUAGES.map(lang => {
@@ -185,14 +183,14 @@ export const SettingsPage = () => {
                   key={lang.code}
                   type="button"
                   onClick={() => handleLanguageSelect(lang)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition active:scale-95 ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition active:scale-95 ${
                     isSelected
                       ? 'bg-neon-cyan text-slate-950 font-black shadow-md shadow-neon-cyan/20'
                       : 'bg-midnight-bg border border-midnight-border text-slate-300 hover:text-white hover:border-slate-500'
                   }`}
                 >
-                  <span className="text-sm">{lang.flag}</span>
-                  <span>{lang.name}</span>
+                  <span className="text-base">{lang.flag}</span>
+                  <span>{lang.name} ({lang.nativeName})</span>
                 </button>
               );
             })}
@@ -221,11 +219,10 @@ export const SettingsPage = () => {
           <button
             type="button"
             onClick={handleTest5SecVibration}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition active:scale-95 ${
-              isVibrating
-                ? 'bg-neon-cyan text-slate-950 animate-pulse shadow-lg shadow-neon-cyan/30'
-                : 'bg-neon-cyan/15 hover:bg-neon-cyan text-neon-cyan hover:text-slate-950 border border-neon-cyan/30'
-            }`}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition active:scale-95 ${isVibrating
+              ? 'bg-neon-cyan text-slate-950 animate-pulse shadow-lg shadow-neon-cyan/30'
+              : 'bg-neon-cyan/15 hover:bg-neon-cyan text-neon-cyan hover:text-slate-950 border border-neon-cyan/30'
+              }`}
           >
             <Vibrate className="w-4 h-4" />
             <span>{isVibrating ? 'Vibrating (5s)...' : 'Test 5-Second Vibration'}</span>

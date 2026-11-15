@@ -19,7 +19,11 @@ import {
   Copy,
   ChevronRight,
   ShieldCheck,
-  Check
+  Check,
+  Scale,
+  TrendingUp,
+  TrendingDown,
+  Minus
 } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useAuth } from '../../context/AuthContext';
@@ -27,9 +31,11 @@ import { useNotification } from '../../context/NotificationContext';
 import { DAYS_OF_WEEK } from '../../utils/routinePresets';
 import { AddPlanExerciseModal, SIX_BODY_PARTS } from '../../components/planner/AddPlanExerciseModal';
 import { EditPlanExerciseModal } from '../../components/planner/EditPlanExerciseModal';
+import { getWeightLogs } from '../../services/firestore/firestoreService';
+import { KG_TO_LBS } from '../../utils/weightCalculations';
 
 export const WeeklyPlannerPage = ({ setActiveTab }) => {
-  const { userProfile } = useAuth();
+  const { userProfile, currentUser, isDemoMode } = useAuth();
   const { 
     weeklyRoutine, 
     updateDayRoutine, 
@@ -44,6 +50,67 @@ export const WeeklyPlannerPage = ({ setActiveTab }) => {
     if (document.documentElement) document.documentElement.scrollTop = 0;
     if (document.body) document.body.scrollTop = 0;
   }, []);
+
+  // Fetch body weight logs to display overall trend on rest & active recovery days
+  const userId = currentUser?.uid || (isDemoMode ? 'demo_athlete_platesync' : 'guest_local');
+  const [weightLogs, setWeightLogs] = useState([]);
+
+  useEffect(() => {
+    let mounted = true;
+    getWeightLogs(userId).then(logs => {
+      if (mounted && logs) setWeightLogs(logs);
+    });
+    return () => { mounted = false; };
+  }, [userId, userProfile?.bodyWeight]);
+
+  const preferredUnit = (userProfile?.preferredUnit === 'LB' || userProfile?.preferredUnit === 'LBS') ? 'LBS' : 'KG';
+
+  // Compute Current Weight & Overall Trend (identically to Weight Tracker)
+  const weightTrendData = useMemo(() => {
+    const baseKg = Number(userProfile?.bodyWeight) || 75;
+    if (!weightLogs || weightLogs.length === 0) {
+      const displayCurrent = preferredUnit === 'LBS'
+        ? `${Math.round(baseKg * KG_TO_LBS * 10) / 10} lbs`
+        : `${Math.round(baseKg * 10) / 10} kg`;
+      return {
+        current: displayCurrent,
+        trend: { type: 'neutral', value: '0.0 kg' },
+        hasLogs: false
+      };
+    }
+
+    const currentKg = weightLogs[0].weightKg;
+    const oldestKg = weightLogs[weightLogs.length - 1].weightKg;
+    const diffKg = Math.round((currentKg - oldestKg) * 10) / 10;
+
+    let trendType = 'neutral';
+    let trendValue = '0.0 kg';
+    if (Math.abs(diffKg) >= 0.05) {
+      if (diffKg > 0) {
+        trendType = 'up';
+        trendValue = preferredUnit === 'LBS'
+          ? `+${Math.round(diffKg * KG_TO_LBS * 10) / 10} lbs`
+          : `+${diffKg} kg`;
+      } else {
+        trendType = 'down';
+        trendValue = preferredUnit === 'LBS'
+          ? `${Math.round(diffKg * KG_TO_LBS * 10) / 10} lbs`
+          : `${diffKg} kg`;
+      }
+    }
+
+    const displayCurrent = preferredUnit === 'LBS'
+      ? `${(weightLogs[0].weightLb || Math.round(currentKg * KG_TO_LBS * 10) / 10)} lbs`
+      : `${Math.round(currentKg * 10) / 10} kg`;
+
+    return {
+      current: displayCurrent,
+      trend: { type: trendType, value: trendValue },
+      hasLogs: true,
+      totalLogs: weightLogs.length,
+      latestDate: weightLogs[0].date
+    };
+  }, [weightLogs, preferredUnit, userProfile?.bodyWeight]);
 
   // Find today's day key (Mon - Sun)
   const currentDayKey = useMemo(() => {
@@ -546,24 +613,85 @@ export const WeeklyPlannerPage = ({ setActiveTab }) => {
 
           {/* Planned Exercises Section */}
           {activeDay.isRestDay ? (
-            /* Rest Day Card */
-            <div className="bg-midnight-card border border-midnight-border rounded-3xl p-8 text-center space-y-4">
-              <div className="w-16 h-16 rounded-3xl bg-neon-violet/10 border border-neon-violet/30 flex items-center justify-center text-neon-violet mx-auto shadow-lg shadow-neon-violet/10">
-                <Coffee className="w-8 h-8" />
+            <div className="space-y-4">
+              {/* Athlete Body Weight & Overall Trend Banner (Above Rest & Active Recovery for Phone & Desktop) */}
+              <div className="bg-midnight-card border border-midnight-border rounded-3xl p-5 md:p-6 shadow-card space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-midnight-border pb-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-neon-cyan shadow-glow-cyan" />
+                      <span className="text-[10px] uppercase font-bold text-neon-cyan tracking-wider font-mono">
+                        Rest &amp; Active Recovery &bull; Body Mass Trend
+                      </span>
+                    </div>
+                    <h4 className="text-base font-black text-white flex items-center gap-2">
+                      <Scale className="w-4 h-4 text-neon-cyan" />
+                      <span>Athlete Body Weight &amp; Overall Trend</span>
+                    </h4>
+                    <p className="text-xs text-slate-400">
+                      Tracking your overall weight trajectory supports recovery nutrition, caloric budgeting, and muscle rebuilding on rest days.
+                    </p>
+                  </div>
+
+                  {/* Weight Tracker Stats Chips */}
+                  <div className="flex items-center gap-3 shrink-0">
+                    <div className="px-4 py-2.5 rounded-2xl bg-midnight-bg border border-midnight-border text-center min-w-[110px]">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block font-mono">Current Weight</span>
+                      <span className="text-base font-black font-mono text-neon-cyan">{weightTrendData.current}</span>
+                    </div>
+
+                    <div className="px-4 py-2.5 rounded-2xl bg-midnight-bg border border-midnight-border text-center min-w-[120px]">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block font-mono">Overall Trend</span>
+                      <span className={`text-base font-black font-mono flex items-center justify-center gap-1.5 ${
+                        weightTrendData.trend.type === 'down' ? 'text-neon-cyan' : weightTrendData.trend.type === 'up' ? 'text-neon-violet' : 'text-slate-300'
+                      }`}>
+                        {weightTrendData.trend.type === 'down' && <TrendingDown className="w-4 h-4" />}
+                        {weightTrendData.trend.type === 'up' && <TrendingUp className="w-4 h-4" />}
+                        {weightTrendData.trend.type === 'neutral' && <Minus className="w-4 h-4" />}
+                        <span>{weightTrendData.trend.value}</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between text-xs pt-0.5">
+                  <span className="text-[11px] text-slate-400 font-mono">
+                    {weightTrendData.hasLogs 
+                      ? `Latest recorded: ${weightTrendData.latestDate} (${weightTrendData.totalLogs} entries)`
+                      : 'Baseline athlete profile weight'}
+                  </span>
+                  {setActiveTab && (
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('bodyweight')}
+                      className="text-xs font-bold text-neon-cyan hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>Open Weight Tracker</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
               </div>
-              <div className="space-y-1">
-                <h3 className="text-lg font-black text-white">Scheduled Rest & Recovery Day</h3>
-                <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
-                  Muscle growth and neural adaptation happen during rest. Prioritize 8 hours of sleep, clean protein hydration, and light mobility or walking today.
-                </p>
+
+              {/* Scheduled Rest & Recovery Day Card */}
+              <div className="bg-midnight-card border border-midnight-border rounded-3xl p-8 text-center space-y-4">
+                <div className="w-16 h-16 rounded-3xl bg-neon-violet/10 border border-neon-violet/30 flex items-center justify-center text-neon-violet mx-auto shadow-lg shadow-neon-violet/10">
+                  <Coffee className="w-8 h-8" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-lg font-black text-white">Scheduled Rest & Recovery Day</h3>
+                  <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+                    Muscle growth and neural adaptation happen during rest. Prioritize 8 hours of sleep, clean protein hydration, and light mobility or walking today.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleToggleRestDay}
+                  className="px-5 py-2 rounded-xl bg-midnight-bg hover:bg-midnight-elevated border border-midnight-border text-xs text-slate-300 hover:text-white transition font-semibold"
+                >
+                  Change to Active Workout Day
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={handleToggleRestDay}
-                className="px-5 py-2 rounded-xl bg-midnight-bg hover:bg-midnight-elevated border border-midnight-border text-xs text-slate-300 hover:text-white transition font-semibold"
-              >
-                Change to Active Workout Day
-              </button>
             </div>
           ) : (
             /* Exercises List */
