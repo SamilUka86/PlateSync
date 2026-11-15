@@ -56,8 +56,13 @@ export const AdminFeedbackTab = () => {
       setLoading(false);
     }, statusFilter, categoryFilter);
 
+    const interval = setInterval(() => {
+      loadFeedback();
+    }, 15000);
+
     return () => {
       if (typeof unsubscribe === 'function') unsubscribe();
+      clearInterval(interval);
     };
   }, [statusFilter, categoryFilter]);
 

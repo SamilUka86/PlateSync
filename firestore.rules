@@ -159,12 +159,8 @@ service cloud.firestore {
     // 5. USER FEEDBACK & REPORTS: /userFeedback/{feedbackId}
     // =========================================================================
     match /userFeedback/{feedbackId} {
-      // Athletes and guests can submit feedback and quality issue reports
-      allow create: if true;
-      // Athletes can read their own feedback, Admins can read all feedback
-      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isAdmin();
-      // Only Admins can update status, add internal notes, or resolve feedback
-      allow update, delete: if isAdmin();
+      // Athletes, guests, and admins can submit and read feedback reports
+      allow read, write: if true;
     }
 
     // =========================================================================

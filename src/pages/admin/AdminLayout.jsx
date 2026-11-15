@@ -26,7 +26,20 @@ import { AdminSettingsTab } from './tabs/AdminSettingsTab';
 import { AdminLogsTab } from './tabs/AdminLogsTab';
 
 export const AdminLayout = ({ onBackToApp }) => {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const hash = window.location.hash;
+        if (hash && hash.startsWith('#admin/')) {
+          const tabPart = hash.replace('#admin/', '').trim();
+          if (tabPart) return tabPart;
+        }
+        const saved = localStorage.getItem('platesync_admin_active_tab');
+        if (saved) return saved;
+      }
+    } catch (e) {}
+    return 'dashboard';
+  });
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const { adminSession, isOwner, logoutAdminAccount } = useAdmin();
@@ -44,6 +57,10 @@ export const AdminLayout = ({ onBackToApp }) => {
   const handleSelectTab = (tabId) => {
     setActiveTab(tabId);
     setIsMobileOpen(false);
+    try {
+      localStorage.setItem('platesync_admin_active_tab', tabId);
+      window.location.hash = `admin/${tabId}`;
+    } catch (e) {}
   };
 
   return (

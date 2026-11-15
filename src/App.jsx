@@ -61,7 +61,7 @@ const MainAppLayout = () => {
         const hash = window.location.hash.toLowerCase();
         const params = new URLSearchParams(window.location.search);
         const storedAdminView = localStorage.getItem('platesync_admin_view_active') === 'true';
-        return path.startsWith('/admin') || hash === '#admin' || params.get('view') === 'admin' || storedAdminView;
+        return path.startsWith('/admin') || hash.startsWith('#admin') || params.get('view') === 'admin' || storedAdminView;
       }
     } catch (e) {}
     return false;
@@ -72,33 +72,39 @@ const MainAppLayout = () => {
     try {
       if (isAdminViewOpen) {
         localStorage.setItem('platesync_admin_view_active', 'true');
-        if (window.location.hash !== '#admin') {
-          window.location.hash = 'admin';
+        if (!window.location.hash.startsWith('#admin')) {
+          const tab = localStorage.getItem('platesync_admin_active_tab') || 'dashboard';
+          window.location.hash = `admin/${tab}`;
         }
       } else {
         localStorage.removeItem('platesync_admin_view_active');
-        if (window.location.hash === '#admin') {
+        if (window.location.hash.startsWith('#admin')) {
           window.location.hash = '';
         }
       }
     } catch (e) {}
   }, [isAdminViewOpen]);
 
-  // Ensure non-admin athletes never stay in admin view
+  // Only redirect away from admin view if there is NO active admin session AND the user is a non-admin athlete
   useEffect(() => {
+    if (isAdmin) {
+      // Confirmed admin session; stay on admin site across refreshes
+      return;
+    }
     if (currentUser) {
       const email = currentUser.email?.toLowerCase();
       if (email !== 'platesync86@gmail.com' && email !== 'samilplatesync@gmail.com') {
         setIsAdminViewOpen(false);
         try {
           localStorage.removeItem('platesync_admin_view_active');
-          if (window.location.hash === '#admin') {
+          localStorage.removeItem('platesync_admin_active_tab');
+          if (window.location.hash?.startsWith('#admin')) {
             window.location.hash = '';
           }
         } catch (e) {}
       }
     }
-  }, [currentUser]);
+  }, [currentUser, isAdmin]);
 
   const [activeTab, setActiveTab] = useState(() => {
     try {
@@ -196,7 +202,8 @@ const MainAppLayout = () => {
     setIsAdminViewOpen(false);
     try {
       localStorage.removeItem('platesync_admin_view_active');
-      if (window.location.hash === '#admin') {
+      localStorage.removeItem('platesync_admin_active_tab');
+      if (window.location.hash?.startsWith('#admin')) {
         window.location.hash = '';
       }
     } catch (e) {}

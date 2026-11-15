@@ -849,13 +849,27 @@ export const submitUserFeedback = async (feedbackData) => {
   setLocalFallback('user_feedback', [payload, ...localFeedback]);
 
   if (isFirebaseConfigured() && db) {
+    // 1. Write to global userFeedback collection
     try {
       await setDoc(doc(db, 'userFeedback', feedbackId), {
         ...payload,
         createdAt: nowIso
       });
     } catch (e) {
-      console.warn('Feedback submit notice:', e);
+      console.warn('Global feedback submit notice:', e);
+    }
+
+    // 2. Also write to athlete user document so feedback is guaranteed to be accessible via the users collection
+    if (payload.userId && payload.userId !== 'guest_user') {
+      try {
+        const userRef = doc(db, 'users', payload.userId);
+        await setDoc(userRef, {
+          latestFeedback: payload,
+          feedbackHistory: [payload]
+        }, { merge: true });
+      } catch (userErr) {
+        console.warn('User-level feedback write notice:', userErr);
+      }
     }
   }
 
@@ -869,9 +883,10 @@ export const getAllFeedback = async (statusFilter = 'ALL', categoryFilter = 'ALL
   let list = [];
 
   if (isFirebaseConfigured() && db) {
+    // 1. Fetch from global userFeedback collection
     try {
       const snap = await getDocs(collection(db, 'userFeedback'));
-      list = snap.docs.map(d => {
+      snap.docs.forEach(d => {
         const data = d.data();
         let createdAt = data.createdAt;
         if (createdAt && typeof createdAt.toDate === 'function') {
@@ -881,85 +896,78 @@ export const getAllFeedback = async (statusFilter = 'ALL', categoryFilter = 'ALL
         } else if (!createdAt) {
           createdAt = new Date().toISOString();
         }
-        return { id: d.id, ...data, createdAt };
+        list.push({ id: d.id, ...data, createdAt });
       });
     } catch (e) {
-      console.warn('Feedback fetch notice:', e);
+      console.warn('Feedback fetch notice (userFeedback):', e);
+    }
+
+    // 2. Also inspect users collection for feedbackHistory or latestFeedback
+    try {
+      const usersSnap = await getDocs(collection(db, 'users'));
+      usersSnap.docs.forEach(uDoc => {
+        const uData = uDoc.data();
+        if (Array.isArray(uData.feedbackHistory)) {
+          uData.feedbackHistory.forEach(fb => {
+            if (fb && fb.id) {
+              list.push(fb);
+            }
+          });
+        } else if (uData.latestFeedback && uData.latestFeedback.id) {
+          list.push(uData.latestFeedback);
+        }
+      });
+    } catch (usersErr) {
+      console.warn('Feedback fetch notice (users):', usersErr);
     }
   }
 
-  // Merge with local fallback
+  // 3. Merge with local fallback
   const localList = getLocalFallback('user_feedback', []);
-  const seenIds = new Set(list.map(f => f.id));
-  for (const item of localList) {
-    if (!seenIds.has(item.id)) {
-      list.push(item);
+  const seenIds = new Set();
+  const uniqueList = [];
+  
+  for (const item of [...list, ...localList]) {
+    if (item && item.id && !seenIds.has(item.id)) {
+      seenIds.add(item.id);
+      uniqueList.push(item);
     }
   }
 
-  list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  uniqueList.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
+  let filtered = uniqueList;
   if (statusFilter !== 'ALL') {
-    list = list.filter(f => (f.status || 'pending').toLowerCase() === statusFilter.toLowerCase());
+    filtered = filtered.filter(f => (f.status || 'pending').toLowerCase() === statusFilter.toLowerCase());
   }
-
   if (categoryFilter !== 'ALL') {
-    list = list.filter(f => (f.category || '').toLowerCase() === categoryFilter.toLowerCase());
+    filtered = filtered.filter(f => (f.category || '').toLowerCase() === categoryFilter.toLowerCase());
   }
 
-  return list;
+  return filtered;
 };
 
 /**
  * Admin: Real-time subscription to athlete feedback submissions
  */
 export const subscribeToFeedback = (callback, statusFilter = 'ALL', categoryFilter = 'ALL') => {
+  // Always trigger an immediate fetch so UI updates without delay
+  getAllFeedback(statusFilter, categoryFilter).then(callback);
+
   if (!isFirebaseConfigured() || !db) {
-    const local = getLocalFallback('user_feedback', []);
-    callback(local);
     return () => {};
   }
 
   try {
     const q = collection(db, 'userFeedback');
-    const unsub = onSnapshot(q, (snap) => {
-      let list = snap.docs.map(d => {
-        const data = d.data();
-        let createdAt = data.createdAt;
-        if (createdAt && typeof createdAt.toDate === 'function') {
-          createdAt = createdAt.toDate().toISOString();
-        } else if (createdAt && createdAt.seconds) {
-          createdAt = new Date(createdAt.seconds * 1000).toISOString();
-        } else if (!createdAt) {
-          createdAt = new Date().toISOString();
-        }
-        return { id: d.id, ...data, createdAt };
-      });
-
-      const localList = getLocalFallback('user_feedback', []);
-      const seenIds = new Set(list.map(f => f.id));
-      for (const item of localList) {
-        if (!seenIds.has(item.id)) list.push(item);
-      }
-
-      list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-
-      if (statusFilter !== 'ALL') {
-        list = list.filter(f => (f.status || 'pending').toLowerCase() === statusFilter.toLowerCase());
-      }
-      if (categoryFilter !== 'ALL') {
-        list = list.filter(f => (f.category || '').toLowerCase() === categoryFilter.toLowerCase());
-      }
-
-      callback(list);
-    }, (err) => {
-      console.warn('Feedback snapshot notice, fallback to fetch:', err);
+    const unsub = onSnapshot(q, () => {
       getAllFeedback(statusFilter, categoryFilter).then(callback);
+    }, (err) => {
+      console.warn('Feedback snapshot notice, fallback to polling:', err);
     });
 
     return unsub;
   } catch (e) {
-    getAllFeedback(statusFilter, categoryFilter).then(callback);
     return () => {};
   }
 };

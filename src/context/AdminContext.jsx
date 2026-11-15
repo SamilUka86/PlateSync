@@ -10,7 +10,27 @@ import { auth, isFirebaseConfigured } from '../services/firebase/config';
 const AdminContext = createContext({});
 
 export const AdminProvider = ({ children }) => {
-  const [adminSession, setAdminSession] = useState(() => getActiveAdminSession());
+  const [adminSession, setAdminSession] = useState(() => {
+    const saved = getActiveAdminSession();
+    if (saved) return saved;
+    try {
+      const cur = auth?.currentUser;
+      const curEmail = cur?.email?.toLowerCase();
+      if (curEmail === 'platesync86@gmail.com' || curEmail === 'samilplatesync@gmail.com') {
+        const session = {
+          uid: cur.uid,
+          email: curEmail,
+          role: 'owner',
+          isOwner: true,
+          permissions: ['all'],
+          expiresAt: Date.now() + (30 * 24 * 60 * 60 * 1000)
+        };
+        localStorage.setItem('platesync_admin_session_v1', JSON.stringify(session));
+        return session;
+      }
+    } catch (e) {}
+    return null;
+  });
   const [adminLoading, setAdminLoading] = useState(true);
   const [adminError, setAdminError] = useState(null);
 
@@ -21,6 +41,27 @@ export const AdminProvider = ({ children }) => {
     const checkSession = async () => {
       const savedSession = getActiveAdminSession();
       if (!savedSession) {
+        // Check if currentUser in Firebase is admin
+        if (isFirebaseConfigured() && auth) {
+          const cur = auth.currentUser;
+          const curEmail = cur?.email?.toLowerCase();
+          if (curEmail === 'platesync86@gmail.com' || curEmail === 'samilplatesync@gmail.com') {
+            const session = {
+              uid: cur.uid,
+              email: curEmail,
+              role: 'owner',
+              isOwner: true,
+              permissions: ['all'],
+              expiresAt: Date.now() + (30 * 24 * 60 * 60 * 1000)
+            };
+            localStorage.setItem('platesync_admin_session_v1', JSON.stringify(session));
+            if (isMounted) {
+              setAdminSession(session);
+              setAdminLoading(false);
+            }
+            return;
+          }
+        }
         if (isMounted) {
           setAdminSession(null);
           setAdminLoading(false);
@@ -75,7 +116,7 @@ export const AdminProvider = ({ children }) => {
 
     checkSession();
 
-    // Invalidate admin session whenever an athlete user signs in
+    // Invalidate admin session only if a verified non-admin athlete signs in
     let authUnsubscribe = null;
     if (isFirebaseConfigured() && auth) {
       try {
@@ -86,6 +127,20 @@ export const AdminProvider = ({ children }) => {
               logoutAdmin();
               if (isMounted) {
                 setAdminSession(null);
+              }
+            } else {
+              // Re-affirm admin session
+              const session = {
+                uid: user.uid,
+                email: userEmail,
+                role: 'owner',
+                isOwner: true,
+                permissions: ['all'],
+                expiresAt: Date.now() + (30 * 24 * 60 * 60 * 1000)
+              };
+              localStorage.setItem('platesync_admin_session_v1', JSON.stringify(session));
+              if (isMounted) {
+                setAdminSession(session);
               }
             }
           }
@@ -130,10 +185,22 @@ export const AdminProvider = ({ children }) => {
     setAdminSession(null);
   };
 
+  const isCurrentAdmin = Boolean(
+    (adminSession?.uid && (adminSession.role === 'admin' || adminSession.role === 'owner')) ||
+    adminSession?.email?.toLowerCase() === 'platesync86@gmail.com' ||
+    adminSession?.email?.toLowerCase() === 'samilplatesync@gmail.com' ||
+    auth?.currentUser?.email?.toLowerCase() === 'platesync86@gmail.com' ||
+    auth?.currentUser?.email?.toLowerCase() === 'samilplatesync@gmail.com'
+  );
+
   const value = {
     adminSession,
-    isAdmin: Boolean(adminSession?.uid && (adminSession.role === 'admin' || adminSession.role === 'owner')),
-    isOwner: Boolean(adminSession?.isOwner || adminSession?.role === 'owner' || adminSession?.email?.toLowerCase() === 'platesync86@gmail.com' || adminSession?.email?.toLowerCase() === 'samilplatesync@gmail.com'),
+    isAdmin: isCurrentAdmin,
+    isOwner: Boolean(
+      adminSession?.isOwner ||
+      adminSession?.role === 'owner' ||
+      isCurrentAdmin
+    ),
     adminLoading,
     adminError,
     loginAdminAccount,
