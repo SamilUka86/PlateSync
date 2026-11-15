@@ -18,6 +18,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useAdmin } from '../../context/AdminContext';
 import { useNotification } from '../../context/NotificationContext';
 import { FirebaseSetupModal } from '../../components/auth/FirebaseSetupModal';
 import { isFirebaseConfigured } from '../../services/firebase/config';
@@ -34,9 +35,16 @@ import {
   changeWebsiteLanguage
 } from '../../services/translation/websiteTranslator';
 
-export const SettingsPage = ({ onOpenFeedback }) => {
+export const SettingsPage = ({ onOpenFeedback, onOpenAdmin }) => {
   const { currentUser, userProfile, updateProfile, logout, isDemoMode, loginAsDemo } = useAuth();
+  const { isAdmin, adminSession } = useAdmin();
   const { addNotification } = useNotification();
+
+  const isAdminUser = Boolean(
+    currentUser?.email?.toLowerCase() === 'samilplatesync@gmail.com' ||
+    adminSession?.email?.toLowerCase() === 'samilplatesync@gmail.com' ||
+    isAdmin
+  );
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [isVibrating, setIsVibrating] = useState(false);
   const [buzzerDuration, setBuzzerDurationState] = useState(() => getBuzzerDuration());
@@ -311,6 +319,37 @@ export const SettingsPage = ({ onOpenFeedback }) => {
           </button>
         </div>
       </div>
+
+      {/* Switch to Admin Portal (Available ONLY if logged in using admin email) */}
+      {isAdminUser && (
+        <div className="bg-gradient-to-r from-midnight-card via-midnight-elevated to-midnight-card border border-amber-400/30 rounded-3xl p-6 space-y-3 shadow-lg shadow-amber-500/5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Shield className="w-4 h-4 text-amber-400" />
+                <h3 className="text-sm font-black text-white">
+                  Administrator Portal Access
+                </h3>
+                <span className="px-2 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/30 text-[10px] font-bold text-amber-300 font-mono">
+                  {currentUser?.email || 'samilplatesync@gmail.com'}
+                </span>
+              </div>
+              <p className="text-xs text-slate-400">
+                You are currently logged in with verified administrative credentials. You can switch to the Admin Portal at any time.
+              </p>
+            </div>
+
+            <button
+              onClick={onOpenAdmin || (() => window.dispatchEvent(new CustomEvent('platesync_open_admin')))}
+              className="px-4 py-2.5 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 rounded-xl text-xs font-black shadow-md shadow-amber-500/20 transition flex items-center gap-2 active:scale-95 shrink-0"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span>Switch to Admin Portal</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Account Management & Logout */}
       <div className="bg-midnight-card border border-midnight-border rounded-3xl p-6 space-y-4">

@@ -21,6 +21,7 @@ import {
   Shield
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useAdmin } from '../../context/AdminContext';
 
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -36,9 +37,16 @@ const NAV_ITEMS = [
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
-export const Sidebar = ({ activeTab, setActiveTab, isMobileOpen, setIsMobileOpen, collapsed, setCollapsed, onOpenAuth }) => {
+export const Sidebar = ({ activeTab, setActiveTab, isMobileOpen, setIsMobileOpen, collapsed, setCollapsed, onOpenAuth, onOpenAdmin }) => {
   const { currentUser, userProfile, logout, isDemoMode, isFirebaseReady, demoAccessMode, toggleDemoAccessMode, isDevTester, toggleDevTester } = useAuth();
+  const { isAdmin, adminSession } = useAdmin();
   const [logoClicks, setLogoClicks] = useState(0);
+
+  const isAdminUser = Boolean(
+    currentUser?.email?.toLowerCase() === 'samilplatesync@gmail.com' ||
+    adminSession?.email?.toLowerCase() === 'samilplatesync@gmail.com' ||
+    isAdmin
+  );
 
   const handleLogoAction = () => {
     if (collapsed) {
@@ -174,6 +182,20 @@ export const Sidebar = ({ activeTab, setActiveTab, isMobileOpen, setIsMobileOpen
                 </button>
               );
             })}
+
+            {/* Switch to Admin Portal (Available ONLY if logged in using admin email) */}
+            {isAdminUser && (
+              <button
+                onClick={onOpenAdmin || (() => window.dispatchEvent(new CustomEvent('platesync_open_admin')))}
+                className={`w-full mt-2.5 flex items-center ${collapsed ? 'justify-center' : 'justify-between'} px-3 py-2.5 rounded-xl text-xs font-bold transition bg-amber-400/10 hover:bg-amber-400/20 text-amber-300 border border-amber-400/30 shadow-sm`}
+                title="Switch to Admin Portal"
+              >
+                <div className="flex items-center gap-3">
+                  <Shield className="w-4 h-4 text-amber-400 shrink-0" />
+                  {!collapsed && <span>Switch to Admin Portal</span>}
+                </div>
+              </button>
+            )}
           </nav>
         </div>
 

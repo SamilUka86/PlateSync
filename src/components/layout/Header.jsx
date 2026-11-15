@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
+import { useAdmin } from '../../context/AdminContext';
 import { usePWAInstall } from '../../hooks/usePWAInstall';
 import { PWAInstallModal } from '../pwa/PWAInstallModal';
 import {
@@ -27,9 +28,17 @@ import {
   toggleEnglishHindi
 } from '../../services/translation/websiteTranslator';
 
-export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, setCollapsed, onOpenAuth, onOpenFeedback }) => {
+export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, setCollapsed, onOpenAuth, onOpenFeedback, onOpenAdmin }) => {
   const { currentUser, userProfile, updateProfile, isDemoMode, isDevTester, demoAccessMode, toggleDemoAccessMode, logout } = useAuth();
+  const { isAdmin, adminSession } = useAdmin();
   const { addNotification } = useNotification();
+
+  // Switch to admin portal is available strictly if logged in with admin email / admin session
+  const isAdminUser = Boolean(
+    currentUser?.email?.toLowerCase() === 'samilplatesync@gmail.com' ||
+    adminSession?.email?.toLowerCase() === 'samilplatesync@gmail.com' ||
+    isAdmin
+  );
 
   // Integrated PWA Installation Hook with Android, iOS and Desktop support
   const {
@@ -254,6 +263,19 @@ export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, s
         >
           <MessageSquare className="w-3.5 h-3.5" />
         </button>
+
+        {/* Switch to Admin Portal (Available ONLY if logged in using admin email) */}
+        {isAdminUser && (
+          <button
+            type="button"
+            onClick={onOpenAdmin || (() => window.dispatchEvent(new CustomEvent('platesync_open_admin')))}
+            className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-400/40 bg-amber-400/10 hover:bg-amber-400/20 text-amber-300 text-xs font-bold transition active:scale-95 shadow-sm shadow-amber-500/10"
+            title="Switch to Admin Portal"
+          >
+            <Shield className="w-3.5 h-3.5 text-amber-400" />
+            <span className="hidden sm:inline">Admin Portal</span>
+          </button>
+        )}
 
         {/* User Avatar */}
         <button
