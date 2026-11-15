@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   CalendarPlus, 
   Calendar, 
@@ -33,6 +34,21 @@ export const AddToPlannerModal = ({ isOpen, onClose, exercise, setActiveTab }) =
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAddedSuccess, setIsAddedSuccess] = useState(false);
+
+  // Prevent background scrolling while modal is open & handle escape
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      const handleKeyDown = (e) => {
+        if (e.key === 'Escape') onClose();
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.body.style.overflow = '';
+        window.removeEventListener('keydown', handleKeyDown);
+      };
+    }
+  }, [isOpen, onClose]);
 
   if (!isOpen || !exercise) return null;
 
@@ -81,7 +97,7 @@ export const AddToPlannerModal = ({ isOpen, onClose, exercise, setActiveTab }) =
   const selectedDayInfo = DAYS_OF_WEEK.find(d => d.key === selectedDayKey);
   const currentPlanForSelectedDay = weeklyRoutine?.[selectedDayKey];
 
-  return (
+  const modalContent = (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-midnight-bg/85 backdrop-blur-md animate-in fade-in">
       <div className="w-full max-w-lg bg-midnight-card border border-midnight-border rounded-3xl p-5 md:p-6 shadow-2xl space-y-4 max-h-[90vh] flex flex-col">
         
@@ -205,42 +221,48 @@ export const AddToPlannerModal = ({ isOpen, onClose, exercise, setActiveTab }) =
               Target Parameters for Day {selectedDayIndex} ({selectedDayInfo?.name})
             </h5>
 
-            <div className="grid grid-cols-3 gap-2.5">
+            <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
               {/* Sets */}
-              <div>
-                <label className="text-[10px] font-bold text-slate-400 block mb-1">Target Sets</label>
+              <div className="min-w-0">
+                <label className="text-[10px] font-bold text-slate-300 block mb-1 truncate">
+                  Target Sets
+                </label>
                 <input
                   type="number"
                   min="1"
                   max="10"
                   value={targetSets}
                   onChange={(e) => setTargetSets(e.target.value)}
-                  className="w-full px-2.5 py-1.5 bg-midnight-card border border-midnight-border rounded-xl text-white text-xs font-mono text-center focus:outline-none focus:border-neon-cyan"
+                  className="w-full px-2 py-1.5 bg-midnight-card border border-slate-700/80 rounded-xl text-white text-xs font-mono text-center focus:outline-none focus:border-neon-cyan"
                   required
                 />
               </div>
 
               {/* Reps */}
-              <div>
-                <label className="text-[10px] font-bold text-slate-400 block mb-1">Target Reps</label>
+              <div className="min-w-0">
+                <label className="text-[10px] font-bold text-slate-300 block mb-1 truncate">
+                  Target Reps
+                </label>
                 <input
                   type="text"
                   value={targetReps}
                   onChange={(e) => setTargetReps(e.target.value)}
                   placeholder="e.g. 8-10"
-                  className="w-full px-2.5 py-1.5 bg-midnight-card border border-midnight-border rounded-xl text-white text-xs font-mono text-center focus:outline-none focus:border-neon-cyan"
+                  className="w-full px-2 py-1.5 bg-midnight-card border border-slate-700/80 rounded-xl text-white text-xs font-mono text-center focus:outline-none focus:border-neon-cyan"
                   required
                 />
               </div>
 
               {/* Weight & Unit */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-[10px] font-bold text-slate-400">Weight</label>
+              <div className="min-w-0">
+                <div className="flex items-center justify-between mb-1 gap-1">
+                  <label className="text-[10px] font-bold text-slate-300 truncate">
+                    Weight
+                  </label>
                   <button
                     type="button"
                     onClick={() => setUnit(unit === 'KG' ? 'LB' : 'KG')}
-                    className="text-[9px] font-mono font-bold text-neon-cyan hover:underline"
+                    className="text-[9px] font-mono font-bold text-neon-cyan hover:underline shrink-0"
                   >
                     {unit}
                   </button>
@@ -253,9 +275,9 @@ export const AddToPlannerModal = ({ isOpen, onClose, exercise, setActiveTab }) =
                     max="500"
                     value={targetWeight}
                     onChange={(e) => setTargetWeight(e.target.value)}
-                    className="w-full pl-2 pr-6 py-1.5 bg-midnight-card border border-midnight-border rounded-xl text-white text-xs font-mono text-center focus:outline-none focus:border-neon-cyan"
+                    className="w-full pl-2 pr-6 py-1.5 bg-midnight-card border border-slate-700/80 rounded-xl text-white text-xs font-mono text-center focus:outline-none focus:border-neon-cyan"
                   />
-                  <span className="absolute right-1.5 top-1.5 text-[9px] font-mono text-slate-500">
+                  <span className="absolute right-1.5 top-1.5 text-[9px] font-mono text-slate-400 font-bold pointer-events-none">
                     {unit}
                   </span>
                 </div>
@@ -323,4 +345,6 @@ export const AddToPlannerModal = ({ isOpen, onClose, exercise, setActiveTab }) =
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 };

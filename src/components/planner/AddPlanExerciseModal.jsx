@@ -442,9 +442,9 @@ export const AddPlanExerciseModal = ({
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-3">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-200 mb-1">
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                    <div className="min-w-0">
+                      <label className="block text-xs font-bold text-slate-200 mb-1 truncate">
                         Target Sets
                       </label>
                       <input
@@ -453,12 +453,12 @@ export const AddPlanExerciseModal = ({
                         max="20"
                         value={targetSets}
                         onChange={(e) => setTargetSets(e.target.value)}
-                        className="w-full px-3 py-2 bg-midnight-bg border border-slate-700 rounded-xl text-white text-xs md:text-sm font-bold font-mono focus:outline-none focus:border-neon-cyan"
+                        className="w-full px-2.5 sm:px-3 py-2 bg-midnight-bg border border-slate-700 rounded-xl text-white text-xs md:text-sm font-bold font-mono focus:outline-none focus:border-neon-cyan"
                       />
                     </div>
 
-                    <div>
-                      <label className="block text-xs font-bold text-slate-200 mb-1">
+                    <div className="min-w-0">
+                      <label className="block text-xs font-bold text-slate-200 mb-1 truncate">
                         Target Reps
                       </label>
                       <input
@@ -466,19 +466,19 @@ export const AddPlanExerciseModal = ({
                         value={targetReps}
                         onChange={(e) => setTargetReps(e.target.value)}
                         placeholder="e.g. 8-10 or 12"
-                        className="w-full px-3 py-2 bg-midnight-bg border border-slate-700 rounded-xl text-white text-xs md:text-sm font-bold font-mono focus:outline-none focus:border-neon-cyan"
+                        className="w-full px-2.5 sm:px-3 py-2 bg-midnight-bg border border-slate-700 rounded-xl text-white text-xs md:text-sm font-bold font-mono focus:outline-none focus:border-neon-cyan"
                       />
                     </div>
 
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <label className="text-xs font-bold text-slate-200">
-                          Target Weight
+                    <div className="min-w-0">
+                      <div className="flex items-center justify-between mb-1 gap-1">
+                        <label className="text-xs font-bold text-slate-200 truncate">
+                          Weight
                         </label>
                         <button
                           type="button"
                           onClick={() => setTargetUnit(prev => prev === 'KG' ? 'LB' : 'KG')}
-                          className="text-xs font-mono font-bold text-neon-cyan hover:underline"
+                          className="text-[11px] font-mono font-bold text-neon-cyan hover:underline shrink-0"
                         >
                           {targetUnit}
                         </button>
@@ -490,9 +490,9 @@ export const AddPlanExerciseModal = ({
                           min="0"
                           value={targetWeight}
                           onChange={(e) => setTargetWeight(e.target.value)}
-                          className="w-full px-3 py-2 bg-midnight-bg border border-slate-700 rounded-xl text-white text-xs md:text-sm font-bold font-mono focus:outline-none focus:border-neon-cyan"
+                          className="w-full pl-2.5 sm:pl-3 pr-7 py-2 bg-midnight-bg border border-slate-700 rounded-xl text-white text-xs md:text-sm font-bold font-mono focus:outline-none focus:border-neon-cyan"
                         />
-                        <span className="absolute right-3 top-2 text-xs text-slate-400 font-mono pointer-events-none font-bold">
+                        <span className="absolute right-2 top-2 text-[11px] text-slate-400 font-mono pointer-events-none font-bold">
                           {targetUnit}
                         </span>
                       </div>
@@ -564,9 +564,9 @@ export const AddPlanExerciseModal = ({
               </div>
 
               {/* Target Parameters */}
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                <div className="min-w-0">
+                  <label className="block text-xs font-bold text-slate-300 mb-1 truncate">
                     Target Sets
                   </label>
                   <input
@@ -575,12 +575,12 @@ export const AddPlanExerciseModal = ({
                     max="20"
                     value={targetSets}
                     onChange={(e) => setTargetSets(e.target.value)}
-                    className="w-full px-3 py-2 bg-midnight-bg border border-midnight-border rounded-xl text-white text-xs font-mono focus:outline-none focus:border-neon-cyan"
+                    className="w-full px-2.5 sm:px-3 py-2 bg-midnight-bg border border-slate-700 rounded-xl text-white text-xs md:text-sm font-bold font-mono focus:outline-none focus:border-neon-cyan"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <div className="min-w-0">
+                  <label className="block text-xs font-bold text-slate-300 mb-1 truncate">
                     Target Reps
                   </label>
                   <input
@@ -588,19 +588,19 @@ export const AddPlanExerciseModal = ({
                     value={targetReps}
                     onChange={(e) => setTargetReps(e.target.value)}
                     placeholder="e.g. 10-12"
-                    className="w-full px-3 py-2 bg-midnight-bg border border-midnight-border rounded-xl text-white text-xs font-mono focus:outline-none focus:border-neon-cyan"
+                    className="w-full px-2.5 sm:px-3 py-2 bg-midnight-bg border border-slate-700 rounded-xl text-white text-xs md:text-sm font-bold font-mono focus:outline-none focus:border-neon-cyan"
                   />
                 </div>
 
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-xs font-semibold text-slate-300">
-                      Target Weight
+                <div className="min-w-0">
+                  <div className="flex items-center justify-between mb-1 gap-1">
+                    <label className="text-xs font-bold text-slate-300 truncate">
+                      Weight
                     </label>
                     <button
                       type="button"
                       onClick={() => setTargetUnit(prev => prev === 'KG' ? 'LB' : 'KG')}
-                      className="text-[10px] font-mono font-bold text-neon-cyan hover:underline"
+                      className="text-[11px] font-mono font-bold text-neon-cyan hover:underline shrink-0"
                     >
                       {targetUnit}
                     </button>
@@ -612,9 +612,9 @@ export const AddPlanExerciseModal = ({
                       min="0"
                       value={targetWeight}
                       onChange={(e) => setTargetWeight(e.target.value)}
-                      className="w-full px-3 py-2 bg-midnight-bg border border-midnight-border rounded-xl text-white text-xs font-mono focus:outline-none focus:border-neon-cyan"
+                      className="w-full pl-2.5 sm:pl-3 pr-7 py-2 bg-midnight-bg border border-slate-700 rounded-xl text-white text-xs md:text-sm font-bold font-mono focus:outline-none focus:border-neon-cyan"
                     />
-                    <span className="absolute right-3 top-2.5 text-[10px] text-slate-400 font-mono pointer-events-none">
+                    <span className="absolute right-2 top-2 text-[11px] text-slate-400 font-mono pointer-events-none font-bold">
                       {targetUnit}
                     </span>
                   </div>

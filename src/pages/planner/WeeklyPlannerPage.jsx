@@ -312,34 +312,34 @@ export const WeeklyPlannerPage = ({ setActiveTab }) => {
         </div>
 
         {/* Quick Stats Bar */}
-        <div className="grid grid-cols-3 gap-3 md:gap-4 mt-6 pt-6 border-t border-midnight-border">
-          <div className="p-3 md:p-4 rounded-2xl bg-midnight-bg/60 border border-midnight-border flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-neon-cyan/10 border border-neon-cyan/30 flex items-center justify-center text-neon-cyan shrink-0">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 mt-6 pt-6 border-t border-midnight-border">
+          <div className="p-3 md:p-4 rounded-2xl bg-midnight-bg/60 border border-midnight-border flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-neon-cyan/10 border border-neon-cyan/30 flex items-center justify-center text-neon-cyan shrink-0">
               <Dumbbell className="w-4 h-4" />
             </div>
-            <div>
-              <p className="text-[10px] uppercase font-bold text-slate-400 font-mono">Training Days</p>
-              <p className="text-base md:text-lg font-black text-white">{stats.totalWorkouts} Days</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] sm:text-xs uppercase font-bold text-slate-400 font-mono tracking-wider truncate">Training Days</p>
+              <p className="text-sm md:text-base font-black text-white truncate">{stats.totalWorkouts} Workouts</p>
             </div>
           </div>
 
-          <div className="p-3 md:p-4 rounded-2xl bg-midnight-bg/60 border border-midnight-border flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-neon-violet/10 border border-neon-violet/30 flex items-center justify-center text-neon-violet shrink-0">
+          <div className="p-3 md:p-4 rounded-2xl bg-midnight-bg/60 border border-midnight-border flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-neon-violet/10 border border-neon-violet/30 flex items-center justify-center text-neon-violet shrink-0">
               <Coffee className="w-4 h-4" />
             </div>
-            <div>
-              <p className="text-[10px] uppercase font-bold text-slate-400 font-mono">Rest & Recovery</p>
-              <p className="text-base md:text-lg font-black text-white">{stats.totalRestDays} Days</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] sm:text-xs uppercase font-bold text-slate-400 font-mono tracking-wider truncate">Rest Days</p>
+              <p className="text-sm md:text-base font-black text-white truncate">{stats.totalRestDays} Recovery</p>
             </div>
           </div>
 
-          <div className="p-3 md:p-4 rounded-2xl bg-midnight-bg/60 border border-midnight-border flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-neon-success/10 border border-neon-success/30 flex items-center justify-center text-neon-success shrink-0">
+          <div className="p-3 md:p-4 rounded-2xl bg-midnight-bg/60 border border-midnight-border flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-neon-success/10 border border-neon-success/30 flex items-center justify-center text-neon-success shrink-0">
               <Flame className="w-4 h-4" />
             </div>
-            <div>
-              <p className="text-[10px] uppercase font-bold text-slate-400 font-mono">Total Planned Movements</p>
-              <p className="text-base md:text-lg font-black text-white">{stats.totalExercises} Exercises</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] sm:text-xs uppercase font-bold text-slate-400 font-mono tracking-wider truncate">Movements</p>
+              <p className="text-sm md:text-base font-black text-white truncate">{stats.totalExercises} Planned</p>
             </div>
           </div>
         </div>
@@ -471,9 +471,9 @@ export const WeeklyPlannerPage = ({ setActiveTab }) => {
             </div>
 
             {/* Day Title & Focus Inline Fields */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+              <div className="min-w-0">
+                <label className="block text-xs font-bold text-slate-300 mb-1">
                   Routine Title
                 </label>
                 <input
@@ -481,12 +481,12 @@ export const WeeklyPlannerPage = ({ setActiveTab }) => {
                   value={activeDay.title || ''}
                   onChange={(e) => handleUpdateTitle(e.target.value)}
                   placeholder="e.g. Push • Chest, Shoulders & Triceps"
-                  className="w-full px-3.5 py-2 bg-midnight-bg border border-midnight-border rounded-xl text-white text-xs font-bold focus:outline-none focus:border-neon-cyan transition"
+                  className="w-full px-3.5 py-2.5 bg-midnight-bg border border-midnight-border rounded-xl text-white text-xs font-bold focus:outline-none focus:border-neon-cyan transition truncate"
                 />
               </div>
 
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+              <div className="min-w-0">
+                <label className="block text-xs font-bold text-slate-300 mb-1">
                   Focus / Muscle Targets
                 </label>
                 <input
@@ -494,23 +494,23 @@ export const WeeklyPlannerPage = ({ setActiveTab }) => {
                   value={activeDay.focus || ''}
                   onChange={(e) => handleUpdateFocus(e.target.value)}
                   placeholder="e.g. Hypertrophy, Heavy Bench & Delts"
-                  className="w-full px-3.5 py-2 bg-midnight-bg border border-midnight-border rounded-xl text-white text-xs focus:outline-none focus:border-neon-cyan transition"
+                  className="w-full px-3.5 py-2.5 bg-midnight-bg border border-midnight-border rounded-xl text-white text-xs focus:outline-none focus:border-neon-cyan transition truncate"
                 />
               </div>
 
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+              <div className="min-w-0">
+                <label className="block text-xs font-bold text-slate-300 mb-1">
                   Target Duration (Minutes)
                 </label>
                 <div className="relative">
-                  <Clock className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
+                  <Clock className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-3 pointer-events-none" />
                   <input
                     type="number"
                     min="10"
                     max="180"
                     value={activeDay.targetDuration || 60}
                     onChange={(e) => handleUpdateDuration(e.target.value)}
-                    className="w-full pl-9 pr-3.5 py-2 bg-midnight-bg border border-midnight-border rounded-xl text-white text-xs font-mono focus:outline-none focus:border-neon-cyan transition"
+                    className="w-full pl-9 pr-3.5 py-2.5 bg-midnight-bg border border-midnight-border rounded-xl text-white text-xs font-mono font-bold focus:outline-none focus:border-neon-cyan transition"
                   />
                 </div>
               </div>
@@ -723,15 +723,15 @@ export const WeeklyPlannerPage = ({ setActiveTab }) => {
                       <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-midnight-border">
                         {/* Target Stats Box */}
                         <div className="flex items-center gap-2 text-right">
-                          <div className="px-3.5 py-1.5 rounded-xl bg-midnight-bg border border-slate-700/80 font-mono text-center">
-                            <p className="text-[10px] text-slate-300 uppercase font-bold tracking-wider">Sets × Reps</p>
-                            <p className="text-xs sm:text-sm font-black text-white">{ex.targetSets} × {ex.targetReps}</p>
+                          <div className="px-3 py-1.5 rounded-xl bg-midnight-bg border border-slate-700/80 font-mono text-center min-w-0">
+                            <p className="text-[10px] text-slate-300 uppercase font-bold tracking-wider truncate">Sets × Reps</p>
+                            <p className="text-xs sm:text-sm font-black text-white truncate">{ex.targetSets} × {ex.targetReps}</p>
                           </div>
 
                           {Number(ex.targetWeight) > 0 && (
-                            <div className="px-3.5 py-1.5 rounded-xl bg-midnight-bg border border-slate-700/80 font-mono text-center">
-                              <p className="text-[10px] text-slate-300 uppercase font-bold tracking-wider">Target Wt</p>
-                              <p className="text-xs sm:text-sm font-black text-neon-cyan">
+                            <div className="px-3 py-1.5 rounded-xl bg-midnight-bg border border-slate-700/80 font-mono text-center min-w-0">
+                              <p className="text-[10px] text-slate-300 uppercase font-bold tracking-wider truncate">Target Wt</p>
+                              <p className="text-xs sm:text-sm font-black text-neon-cyan truncate">
                                 {ex.targetWeight} {ex.unit || 'KG'}
                               </p>
                             </div>

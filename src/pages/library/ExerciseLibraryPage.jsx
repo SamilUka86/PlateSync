@@ -23,7 +23,9 @@ import {
   Target,
   Maximize2,
   Minimize2,
-  CalendarPlus
+  CalendarPlus,
+  Activity,
+  ArrowRight
 } from 'lucide-react';
 import { 
   EXERCISE_DATABASE, 
@@ -35,12 +37,18 @@ import {
   EXERCISE_TYPES,
   PREBUILT_WORKOUT_PROGRAMS
 } from '../../utils/exerciseData';
+import { DAYS_OF_WEEK } from '../../utils/routinePresets';
 import { ExerciseDetailModal } from '../../components/library/ExerciseDetailModal';
 import { AddToPlannerModal } from '../../components/planner/AddToPlannerModal';
 import { useNotification } from '../../context/NotificationContext';
+import { useWorkout } from '../../context/WorkoutContext';
+import { useAuth } from '../../context/AuthContext';
 
 export const ExerciseLibraryPage = ({ setActiveTab }) => {
   const { addNotification } = useNotification();
+  const { updateDayRoutine, saveWeeklyRoutineState, weeklyRoutine } = useWorkout();
+  const { userProfile } = useAuth();
+  const [expandedPrograms, setExpandedPrograms] = useState({});
 
   // Scroll to top on mount
   useEffect(() => {
@@ -340,6 +348,221 @@ export const ExerciseLibraryPage = ({ setActiveTab }) => {
   const handleAddToWorkout = (exercise) => {
     addNotification(`"${exercise.name}" selected. Head to Workout Tracker to log your sets!`, 'success');
     if (setActiveTab) setActiveTab('tracker');
+  };
+
+  // Toggle program expanded detail view
+  const toggleExpandProgram = (progId) => {
+    setExpandedPrograms(prev => ({ ...prev, [progId]: !prev[progId] }));
+  };
+
+  // Normalize string for fuzzy matching
+  const normalizeName = (name) => (name ? name.toLowerCase().replace(/[^a-z0-9]/g, '') : '');
+
+  // Look up full exercise definition from EXERCISE_DATABASE
+  const getExerciseDef = (name) => {
+    if (!name) return null;
+    const norm = normalizeName(name);
+    let match = EXERCISE_DATABASE.find(ex => normalizeName(ex.name) === norm);
+    if (match) return match;
+
+    match = EXERCISE_DATABASE.find(ex => {
+      const exNorm = normalizeName(ex.name);
+      return exNorm.includes(norm) || norm.includes(exNorm);
+    });
+    if (match) return match;
+
+    if (/squat/i.test(name)) match = EXERCISE_DATABASE.find(ex => /squat/i.test(ex.name));
+    else if (/bench|press/i.test(name)) match = EXERCISE_DATABASE.find(ex => /bench\s*press/i.test(ex.name));
+    else if (/deadlift/i.test(name)) match = EXERCISE_DATABASE.find(ex => /deadlift/i.test(ex.name));
+    else if (/row/i.test(name)) match = EXERCISE_DATABASE.find(ex => /barbell\s*row/i.test(ex.name));
+
+    if (match) {
+      return {
+        ...match,
+        id: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        name: name
+      };
+    }
+
+    return {
+      id: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      name: name,
+      muscle: 'Full Body',
+      equipment: 'Barbell/Dumbbell',
+      type: 'Compound',
+      movementPattern: 'Compound Movement',
+      difficulty: 'Intermediate',
+      instructions: `Perform ${name} with strict biomechanical form, steady cadence, and full range of motion.`,
+      startingPosition: 'Brace core, maintain neutral spine, and stabilize joints securely.',
+      technique: 'Smooth controlled eccentric phase followed by explosive concentric power.',
+      breathing: 'Inhale and brace intra-abdominal pressure; exhale through the sticking point.',
+      safetyNotes: 'Always train with proper warmup sets and respect safe lifting boundaries.',
+      commonMistakes: ['Rushing repetition tempo', 'Losing joint alignment'],
+      alternatives: []
+    };
+  };
+
+  // Start a specific day of a prebuilt program in the live Workout Tracker
+  const handleStartProgramInTracker = (prog, dayIndex = 0) => {
+    const day = prog.days[dayIndex] || prog.days[0];
+    if (!day) return;
+
+    const userPreferredUnit = userProfile?.preferredUnit || 'KG';
+    const session = {
+      id: `w_prog_${Date.now()}`,
+      workoutName: `${prog.title} – ${day.name}`,
+      date: new Date().toISOString(),
+      startTime: Date.now(),
+      routineDay: day.name,
+      exercises: day.exercises.map((e, idx) => {
+        const def = getExerciseDef(e.name);
+        const isLegPress45 = Boolean(def.isLegPress45 || /45.*leg\s*press/i.test(def.name));
+        const numSets = Number(e.sets) || 3;
+        const targetRepsNum = parseInt(e.reps, 10) || 10;
+        const defaultW = Number(def.defaultBarbell) || (isLegPress45 ? 100 : 20);
+
+        return {
+          id: `ex_${Date.now()}_${idx}_${Math.random()}`,
+          exerciseId: def.id,
+          name: def.name,
+          muscle: def.muscle,
+          category: def.muscle,
+          subgroup: def.subgroup || '',
+          equipment: def.equipment,
+          movementPattern: def.movementPattern,
+          isLegPress45,
+          sets: Array.from({ length: numSets }).map((_, sIdx) => ({
+            setNumber: sIdx + 1,
+            targetReps: targetRepsNum,
+            reps: targetRepsNum,
+            targetWeight: defaultW,
+            weight: defaultW,
+            completed: false
+          }))
+        };
+      })
+    };
+
+    try {
+      localStorage.setItem('platesync_live_workout', JSON.stringify(session));
+    } catch (err) {}
+    window.dispatchEvent(new CustomEvent('platesync_load_workout_session', { detail: session }));
+    addNotification(`Loaded "${day.name}" into Workout Tracker!`, 'success');
+    if (setActiveTab) setActiveTab('tracker');
+  };
+
+  // Apply full multi-day program schedule into the user's 7-Day Weekly Planner
+  const handleApplyProgramToPlanner = async (prog) => {
+    try {
+      const userPreferredUnit = userProfile?.preferredUnit || 'KG';
+      const dayKeys = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+      let scheduleMap = {};
+
+      if (prog.days.length === 3) {
+        scheduleMap = {
+          monday: prog.days[0],
+          tuesday: null,
+          wednesday: prog.days[1],
+          thursday: null,
+          friday: prog.days[2],
+          saturday: null,
+          sunday: null
+        };
+      } else if (prog.days.length === 4) {
+        scheduleMap = {
+          monday: prog.days[0],
+          tuesday: prog.days[1],
+          wednesday: null,
+          thursday: prog.days[2],
+          friday: prog.days[3],
+          saturday: null,
+          sunday: null
+        };
+      } else if (prog.days.length === 5) {
+        scheduleMap = {
+          monday: prog.days[0],
+          tuesday: prog.days[1],
+          wednesday: prog.days[2],
+          thursday: prog.days[3],
+          friday: prog.days[4],
+          saturday: null,
+          sunday: null
+        };
+      } else if (prog.days.length === 6) {
+        scheduleMap = {
+          monday: prog.days[0],
+          tuesday: prog.days[1],
+          wednesday: prog.days[2],
+          thursday: prog.days[3],
+          friday: prog.days[4],
+          saturday: prog.days[5],
+          sunday: null
+        };
+      } else {
+        dayKeys.forEach((key, idx) => {
+          scheduleMap[key] = prog.days[idx] || null;
+        });
+      }
+
+      const nextRoutine = {};
+
+      dayKeys.forEach((key) => {
+        const dayInfo = DAYS_OF_WEEK.find(d => d.key === key) || { name: key, short: key.slice(0, 3) };
+        const dayProgram = scheduleMap[key];
+
+        if (dayProgram) {
+          nextRoutine[key] = {
+            id: key,
+            dayName: dayInfo.name,
+            shortName: dayInfo.short,
+            isRestDay: false,
+            title: `${prog.title} – ${dayProgram.name}`,
+            focus: prog.splitType || prog.level,
+            targetDuration: 60,
+            exercises: dayProgram.exercises.map((e, idx) => {
+              const def = getExerciseDef(e.name);
+              const isLegPress45 = Boolean(def.isLegPress45 || /45.*leg\s*press/i.test(def.name));
+              return {
+                id: `plan_${key}_${idx}_${Date.now()}`,
+                exerciseId: def.id,
+                name: def.name,
+                muscle: def.muscle,
+                category: def.muscle,
+                subgroup: def.subgroup || '',
+                equipment: def.equipment || 'Barbell',
+                targetSets: Number(e.sets) || 3,
+                targetReps: String(e.reps || '8-10'),
+                targetWeight: Number(def.defaultBarbell) || (isLegPress45 ? 100 : 20),
+                unit: userPreferredUnit,
+                notes: `${e.rest ? `${e.rest} rest. ` : ''}Pattern: ${def.movementPattern || 'Compound'}`,
+                isLegPress45
+              };
+            })
+          };
+        } else {
+          nextRoutine[key] = {
+            id: key,
+            dayName: dayInfo.name,
+            shortName: dayInfo.short,
+            isRestDay: true,
+            title: 'Rest & Active Recovery',
+            focus: 'Recovery, Mobility & Sleep',
+            targetDuration: 0,
+            exercises: []
+          };
+        }
+      });
+
+      if (saveWeeklyRoutineState) {
+        await saveWeeklyRoutineState(nextRoutine);
+      }
+
+      addNotification(`Applied "${prog.title}" to Weekly Planner (${prog.days.length} training days scheduled)!`, 'success');
+      if (setActiveTab) setActiveTab('planner');
+    } catch (err) {
+      console.error('Failed to apply program to planner:', err);
+      addNotification('Could not apply program to planner', 'error');
+    }
   };
 
   // Reset all filters
@@ -726,6 +949,12 @@ export const ExerciseLibraryPage = ({ setActiveTab }) => {
                               {ex.subgroup}
                             </span>
                           )}
+                          {ex.movementPattern && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                              <Activity className="w-3 h-3 text-emerald-400 shrink-0" />
+                              <span>{ex.movementPattern}</span>
+                            </span>
+                          )}
                         </div>
 
                         {/* Favorite button */}
@@ -860,47 +1089,176 @@ export const ExerciseLibraryPage = ({ setActiveTab }) => {
         /* Workout Programs Section (All 12 Prebuilt Programs) */
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {PREBUILT_WORKOUT_PROGRAMS.map((prog) => (
-              <div key={prog.id} className="bg-midnight-card border border-midnight-border rounded-3xl p-6 flex flex-col justify-between space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-neon-violet/10 text-neon-violet border border-neon-violet/20 font-mono">
-                      {prog.splitType}
-                    </span>
-                    <span className="text-[10px] text-neon-cyan font-bold">{prog.level}</span>
-                  </div>
+            {PREBUILT_WORKOUT_PROGRAMS.map((prog) => {
+              const isExpanded = Boolean(expandedPrograms[prog.id]);
+              const totalMovements = prog.days.reduce((acc, d) => acc + (d.exercises?.length || 0), 0);
 
-                  <h3 className="text-base font-black text-white">{prog.title}</h3>
-                  <p className="text-xs text-slate-400 leading-relaxed">{prog.description}</p>
-                </div>
-
-                {/* Days Schedule Preview */}
-                <div className="space-y-2 pt-2 border-t border-midnight-border">
-                  <span className="text-[11px] font-bold text-slate-300 block">Schedule ({prog.days.length} Days):</span>
-                  <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                    {prog.days.map((day) => (
-                      <div key={day.dayNumber} className="p-2.5 rounded-xl bg-midnight-bg border border-midnight-border text-xs">
-                        <p className="font-bold text-white text-[11px]">{day.name}</p>
-                        <p className="text-[10px] text-slate-400 mt-0.5 truncate">
-                          {day.exercises.map(e => e.name).join(' • ')}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => {
-                    addNotification(`Program "${prog.title}" ready! Head to Workout Tracker to log.`, 'success');
-                    if (setActiveTab) setActiveTab('tracker');
-                  }}
-                  className="w-full py-2.5 bg-neon-cyan hover:bg-[#29bfcd] text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-neon-cyan/20 flex items-center justify-center gap-2 transition active:scale-95"
+              return (
+                <div
+                  key={prog.id}
+                  className="bg-midnight-card border border-midnight-border hover:border-slate-700/80 rounded-3xl p-5 md:p-6 flex flex-col justify-between space-y-4 shadow-xl transition-all"
                 >
-                  <Play className="w-3.5 h-3.5 fill-slate-950" />
-                  <span>Start This Program</span>
-                </button>
-              </div>
-            ))}
+                  <div className="space-y-3">
+                    {/* Header Badges */}
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-neon-violet/15 text-neon-violet border border-neon-violet/25 font-mono">
+                        {prog.splitType}
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-midnight-bg border border-midnight-border text-slate-300">
+                          {prog.durationDays || prog.days.length} Days/Wk
+                        </span>
+                        <span className="text-[10px] text-neon-cyan font-bold px-2 py-0.5 rounded bg-neon-cyan/10 border border-neon-cyan/20">
+                          {prog.level}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="text-base font-black text-white leading-snug">{prog.title}</h3>
+                      <p className="text-xs text-slate-400 mt-1 leading-relaxed">{prog.description}</p>
+                    </div>
+
+                    {/* Schedule & Movement Patterns Breakdown */}
+                    <div className="pt-3 border-t border-midnight-border space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-slate-300 flex items-center gap-1.5">
+                          <Activity className="w-3.5 h-3.5 text-neon-cyan" />
+                          <span>Schedule & Movement Patterns ({prog.days.length} Days • {totalMovements} Movements)</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => toggleExpandProgram(prog.id)}
+                          className="text-[11px] font-bold text-neon-cyan hover:underline flex items-center gap-1"
+                        >
+                          {isExpanded ? (
+                            <>
+                              <span>Collapse</span>
+                              <ChevronUp className="w-3 h-3" />
+                            </>
+                          ) : (
+                            <>
+                              <span>View All Movements</span>
+                              <ChevronDown className="w-3 h-3" />
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      {/* Day list with structured movement cards */}
+                      <div className={`space-y-2.5 overflow-y-auto pr-1 scrollbar-thin ${isExpanded ? 'max-h-[500px]' : 'max-h-64'}`}>
+                        {prog.days.map((day, dIdx) => (
+                          <div
+                            key={day.dayNumber || dIdx}
+                            className="p-3 rounded-2xl bg-midnight-bg/90 border border-midnight-border space-y-2"
+                          >
+                            {/* Day Header */}
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="min-w-0">
+                                <p className="font-bold text-white text-xs truncate">{day.name}</p>
+                                <span className="text-[10px] text-slate-400 font-mono">
+                                  {day.exercises.length} Exercises
+                                </span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleStartProgramInTracker(prog, dIdx)}
+                                className="px-2 py-1 rounded-lg bg-neon-cyan/10 hover:bg-neon-cyan text-neon-cyan hover:text-slate-950 font-black text-[10px] transition flex items-center gap-1 shrink-0"
+                                title={`Start ${day.name} in Workout Tracker`}
+                              >
+                                <Play className="w-2.5 h-2.5 fill-current" />
+                                <span>Start Day</span>
+                              </button>
+                            </div>
+
+                            {/* Exercises in this Day */}
+                            <div className="space-y-1.5 pt-1">
+                              {day.exercises.map((e, eIdx) => {
+                                const def = getExerciseDef(e.name);
+                                return (
+                                  <div
+                                    key={eIdx}
+                                    onClick={() => handleOpenExerciseDetail(def)}
+                                    className="p-2 rounded-xl bg-midnight-card hover:bg-midnight-elevated border border-midnight-border hover:border-neon-cyan/40 cursor-pointer transition flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 group/item"
+                                    title="Click to view biomechanics, movement pattern, & bilingual form cues"
+                                  >
+                                    <div className="min-w-0 flex-1">
+                                      <div className="flex items-center gap-1.5 flex-wrap">
+                                        <span className="font-bold text-white text-xs group-hover/item:text-neon-cyan transition truncate">
+                                          {e.name}
+                                        </span>
+                                        {def?.movementPattern && (
+                                          <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 inline-flex items-center gap-0.5">
+                                            <Activity className="w-2.5 h-2.5 text-emerald-400 shrink-0" />
+                                            <span className="truncate">{def.movementPattern}</span>
+                                          </span>
+                                        )}
+                                        {def?.muscle && (
+                                          <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/20">
+                                            {def.muscle}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-1.5 shrink-0 justify-between sm:justify-end">
+                                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-midnight-bg text-slate-200 border border-slate-700/80">
+                                        {e.sets} × {e.reps}
+                                      </span>
+                                      {e.rest && (
+                                        <span className="text-[10px] font-mono text-slate-400">
+                                          {e.rest}
+                                        </span>
+                                      )}
+                                      <button
+                                        type="button"
+                                        onClick={(evt) => {
+                                          evt.stopPropagation();
+                                          setPlannerExercise(def);
+                                        }}
+                                        className="px-2 py-0.5 rounded bg-midnight-bg hover:bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/30 text-[10px] font-bold transition active:scale-95"
+                                        title="Add this exercise to Weekly Planner"
+                                      >
+                                        + Plan
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Program Action Buttons */}
+                  <div className="pt-3 border-t border-midnight-border space-y-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleApplyProgramToPlanner(prog)}
+                        className="w-full py-2.5 px-3 bg-midnight-bg hover:bg-midnight-elevated border border-midnight-border hover:border-neon-cyan text-slate-200 hover:text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition active:scale-95"
+                        title="Distribute program days into your Weekly Planner schedule"
+                      >
+                        <CalendarPlus className="w-3.5 h-3.5 text-neon-cyan" />
+                        <span>Apply to Planner</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleStartProgramInTracker(prog, 0)}
+                        className="w-full py-2.5 px-3 bg-neon-cyan hover:bg-[#29bfcd] text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-neon-cyan/20 flex items-center justify-center gap-1.5 transition active:scale-95"
+                        title="Start Day 1 in the Workout Tracker"
+                      >
+                        <Play className="w-3.5 h-3.5 fill-slate-950" />
+                        <span>Start Day 1</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
