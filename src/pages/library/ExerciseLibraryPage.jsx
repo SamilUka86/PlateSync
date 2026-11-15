@@ -101,6 +101,14 @@ export const ExerciseLibraryPage = ({ setActiveTab }) => {
           >
             Workout Programs ({PREBUILT_WORKOUT_PROGRAMS.length})
           </button>
+          <button
+            onClick={() => setActiveTab && setActiveTab('planner')}
+            className="px-4 py-2 rounded-lg text-xs font-bold text-slate-400 hover:text-white flex items-center gap-1.5 transition hover:bg-midnight-elevated"
+            title="Create and organize custom 7-day manual workouts"
+          >
+            <Calendar className="w-3.5 h-3.5 text-neon-cyan" />
+            <span>Weekly Planner (Mon - Sun)</span>
+          </button>
         </div>
       </div>
 

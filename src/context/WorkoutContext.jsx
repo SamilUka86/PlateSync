@@ -3,9 +3,17 @@ import { useAuth } from './AuthContext';
 import { 
   getUserWorkouts, 
   saveWorkoutSession, 
-  deleteWorkoutSession 
+  deleteWorkoutSession,
+  saveWeeklyRoutine,
+  getWeeklyRoutine
 } from '../services/firestore/firestoreService';
 import { convertWeight, KG_TO_LBS } from '../utils/weightCalculations';
+import { 
+  DEFAULT_WEEKLY_ROUTINE, 
+  UPPER_LOWER_ROUTINE, 
+  FULL_BODY_ROUTINE, 
+  BLANK_WEEKLY_ROUTINE 
+} from '../utils/routinePresets';
 
 const WorkoutContext = createContext({});
 
@@ -182,6 +190,104 @@ export const WorkoutProvider = ({ children }) => {
 
   // Staged calculated weight to bridge calculator -> workout tracker
   const [stagedWeight, setStagedWeight] = useState(null);
+
+  // Weekly 7-Day Routine (Monday to Sunday)
+  const [weeklyRoutine, setWeeklyRoutine] = useState(() => {
+    try {
+      const stored = localStorage.getItem('platesync_weekly_plan');
+      return stored ? JSON.parse(stored) : DEFAULT_WEEKLY_ROUTINE;
+    } catch (e) {
+      return DEFAULT_WEEKLY_ROUTINE;
+    }
+  });
+
+  // Sync weekly routine from Firestore when user logs in
+  useEffect(() => {
+    if (!currentUser?.uid || isDemoMode || currentUser?.isDemo) return;
+    getWeeklyRoutine(currentUser.uid).then(plan => {
+      if (plan) {
+        setWeeklyRoutine(plan);
+        try {
+          localStorage.setItem('platesync_weekly_plan', JSON.stringify(plan));
+        } catch (e) {}
+      }
+    });
+  }, [currentUser, isDemoMode]);
+
+  const saveWeeklyRoutineState = async (newRoutine) => {
+    setWeeklyRoutine(newRoutine);
+    try {
+      localStorage.setItem('platesync_weekly_plan', JSON.stringify(newRoutine));
+    } catch (e) {}
+
+    if (currentUser?.uid && !isDemoMode && !currentUser?.isDemo) {
+      await saveWeeklyRoutine(currentUser.uid, newRoutine);
+    }
+  };
+
+  const updateDayRoutine = async (dayKey, dayData) => {
+    const nextRoutine = {
+      ...weeklyRoutine,
+      [dayKey]: dayData
+    };
+    await saveWeeklyRoutineState(nextRoutine);
+  };
+
+  const resetWeeklyRoutine = async (templateKey = 'ppl') => {
+    let nextRoutine = DEFAULT_WEEKLY_ROUTINE;
+    if (templateKey === 'upper-lower') {
+      nextRoutine = UPPER_LOWER_ROUTINE;
+    } else if (templateKey === 'full-body') {
+      nextRoutine = FULL_BODY_ROUTINE;
+    } else if (templateKey === 'blank') {
+      nextRoutine = BLANK_WEEKLY_ROUTINE;
+    }
+    await saveWeeklyRoutineState(nextRoutine);
+  };
+
+  const startRoutineDayWorkout = (dayKey, setActiveTabCallback) => {
+    const day = weeklyRoutine[dayKey];
+    if (!day || day.isRestDay) return;
+    const defaultUnit = userProfile?.preferredUnit || 'KG';
+    const newSession = {
+      id: `w_${Date.now()}`,
+      workoutName: day.title || `${day.dayName} Workout`,
+      date: new Date().toISOString(),
+      startTime: Date.now(),
+      routineDay: day.dayName,
+      exercises: (day.exercises || []).map(ex => {
+        const isLegPress45 = Boolean(ex.isLegPress45 || /45.*leg\s*press/i.test(ex.name));
+        const numSets = Number(ex.targetSets) || 3;
+        const targetW = Number(ex.targetWeight) || (isLegPress45 ? 100 : 20);
+        const targetR = parseInt(ex.targetReps) || 10;
+        return {
+          id: `ex_${Date.now()}_${Math.random()}`,
+          exerciseId: ex.exerciseId || ex.id,
+          name: ex.name,
+          muscle: ex.muscle || 'Other',
+          category: ex.category || ex.muscle || 'Other',
+          isLegPress45,
+          sets: Array.from({ length: numSets }).map((_, idx) => ({
+            setNumber: idx + 1,
+            weight: targetW,
+            unit: ex.unit || defaultUnit,
+            reps: targetR,
+            completed: false,
+            isPR: false,
+            isLegPress45
+          }))
+        };
+      })
+    };
+
+    localStorage.setItem('platesync_live_workout', JSON.stringify(newSession));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('platesync_load_workout_session', { detail: newSession }));
+    }
+    if (setActiveTabCallback) {
+      setActiveTabCallback('tracker');
+    }
+  };
 
   // Saved Plate Configurations
   const [savedConfigurations, setSavedConfigurations] = useState(() => {
@@ -369,7 +475,12 @@ export const WorkoutProvider = ({ children }) => {
     saveWorkout,
     deleteWorkout,
     stagedWeight,
-    setStagedWeight
+    setStagedWeight,
+    weeklyRoutine,
+    updateDayRoutine,
+    resetWeeklyRoutine,
+    startRoutineDayWorkout,
+    saveWeeklyRoutineState
   };
 
   return (

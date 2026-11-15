@@ -19,6 +19,7 @@ export const DemoRestrictedView = ({ activeTab, setActiveTab, onOpenAuth }) => {
     switch (activeTab) {
       case 'dashboard': return 'Dashboard Overview';
       case 'tracker': return 'Workout Tracker & Set Logger';
+      case 'planner': return 'Weekly Workout Planner';
       case 'library': return 'Exercise Library & Programs';
       case 'history': return 'Workout History & Logs';
       case 'analytics': return 'Progress & Performance Analytics';

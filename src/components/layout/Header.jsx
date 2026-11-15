@@ -53,6 +53,7 @@ export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, s
       case 'dashboard': return 'Dashboard Overview';
       case 'calculator': return 'Smart Barbell Calculator';
       case 'tracker': return 'Workout Tracker & Logging';
+      case 'planner': return 'Weekly Workout Planner (Mon - Sun)';
       case 'library': return 'Exercise Library & Programs';
       case 'history': return 'Workout History & Logs';
       case 'analytics': return 'Performance & Analytics';

@@ -243,3 +243,48 @@ export const deleteWorkoutSession = async (userId, workoutId) => {
     return true;
   }
 };
+
+/**
+ * 3. Weekly Workout Routine Planner
+ */
+export const saveWeeklyRoutine = async (userId, weeklyPlan) => {
+  if (!userId || !weeklyPlan) return false;
+  setLocalItem(`weekly_plan_${userId}`, weeklyPlan);
+
+  if (!isFirebaseConfigured() || !db) return true;
+
+  try {
+    const docRef = doc(db, 'users', userId, 'planner', 'weekly');
+    await setDoc(docRef, {
+      weeklyPlan,
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+    return true;
+  } catch (err) {
+    console.warn('Firestore weekly routine save notice:', err);
+    return true;
+  }
+};
+
+export const getWeeklyRoutine = async (userId) => {
+  if (!userId) return null;
+  const localPlan = getLocalItem(`weekly_plan_${userId}`, null);
+
+  if (!isFirebaseConfigured() || !db) {
+    return localPlan;
+  }
+
+  try {
+    const docRef = doc(db, 'users', userId, 'planner', 'weekly');
+    const snap = await getDoc(docRef);
+    if (snap.exists() && snap.data()?.weeklyPlan) {
+      const remotePlan = snap.data().weeklyPlan;
+      setLocalItem(`weekly_plan_${userId}`, remotePlan);
+      return remotePlan;
+    }
+    return localPlan;
+  } catch (err) {
+    console.warn('Firestore weekly routine get notice:', err);
+    return localPlan;
+  }
+};

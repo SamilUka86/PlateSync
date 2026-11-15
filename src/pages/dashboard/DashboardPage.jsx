@@ -14,7 +14,8 @@ import {
   Sparkles,
   BarChart3,
   Award,
-  Zap
+  Zap,
+  Play
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -31,10 +32,18 @@ import { KG_TO_LBS } from '../../utils/weightCalculations';
 
 export const DashboardPage = ({ setActiveTab }) => {
   const { userProfile, currentUser } = useAuth();
-  const { workouts, metrics } = useWorkout();
+  const { workouts, metrics, weeklyRoutine, startRoutineDayWorkout } = useWorkout();
 
   const athleteName = userProfile?.name || currentUser?.displayName || 'Athlete';
   const preferredUnit = userProfile?.preferredUnit || 'KG';
+
+  // Determine current day of week key
+  const todayKey = useMemo(() => {
+    const dayMap = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    return dayMap[new Date().getDay()];
+  }, []);
+
+  const todayPlan = weeklyRoutine?.[todayKey];
 
   // Weekly 7-day activity data for the Recharts BarChart
   const weeklyActivityData = useMemo(() => {
@@ -228,6 +237,81 @@ export const DashboardPage = ({ setActiveTab }) => {
         </div>
 
       </div>
+
+      {/* 2.5 Today's Scheduled Routine Card (Monday - Sunday Split) */}
+      {todayPlan && (
+        <div className="bg-midnight-card border border-midnight-border rounded-3xl p-6 relative overflow-hidden shadow-xl hover:border-neon-cyan/40 transition">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-neon-cyan/10 border border-neon-cyan/30 flex items-center justify-center text-neon-cyan shrink-0 shadow-glow-cyan">
+                <Calendar className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black uppercase text-neon-cyan font-mono tracking-wider">
+                    {todayPlan.dayName} • Scheduled Workout
+                  </span>
+                  {todayPlan.isRestDay ? (
+                    <span className="px-2 py-0.5 rounded-md bg-neon-violet/15 text-neon-violet text-[10px] font-bold border border-neon-violet/30">
+                      Rest Day
+                    </span>
+                  ) : (
+                    <span className="px-2 py-0.5 rounded-md bg-neon-cyan/15 text-neon-cyan text-[10px] font-bold border border-neon-cyan/30">
+                      {todayPlan.exercises?.length || 0} Movements
+                    </span>
+                  )}
+                </div>
+
+                <h3 className="text-lg font-black text-white">
+                  {todayPlan.isRestDay ? 'Rest & Active Recovery' : (todayPlan.title || `${todayPlan.dayName} Workout`)}
+                </h3>
+
+                <p className="text-xs text-slate-400">
+                  {todayPlan.focus || 'Strength & Conditioning'} • Target: {todayPlan.targetDuration || 60} mins
+                </p>
+
+                {/* Exercises Preview Pills */}
+                {!todayPlan.isRestDay && todayPlan.exercises?.length > 0 && (
+                  <div className="flex items-center gap-1.5 pt-1.5 flex-wrap">
+                    {todayPlan.exercises.slice(0, 4).map((ex, i) => (
+                      <span key={i} className="px-2 py-0.5 rounded-lg bg-midnight-bg border border-midnight-border text-[10px] font-medium text-slate-300">
+                        {ex.name}
+                      </span>
+                    ))}
+                    {todayPlan.exercises.length > 4 && (
+                      <span className="text-[10px] text-slate-500 font-mono">
+                        +{todayPlan.exercises.length - 4} more
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2 shrink-0 sm:self-center">
+              <button
+                type="button"
+                onClick={() => setActiveTab('planner')}
+                className="px-4 py-2.5 rounded-xl border border-midnight-border bg-midnight-bg hover:bg-midnight-elevated text-slate-200 hover:text-white text-xs font-bold transition"
+              >
+                Customize Split
+              </button>
+
+              {!todayPlan.isRestDay && (todayPlan.exercises?.length > 0) && (
+                <button
+                  type="button"
+                  onClick={() => startRoutineDayWorkout(todayKey, setActiveTab)}
+                  className="px-5 py-2.5 rounded-xl bg-neon-cyan hover:bg-[#29bfcd] text-slate-950 font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition active:scale-95 shadow-md shadow-neon-cyan/25"
+                >
+                  <Play className="w-3.5 h-3.5 fill-current" />
+                  <span>Start Today's Workout</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 3. Main Grid: Weekly Activity Chart (B) & Strength Overview (C) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

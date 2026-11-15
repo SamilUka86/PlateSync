@@ -12,6 +12,7 @@ import { DemoRestrictedView } from './components/layout/DemoRestrictedView';
 import { DashboardPage } from './pages/dashboard/DashboardPage';
 import { CalculatorPage } from './pages/calculator/CalculatorPage';
 import { WorkoutTrackerPage } from './pages/workout/WorkoutTrackerPage';
+import { WeeklyPlannerPage } from './pages/planner/WeeklyPlannerPage';
 import { ExerciseLibraryPage } from './pages/library/ExerciseLibraryPage';
 import { WorkoutHistoryPage } from './pages/history/WorkoutHistoryPage';
 import { AnalyticsPage } from './pages/analytics/AnalyticsPage';
@@ -119,6 +120,7 @@ const MainAppLayout = () => {
               {activeTab === 'dashboard' && <DashboardPage setActiveTab={setActiveTab} />}
               {activeTab === 'calculator' && <CalculatorPage setActiveTab={setActiveTab} />}
               {activeTab === 'tracker' && <WorkoutTrackerPage setActiveTab={setActiveTab} />}
+              {activeTab === 'planner' && <WeeklyPlannerPage setActiveTab={setActiveTab} />}
               {activeTab === 'library' && <ExerciseLibraryPage setActiveTab={setActiveTab} />}
               {activeTab === 'history' && <WorkoutHistoryPage setActiveTab={setActiveTab} />}
               {activeTab === 'analytics' && <AnalyticsPage setActiveTab={setActiveTab} />}

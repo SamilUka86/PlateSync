@@ -131,6 +131,19 @@ export const WorkoutTrackerPage = ({ setActiveTab }) => {
     }
   }, [activeSession]);
 
+  // Listen for externally loaded routine sessions (e.g. from Weekly Planner or Dashboard)
+  useEffect(() => {
+    const handleLoadExternalSession = (e) => {
+      if (e.detail) {
+        setActiveSession(e.detail);
+        setSessionTitle(e.detail.workoutName || 'Strength Training Session');
+        setElapsedSeconds(0);
+      }
+    };
+    window.addEventListener('platesync_load_workout_session', handleLoadExternalSession);
+    return () => window.removeEventListener('platesync_load_workout_session', handleLoadExternalSession);
+  }, []);
+
   // Sync favorites
   useEffect(() => {
     try {
