@@ -8,7 +8,12 @@ import {
   Info, 
   Sparkles,
   Shield,
-  Dumbbell
+  Dumbbell,
+  Target,
+  Activity,
+  Star,
+  Zap,
+  Repeat
 } from 'lucide-react';
 import { translateExerciseGuide } from '../../services/translation/translationService';
 
@@ -16,7 +21,9 @@ export const ExerciseDetailModal = ({
   exercise,
   isOpen,
   onClose,
-  onAddToWorkout
+  onAddToWorkout,
+  isFavorite = false,
+  onToggleFavorite = null
 }) => {
   const [isHindi, setIsHindi] = useState(false);
 
@@ -30,26 +37,52 @@ export const ExerciseDetailModal = ({
 
   const guide = isHindi ? translateExerciseGuide(exercise) : null;
 
+  // Primary & Secondary muscles targeted
+  const primaryMuscles = Array.isArray(exercise.primaryMuscles) && exercise.primaryMuscles.length > 0
+    ? exercise.primaryMuscles
+    : [exercise.subgroup || exercise.muscle];
+
+  const secondaryMuscles = Array.isArray(exercise.secondaryMuscles) && exercise.secondaryMuscles.length > 0
+    ? exercise.secondaryMuscles
+    : [];
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-midnight-bg/85 backdrop-blur-md animate-in fade-in duration-200">
       <div className="w-full max-w-2xl bg-midnight-card border border-midnight-border rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
         
         {/* Modal Header */}
         <div className="p-5 md:p-6 border-b border-midnight-border flex items-start justify-between gap-4 bg-midnight-card">
-          <div className="space-y-1 min-w-0">
-            {/* Meta Tags */}
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/20">
+          <div className="space-y-1.5 min-w-0 flex-1">
+            {/* Meta Tags: Main Group, Subgroup, Equipment, Difficulty, Compound/Isolation */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              {/* Main Muscle Group */}
+              <span className="text-[10px] font-black px-2.5 py-0.5 rounded-md bg-neon-cyan/15 text-neon-cyan border border-neon-cyan/30 uppercase tracking-wider">
                 {isHindi ? (guide?.muscleHindi || exercise.muscle) : exercise.muscle}
               </span>
+
+              {/* Subgroup / Muscle Region */}
+              {exercise.subgroup && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-neon-violet/15 text-neon-violet border border-neon-violet/30">
+                  {isHindi ? (guide?.subgroupHindi || exercise.subgroup) : exercise.subgroup}
+                </span>
+              )}
+
               <span className="text-slate-500 text-xs">&bull;</span>
-              <span className="text-[11px] text-slate-300 font-mono">
+              
+              {/* Equipment */}
+              <span className="text-[11px] text-slate-300 font-mono flex items-center gap-1">
+                <Dumbbell className="w-3 h-3 text-slate-400" />
                 {isHindi ? (guide?.equipmentHindi || exercise.equipment) : exercise.equipment}
               </span>
+
               <span className="text-slate-500 text-xs">&bull;</span>
+
+              {/* Difficulty */}
               <span className="text-[11px] text-neon-gold font-bold">
                 {isHindi ? (guide?.difficultyHindi || exercise.difficulty) : exercise.difficulty}
               </span>
+
+              {/* Compound / Isolation */}
               {exercise.type && (
                 <>
                   <span className="text-slate-500 text-xs">&bull;</span>
@@ -61,7 +94,7 @@ export const ExerciseDetailModal = ({
             </div>
 
             {/* Exercise Title */}
-            <h3 className="text-lg md:text-xl font-black text-white tracking-tight truncate">
+            <h3 className="text-lg md:text-xl font-black text-white tracking-tight leading-snug">
               {isHindi && guide?.nameHindi ? (
                 <>
                   <span>{guide.nameHindi}</span>
@@ -71,10 +104,37 @@ export const ExerciseDetailModal = ({
                 exercise.name
               )}
             </h3>
+
+            {/* Movement Pattern if available */}
+            {exercise.movementPattern && (
+              <p className="text-[11px] text-slate-400 flex items-center gap-1">
+                <Activity className="w-3 h-3 text-neon-cyan" />
+                <span>{isHindi ? 'मूवमेंट पैटर्न: ' : 'Movement Pattern: '}</span>
+                <span className="text-slate-200 font-medium">
+                  {isHindi ? (guide?.movementPatternHindi || exercise.movementPattern) : exercise.movementPattern}
+                </span>
+              </p>
+            )}
           </div>
 
-          {/* Action buttons: Hindi Toggle & Close */}
+          {/* Action buttons: Favorite, Hindi Toggle & Close */}
           <div className="flex items-center gap-2 shrink-0">
+            {/* Favorite button */}
+            {onToggleFavorite && (
+              <button
+                type="button"
+                onClick={() => onToggleFavorite(exercise.id)}
+                className={`p-2 rounded-xl border transition active:scale-95 ${
+                  isFavorite
+                    ? 'bg-amber-400/20 text-amber-400 border-amber-400/40 shadow-sm shadow-amber-400/20'
+                    : 'bg-midnight-elevated text-slate-400 hover:text-amber-400 border-midnight-border hover:border-amber-400/30'
+                }`}
+                title={isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}
+              >
+                <Star className={`w-4 h-4 ${isFavorite ? 'fill-amber-400' : ''}`} />
+              </button>
+            )}
+
             {/* Dedicated Hindi / English Toggle Button */}
             <button
               type="button"
@@ -104,6 +164,45 @@ export const ExerciseDetailModal = ({
         {/* Modal Scrollable Body */}
         <div className="p-5 md:p-6 overflow-y-auto space-y-5 text-xs">
           
+          {/* Target Muscle Anatomical Breakdown */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-2xl bg-midnight-bg border border-midnight-border">
+            {/* Primary Target */}
+            <div className="space-y-1">
+              <span className="text-[10px] font-black uppercase text-neon-cyan tracking-wider flex items-center gap-1">
+                <Target className="w-3 h-3 text-neon-cyan" />
+                {isHindi ? 'प्राथमिक मांसपेशियां (Primary Muscles):' : 'Primary Target Muscles:'}
+              </span>
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {primaryMuscles.map((pm, i) => (
+                  <span key={i} className="px-2 py-0.5 rounded-md bg-neon-cyan/10 border border-neon-cyan/25 text-neon-cyan font-bold text-[11px]">
+                    {pm}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Secondary Synergy */}
+            <div className="space-y-1">
+              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center gap-1">
+                <Zap className="w-3 h-3 text-neon-violet" />
+                {isHindi ? 'सहायक मांसपेशियां (Secondary / Synergists):' : 'Secondary / Synergist Muscles:'}
+              </span>
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {secondaryMuscles.length > 0 ? (
+                  secondaryMuscles.map((sm, i) => (
+                    <span key={i} className="px-2 py-0.5 rounded-md bg-midnight-elevated border border-midnight-border text-slate-300 text-[11px]">
+                      {sm}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-slate-500 text-[11px] italic">
+                    {isHindi ? 'प्रत्यक्ष पृथक्करण (Direct Isolation)' : 'Direct targeted isolation'}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
           {/* 45-Degree Leg Press Sled Notice */}
           {isLegPress45 && (
             <div className="p-3.5 rounded-2xl bg-neon-cyan/10 border border-neon-cyan/30 text-neon-cyan space-y-1">
@@ -145,7 +244,7 @@ export const ExerciseDetailModal = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div className="space-y-1 p-3.5 rounded-2xl bg-midnight-bg border border-midnight-border">
               <h5 className="font-bold text-neon-cyan text-xs">
-                {isHindi ? 'उचित तकनीक (Proper Technique):' : 'Proper Technique:'}
+                {isHindi ? 'उचित तकनीक एवं टिप्स (Proper Technique Tips):' : 'Practical Technique Tips:'}
               </h5>
               <p className="text-slate-300 text-[11px] leading-relaxed mt-1">
                 {isHindi ? (guide?.technique || exercise.technique) : exercise.technique}
@@ -154,7 +253,7 @@ export const ExerciseDetailModal = ({
 
             <div className="space-y-1 p-3.5 rounded-2xl bg-midnight-bg border border-midnight-border">
               <h5 className="font-bold text-neon-violet text-xs">
-                {isHindi ? 'श्वास निर्देश (Breathing Guidance):' : 'Breathing Guidance:'}
+                {isHindi ? 'श्वास निर्देश (Correct Breathing Technique):' : 'Correct Breathing Technique:'}
               </h5>
               <p className="text-slate-300 text-[11px] leading-relaxed mt-1">
                 {isHindi ? (guide?.breathing || exercise.breathing) : exercise.breathing}
@@ -177,12 +276,12 @@ export const ExerciseDetailModal = ({
             </div>
           )}
 
-          {/* Safety Notes */}
+          {/* Safety Precautions */}
           {(exercise.safetyNotes || guide?.safetyNotes) && (
             <div className="space-y-1 p-3 rounded-xl bg-midnight-elevated border border-midnight-border">
               <h5 className="font-bold text-neon-warning flex items-center gap-1.5 text-[11px]">
                 <Shield className="w-3 h-3 text-neon-warning" />
-                <span>{isHindi ? 'सुरक्षा निर्देश (Safety Notes):' : 'Safety Notes:'}</span>
+                <span>{isHindi ? 'सुरक्षा सावधानियां (Safety Precautions):' : 'Safety Precautions:'}</span>
               </h5>
               <p className="text-slate-400 text-[11px] leading-relaxed">
                 {isHindi ? (guide?.safetyNotes || exercise.safetyNotes) : exercise.safetyNotes}
@@ -198,7 +297,10 @@ export const ExerciseDetailModal = ({
 
             {exercise.alternatives && exercise.alternatives.length > 0 && (
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-slate-500 font-semibold">{isHindi ? 'विकल्प:' : 'Alternatives:'}</span>
+                <span className="text-slate-500 font-semibold flex items-center gap-1">
+                  <Repeat className="w-3 h-3 text-slate-400" />
+                  {isHindi ? 'अनुशंसित विकल्प (Alternatives):' : 'Recommended Alternatives:'}
+                </span>
                 {exercise.alternatives.map((alt, idx) => (
                   <span key={idx} className="px-2 py-0.5 rounded-md bg-midnight-elevated border border-midnight-border text-slate-300 text-[10px]">
                     {alt}

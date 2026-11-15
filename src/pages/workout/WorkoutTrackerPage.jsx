@@ -1211,6 +1211,8 @@ export const WorkoutTrackerPage = ({ setActiveTab }) => {
           handleAddExercise(ex);
           setPreviewExercise(null);
         }}
+        isFavorite={previewExercise ? favorites.includes(previewExercise.id) : false}
+        onToggleFavorite={handleToggleFavorite}
       />
 
       {/* 7. FLOATING REST TIMER WIDGET (AUDIO & VIBRATION) */}

@@ -7,37 +7,34 @@ import {
   User,
   ShieldCheck,
   ChevronRight,
-  LogIn
+  LogIn,
+  CheckCircle2
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
+import { usePWAInstall } from '../../hooks/usePWAInstall';
+import { PWAInstallModal } from '../pwa/PWAInstallModal';
 
 export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, setCollapsed, onOpenAuth }) => {
   const { currentUser, userProfile, updateProfile, isDemoMode, isDevTester, demoAccessMode, toggleDemoAccessMode, logout } = useAuth();
   const { addNotification } = useNotification();
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
 
-  // Capture PWA install event if supported
-  useEffect(() => {
-    const handler = (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-    window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
-  }, []);
+  // Integrated PWA Installation Hook with Android, iOS and Desktop support
+  const {
+    isStandalone,
+    isIOS,
+    isAndroid,
+    buttonLabel,
+    isModalOpen,
+    setIsModalOpen,
+    promptInstall
+  } = usePWAInstall();
 
-  const handleInstallPWA = async () => {
-    if (!deferredPrompt) {
-      addNotification('To install on iOS: Tap Share then "Add to Home Screen". On Chrome: use the 3-dots menu.', 'info', 5000);
-      return;
-    }
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      addNotification('PlateSync installed as PWA!', 'success');
-    }
-    setDeferredPrompt(null);
+  const handleInstallClick = () => {
+    promptInstall(
+      (msg) => addNotification(msg, 'success'),
+      (err) => addNotification(err, 'info')
+    );
   };
 
   const currentUnit = userProfile?.preferredUnit || 'KG';
@@ -151,12 +148,20 @@ export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, s
 
         {/* PWA Install Button */}
         <button
-          onClick={handleInstallPWA}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-midnight-border bg-midnight-card hover:bg-midnight-elevated text-slate-300 hover:text-neon-cyan text-xs font-semibold transition"
-          title="Install PlateSync as Progressive Web App"
+          onClick={handleInstallClick}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition active:scale-95 ${
+            isStandalone
+              ? 'border-neon-success/30 bg-neon-success/10 text-neon-success'
+              : 'border-midnight-border bg-midnight-card hover:bg-midnight-elevated text-slate-300 hover:text-neon-cyan hover:border-neon-cyan/40'
+          }`}
+          title={isStandalone ? "PlateSync is running in installed app mode" : "Install PlateSync Progressive Web App"}
         >
-          <Download className="w-3.5 h-3.5 text-neon-cyan" />
-          <span className="hidden sm:inline">Install App</span>
+          {isStandalone ? (
+            <CheckCircle2 className="w-3.5 h-3.5 text-neon-success" />
+          ) : (
+            <Download className="w-3.5 h-3.5 text-neon-cyan" />
+          )}
+          <span className="hidden sm:inline">{buttonLabel}</span>
         </button>
 
         {/* Global Unit Switcher */}
@@ -196,6 +201,14 @@ export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, s
           )}
         </button>
       </div>
+
+      {/* PWA Step-by-Step Installation Modal */}
+      <PWAInstallModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        isIOS={isIOS}
+        isAndroid={isAndroid}
+      />
     </header>
   );
 };

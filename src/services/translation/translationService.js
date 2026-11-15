@@ -31,23 +31,66 @@ const saveToCache = (key, value) => {
 
 // Common fitness vocabulary & phrases mapping
 export const HINDI_VOCABULARY = {
-  // Muscle groups
-  'Chest': 'छाती (Chest / Pectorals)',
-  'Back': 'पीठ (Back / Lats & Rhomboids)',
-  'Shoulders': 'कंधे (Shoulders / Deltoids)',
-  'Biceps': 'बाइसेप्स (Biceps Brachii)',
-  'Triceps': 'ट्राइसेप्स (Triceps Brachii)',
-  'Quadriceps': 'क्वाड्स (Quadriceps / Front Thighs)',
-  'Legs – Quadriceps': 'क्वाड्स (Front Thighs)',
+  // 7 Main Muscle Groups
+  'Chest': 'छाती (Chest)',
+  'Back': 'पीठ (Back)',
+  'Shoulders': 'कंधे (Shoulders)',
+  'Biceps': 'बाइसेप्स (Biceps)',
+  'Triceps': 'ट्राइसेप्स (Triceps)',
+  'Thighs': 'जांघें और पैर (Thighs & Legs)',
+  'Abs': 'एब्स और कोर (Abs & Core)',
+
+  // Subgroups - Chest
+  'Upper Chest': 'ऊपरी छाती (Upper Chest)',
+  'Middle Chest': 'मध्य छाती (Middle Chest)',
+  'Lower Chest': 'निचली छाती (Lower Chest)',
+  'Inner Chest': 'आंतरिक छाती (Inner Chest)',
+  'Outer Chest': 'बाहरी छाती (Outer Chest)',
+
+  // Subgroups - Back
+  'Upper Back': 'ऊपरी पीठ (Upper Back)',
+  'Middle Back': 'मध्य पीठ (Middle Back)',
+  'Lower Back': 'निचली पीठ (Lower Back)',
+  'Lats (Latissimus Dorsi)': 'लैट्स (Lats / Latissimus Dorsi)',
+  'Traps (Trapezius)': 'ट्रैप्स (Traps / Trapezius)',
+  'Spinal Erectors': 'स्पाइनल इरेक्टर्स (Spinal Erectors)',
+
+  // Subgroups - Shoulders
+  'Front Delts (Anterior Deltoids)': 'फ्रंट डेल्ट्स (Anterior Deltoids)',
+  'Side Delts (Lateral Deltoids)': 'साइड डेल्ट्स (Lateral Deltoids)',
+  'Rear Delts (Posterior Deltoids)': 'रियर डेल्ट्स (Posterior Deltoids)',
+  'Rotator Cuff': 'रोटेटर कफ (Rotator Cuff)',
+
+  // Subgroups - Biceps
+  'Biceps Long Head': 'बाइसेप्स लॉन्ग हेड (Long Head)',
+  'Biceps Short Head': 'बाइसेप्स शॉर्ट हेड (Short Head)',
+  'Brachialis': 'ब्रेकियलिस (Brachialis)',
+  'Brachioradialis': 'ब्रेकियोरेडियलिस (Brachioradialis)',
+
+  // Subgroups - Triceps
+  'Long Head': 'लॉन्ग हेड (Long Head)',
+  'Lateral Head': 'लेटरल हेड (Lateral Head)',
+  'Medial Head': 'मेडियल हेड (Medial Head)',
+
+  // Subgroups - Thighs
+  'Quadriceps': 'क्वाड्रिसेप्स (Quadriceps / Front Thighs)',
   'Hamstrings': 'हैमस्ट्रिंग्स (Hamstrings / Rear Thighs)',
-  'Legs – Hamstrings': 'हैमस्ट्रिंग्स (Rear Thighs)',
+  'Adductors (Inner Thigh)': 'एडक्टर्स (Inner Thigh)',
+  'Abductors (Outer Hip)': 'एबडक्टर्स (Outer Hip)',
   'Glutes': 'ग्लूट्स (Glutes / Hips)',
-  'Hamstrings and Glutes': 'हैमस्ट्रिंग्स और ग्लूट्स',
-  'Calves': 'काफ्स (Calves / Gastrocnemius)',
-  'Abs & Core': 'एब्स और कोर (Abs & Core)',
-  'Forearms': 'फोरआर्म्स और ग्रिप (Forearms & Grip)',
-  'Forearms & Grip': 'फोरआर्म्स और ग्रिप',
-  'Full Body & Conditioning': 'फुल बॉडी और कंडीशनिंग',
+
+  // Subgroups - Abs
+  'Upper Abs': 'अपर एब्स (Upper Abs)',
+  'Lower Abs': 'लोअर एब्स (Lower Abs)',
+  'Obliques': 'ऑब्लिक्स (Obliques / Side Core)',
+  'Deep Core / Transverse Abdominis': 'डीप कोर (Deep Core / TVA)',
+
+  // Legacy compatibility
+  'Quadriceps': 'क्वाड्स (Front Thighs)',
+  'Hamstrings & Glutes': 'हैमस्ट्रिंग्स और ग्लूट्स',
+  'Abs & Core': 'एब्स और कोर',
+  'Calves': 'काफ्स (Calves)',
+  'Forearms': 'फोरआर्म्स और ग्रिप',
 
   // Difficulty & Types
   'Beginner': 'शुरुआती (Beginner)',
@@ -365,6 +408,7 @@ export const translateExerciseGuide = (exercise) => {
       ...verified,
       nameHindi: getLocalizedName(exercise.name),
       muscleHindi: HINDI_VOCABULARY[exercise.muscle] || exercise.muscle,
+      subgroupHindi: HINDI_VOCABULARY[exercise.subgroup] || exercise.subgroup,
       equipmentHindi: HINDI_VOCABULARY[exercise.equipment] || exercise.equipment,
       difficultyHindi: HINDI_VOCABULARY[exercise.difficulty] || exercise.difficulty,
       typeHindi: HINDI_VOCABULARY[exercise.type] || exercise.type || 'कम्पाउंड मूवमेंट',
@@ -429,6 +473,7 @@ const generateNaturalHindiGuide = (ex) => {
   return {
     nameHindi: nameHi,
     muscleHindi: muscleHi,
+    subgroupHindi: HINDI_VOCABULARY[ex.subgroup] || ex.subgroup,
     equipmentHindi: equipHi,
     difficultyHindi: HINDI_VOCABULARY[ex.difficulty] || ex.difficulty,
     typeHindi: HINDI_VOCABULARY[ex.type] || ex.type || 'कम्पाउंड मूवमेंट',
