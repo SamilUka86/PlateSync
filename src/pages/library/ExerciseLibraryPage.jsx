@@ -1294,7 +1294,10 @@ export const ExerciseLibraryPage = ({ setActiveTab }) => {
         isOpen={Boolean(selectedExercise)}
         onClose={() => setSelectedExercise(null)}
         onAddToWorkout={handleAddToWorkout}
-        onAddToPlanner={(ex) => setPlannerExercise(ex)}
+        onAddToPlanner={(ex) => {
+          setSelectedExercise(null);
+          setPlannerExercise(ex);
+        }}
         isFavorite={selectedExercise ? favorites.includes(selectedExercise.id) : false}
         onToggleFavorite={handleToggleFavorite}
       />

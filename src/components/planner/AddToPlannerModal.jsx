@@ -98,7 +98,7 @@ export const AddToPlannerModal = ({ isOpen, onClose, exercise, setActiveTab }) =
   const currentPlanForSelectedDay = weeklyRoutine?.[selectedDayKey];
 
   const modalContent = (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-midnight-bg/85 backdrop-blur-md animate-in fade-in">
+    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-midnight-bg/85 backdrop-blur-md animate-in fade-in">
       <div className="w-full max-w-lg bg-midnight-card border border-midnight-border rounded-3xl p-5 md:p-6 shadow-2xl space-y-4 max-h-[90vh] flex flex-col">
         
         {/* Modal Header */}

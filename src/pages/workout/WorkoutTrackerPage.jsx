@@ -1484,7 +1484,10 @@ export const WorkoutTrackerPage = ({ setActiveTab }) => {
           handleAddExercise(ex);
           setPreviewExercise(null);
         }}
-        onAddToPlanner={(ex) => setPlannerExercise(ex)}
+        onAddToPlanner={(ex) => {
+          setPreviewExercise(null);
+          setPlannerExercise(ex);
+        }}
         isFavorite={previewExercise ? favorites.includes(previewExercise.id) : false}
         onToggleFavorite={handleToggleFavorite}
       />

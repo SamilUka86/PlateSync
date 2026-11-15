@@ -369,7 +369,10 @@ export const ExerciseDetailModal = ({
             {onAddToPlanner && (
               <button
                 type="button"
-                onClick={() => onAddToPlanner(exercise)}
+                onClick={() => {
+                  onAddToPlanner(exercise);
+                  if (onClose) onClose();
+                }}
                 className="px-4 py-2.5 bg-midnight-elevated hover:bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/30 rounded-xl font-bold text-xs flex items-center gap-2 transition active:scale-95 shadow-sm"
               >
                 <CalendarPlus className="w-4 h-4" />
