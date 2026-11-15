@@ -92,9 +92,13 @@ export const AuthProvider = ({ children }) => {
 
     // Check saved demo mode
     const savedDemo = localStorage.getItem('platesync_demo_active');
+    const cachedUnit = localStorage.getItem('platesync_preferred_unit');
     if (savedDemo === 'true') {
       setCurrentUser(DEMO_USER);
-      setUserProfile(DEMO_PROFILE);
+      setUserProfile({
+        ...DEMO_PROFILE,
+        ...(cachedUnit ? { preferredUnit: cachedUnit } : {})
+      });
       setIsDemoMode(true);
       const savedMode = localStorage.getItem('platesync_demo_access_mode') || 'calculator-only';
       setDemoAccessMode(savedMode);
@@ -111,7 +115,12 @@ export const AuthProvider = ({ children }) => {
     checkRedirectAuthResult().then((user) => {
       if (user) {
         setCurrentUser(user);
-        getUserProfile(user.uid).then((prof) => setUserProfile(prof));
+        getUserProfile(user.uid).then((prof) => {
+          if (prof) {
+            const savedUnit = localStorage.getItem('platesync_preferred_unit');
+            setUserProfile(savedUnit ? { ...prof, preferredUnit: savedUnit } : prof);
+          }
+        });
       }
     });
 
@@ -122,6 +131,10 @@ export const AuthProvider = ({ children }) => {
           let profile = await getUserProfile(user.uid);
           if (!profile) {
             profile = await createUserProfileDocument(user);
+          }
+          const savedUnit = localStorage.getItem('platesync_preferred_unit');
+          if (savedUnit) {
+            profile = { ...profile, preferredUnit: savedUnit };
           }
           setUserProfile(profile);
         } catch (err) {
@@ -223,15 +236,31 @@ export const AuthProvider = ({ children }) => {
   };
 
   const updateProfile = async (updates) => {
-    if (!currentUser) return;
-    if (isDemoMode) {
-      const updated = { ...userProfile, ...updates, updatedAt: new Date().toISOString() };
-      setUserProfile(updated);
-      return updated;
+    // 1. Optimistic immediate state update - Zero latency for UI renders!
+    setUserProfile(prev => {
+      if (!prev) return { ...updates, updatedAt: new Date().toISOString() };
+      return { ...prev, ...updates, updatedAt: new Date().toISOString() };
+    });
+
+    if (updates.preferredUnit) {
+      try {
+        localStorage.setItem('platesync_preferred_unit', updates.preferredUnit);
+      } catch (e) {}
     }
-    const updated = await fbUpdateProfile(currentUser.uid, updates);
-    setUserProfile(prev => ({ ...prev, ...updates }));
-    return updated;
+
+    if (!currentUser) return;
+
+    if (isDemoMode) {
+      return { ...userProfile, ...updates };
+    }
+
+    // 2. Background async save to Cloud Firestore without blocking UI
+    try {
+      const updated = await fbUpdateProfile(currentUser.uid, updates);
+      return updated;
+    } catch (err) {
+      console.warn('Profile background sync:', err);
+    }
   };
 
   const value = {

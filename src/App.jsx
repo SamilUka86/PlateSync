@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { WorkoutProvider } from './context/WorkoutContext';
 import { NotificationProvider } from './context/NotificationContext';
@@ -33,9 +33,21 @@ const MainAppLayout = () => {
       const isDemo = localStorage.getItem('platesync_demo_active') === 'true';
       const mode = localStorage.getItem('platesync_demo_access_mode') || 'calculator-only';
       if (isDemo && mode === 'calculator-only') return 'calculator';
+
+      const savedTab = localStorage.getItem('platesync_active_tab');
+      if (savedTab) return savedTab;
     } catch (e) {}
     return 'dashboard';
   });
+
+  // Persist activeTab across browser page reloads
+  useEffect(() => {
+    try {
+      if (activeTab) {
+        localStorage.setItem('platesync_active_tab', activeTab);
+      }
+    } catch (e) {}
+  }, [activeTab]);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
 

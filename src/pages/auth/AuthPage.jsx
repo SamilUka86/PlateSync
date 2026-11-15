@@ -40,7 +40,7 @@ export const AuthPage = () => {
   const [googleSubmitting, setGoogleSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const { loginGoogle, loginEmail, registerEmail, loginAsDemo, isFirebaseReady } = useAuth();
+  const { loginGoogle, loginEmail, registerEmail, loginAsDemo, isFirebaseReady, isDevTester } = useAuth();
   const { addNotification } = useNotification();
 
   // Load remembered email
@@ -104,8 +104,8 @@ export const AuthPage = () => {
       console.error('Auth submit error:', err);
       let msg = err.message || 'Authentication failed.';
       if (err.message === 'FIREBASE_NOT_CONFIGURED') {
-        msg = 'Firebase is not yet configured. Click the gear icon above to add keys, or use Demo Account.';
-        setShowConfigModal(true);
+        msg = 'Sign-in service is temporarily connecting. Please try again or explore with the Demo Account.';
+        if (isDevTester) setShowConfigModal(true);
       } else if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
         msg = 'Invalid email or password. Please verify your credentials.';
       } else if (err.code === 'auth/email-already-in-use') {
@@ -129,8 +129,8 @@ export const AuthPage = () => {
     } catch (err) {
       let msg = 'Google authentication encountered an issue.';
       if (err.message === 'FIREBASE_NOT_CONFIGURED') {
-        msg = 'Firebase configuration required for Google Sign-In. Open Settings in the top bar.';
-        setShowConfigModal(true);
+        msg = 'Google authentication is currently connecting. Please try again or use Demo Account.';
+        if (isDevTester) setShowConfigModal(true);
       } else if (err.code === 'auth/popup-closed-by-user') {
         msg = 'Sign-in popup was closed before completion.';
       } else if (err.code === 'auth/popup-blocked') {
@@ -170,15 +170,17 @@ export const AuthPage = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => setShowConfigModal(true)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-midnight-border bg-midnight-card text-slate-300 hover:text-white hover:border-neon-cyan/40 transition text-xs font-medium"
-            title="Configure Firebase Keys & Google OAuth"
-          >
-            <Settings className="w-3.5 h-3.5 text-neon-cyan" />
-            <span className="hidden sm:inline">Firebase Setup</span>
-            <span className={`w-2 h-2 rounded-full ${isFirebaseReady ? 'bg-neon-success' : 'bg-neon-warning animate-pulse'}`} />
-          </button>
+          {isDevTester && (
+            <button
+              onClick={() => setShowConfigModal(true)}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-midnight-border bg-midnight-card text-slate-300 hover:text-white hover:border-neon-cyan/40 transition text-xs font-medium"
+              title="Configure Firebase Keys & Google OAuth"
+            >
+              <Settings className="w-3.5 h-3.5 text-neon-cyan" />
+              <span className="hidden sm:inline">Firebase Setup</span>
+              <span className={`w-2 h-2 rounded-full ${isFirebaseReady ? 'bg-neon-success' : 'bg-neon-warning animate-pulse'}`} />
+            </button>
+          )}
 
           <button
             onClick={loginAsDemo}
@@ -463,10 +465,12 @@ export const AuthPage = () => {
         defaultEmail={email}
       />
 
-      <FirebaseSetupModal
-        isOpen={showConfigModal}
-        onClose={() => setShowConfigModal(false)}
-      />
+      {isDevTester && (
+        <FirebaseSetupModal
+          isOpen={showConfigModal}
+          onClose={() => setShowConfigModal(false)}
+        />
+      )}
 
       {/* Footer */}
       <footer className="px-6 py-4 border-t border-midnight-border bg-midnight-secondary/60 text-center text-xs text-slate-500">

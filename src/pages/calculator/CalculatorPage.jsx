@@ -34,7 +34,7 @@ import { useWorkout } from '../../context/WorkoutContext';
 import { useNotification } from '../../context/NotificationContext';
 
 export const CalculatorPage = ({ setActiveTab }) => {
-  const { userProfile } = useAuth();
+  const { userProfile, updateProfile } = useAuth();
   const { 
     savedConfigurations, 
     savePlateConfiguration, 
@@ -80,6 +80,20 @@ export const CalculatorPage = ({ setActiveTab }) => {
 
   // Display unit toggle without changing physical plates
   const [displayUnit, setDisplayUnit] = useState(userProfile?.preferredUnit || 'KG');
+
+  // Synchronize displayUnit instantly when global unit preference changes
+  useEffect(() => {
+    if (userProfile?.preferredUnit && userProfile.preferredUnit !== displayUnit) {
+      setDisplayUnit(userProfile.preferredUnit);
+    }
+  }, [userProfile?.preferredUnit]);
+
+  const handleToggleDisplayUnit = (unit) => {
+    setDisplayUnit(unit);
+    if (updateProfile) {
+      updateProfile({ preferredUnit: unit });
+    }
+  };
 
   // Custom plate entry
   const [customPlateWeight, setCustomPlateWeight] = useState('');
@@ -425,7 +439,7 @@ export const CalculatorPage = ({ setActiveTab }) => {
             <div className="p-1 bg-midnight-bg rounded-xl border border-midnight-border flex items-center">
               <button
                 type="button"
-                onClick={() => setDisplayUnit('KG')}
+                onClick={() => handleToggleDisplayUnit('KG')}
                 className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-black font-mono transition ${
                   displayUnit === 'KG'
                     ? 'bg-neon-cyan text-slate-950 shadow-md shadow-neon-cyan/20'
@@ -436,7 +450,7 @@ export const CalculatorPage = ({ setActiveTab }) => {
               </button>
               <button
                 type="button"
-                onClick={() => setDisplayUnit('LB')}
+                onClick={() => handleToggleDisplayUnit('LB')}
                 className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-black font-mono transition ${
                   displayUnit === 'LB'
                     ? 'bg-neon-cyan text-slate-950 shadow-md shadow-neon-cyan/20'

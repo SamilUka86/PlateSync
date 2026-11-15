@@ -68,13 +68,23 @@ export const DashboardPage = ({ setActiveTab }) => {
     return result;
   }, [workouts, preferredUnit]);
 
-  // Key Strength Progression items
-  const strengthOverviewList = [
-    { name: 'Barbell Bench Press', maxWeightKg: 115, reps: 3, change: '+5 kg', positive: true },
-    { name: 'Deadlift', maxWeightKg: 210, reps: 2, change: '+10 kg', positive: true },
-    { name: 'Barbell Squat', maxWeightKg: 165, reps: 3, change: '+7.5 kg', positive: true },
-    { name: 'Standing Barbell Shoulder Press', maxWeightKg: 65, reps: 5, change: '+2.5 kg', positive: true },
-  ];
+  // Key Strength Progression items derived dynamically from personal records
+  const strengthOverviewList = useMemo(() => {
+    const prs = metrics?.personalRecords || {};
+    const prKeys = Object.keys(prs);
+    if (prKeys.length === 0) return [];
+
+    return prKeys.slice(0, 4).map(name => {
+      const pr = prs[name];
+      return {
+        name,
+        maxWeightKg: pr.maxWeightKg || 0,
+        reps: pr.reps || 1,
+        change: 'Personal Record',
+        positive: true
+      };
+    });
+  }, [metrics?.personalRecords]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -92,11 +102,17 @@ export const DashboardPage = ({ setActiveTab }) => {
             </div>
 
             <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">
-              Welcome back, <span className="text-neon-cyan">{athleteName}</span>!
+              {workouts.length === 0 ? (
+                <>Welcome to PlateSync, <span className="text-neon-cyan">{athleteName}</span>!</>
+              ) : (
+                <>Welcome back, <span className="text-neon-cyan">{athleteName}</span>!</>
+              )}
             </h1>
 
             <p className="text-xs md:text-sm text-slate-400 max-w-xl leading-relaxed">
-              Ready to crush today&apos;s lifting targets? Calculate mixed KG and LB plates, log your sets without manual conversion, and track your PRs.
+              {workouts.length === 0
+                ? "Your training journey starts now! Calculate mixed KG and LB barbell setups, record your sets, and start building your Personal Records."
+                : "Ready to crush today's lifting targets? Calculate mixed KG and LB plates, log your sets without manual conversion, and track your PRs."}
             </p>
 
             <div className="flex items-center gap-2 pt-1 text-[11px] text-slate-400 font-mono">
@@ -144,7 +160,7 @@ export const DashboardPage = ({ setActiveTab }) => {
             <span className="text-xs text-slate-400 ml-1.5 font-medium">completed</span>
           </div>
           <p className="text-[11px] text-neon-success mt-1 font-medium flex items-center gap-1">
-            <TrendingUp className="w-3 h-3" /> All sessions recorded
+            <TrendingUp className="w-3 h-3" /> {workouts.length === 0 ? 'Start your first session' : 'All sessions recorded'}
           </p>
         </div>
 
@@ -188,7 +204,7 @@ export const DashboardPage = ({ setActiveTab }) => {
             <span className="text-xs text-slate-400 ml-1.5 font-medium">days active</span>
           </div>
           <p className="text-[11px] text-neon-gold mt-1 font-medium">
-            Consistent training rhythm
+            {metrics.currentStreak === 0 ? 'Log a session to start streak' : 'Consistent training rhythm'}
           </p>
         </div>
 
@@ -207,7 +223,7 @@ export const DashboardPage = ({ setActiveTab }) => {
             <span className="text-xs text-slate-400 ml-1.5 font-medium">PR milestones</span>
           </div>
           <p className="text-[11px] text-neon-cyan mt-1 font-medium">
-            Bench, Squat & Deadlift PRs
+            {Object.keys(metrics.personalRecords || {}).length === 0 ? 'Record sets to set PRs' : 'Bench, Squat & Deadlift PRs'}
           </p>
         </div>
 
@@ -298,36 +314,57 @@ export const DashboardPage = ({ setActiveTab }) => {
               </button>
             </div>
 
-            <div className="space-y-3">
-              {strengthOverviewList.map((item) => {
-                const displayWeight = preferredUnit === 'LB'
-                  ? Math.round(item.maxWeightKg * KG_TO_LBS * 10) / 10
-                  : item.maxWeightKg;
+            {strengthOverviewList.length === 0 ? (
+              <div className="p-6 rounded-2xl bg-midnight-bg border border-midnight-border text-center space-y-2.5 my-auto">
+                <div className="w-10 h-10 mx-auto rounded-xl bg-neon-gold/10 border border-neon-gold/20 flex items-center justify-center text-neon-gold">
+                  <Trophy className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-white">No PRs Logged Yet</p>
+                  <p className="text-[11px] text-slate-400 mt-1 max-w-xs mx-auto">
+                    Record your working sets in the Workout Tracker to establish your Personal Records.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setActiveTab('tracker')}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neon-cyan/10 hover:bg-neon-cyan/20 border border-neon-cyan/30 text-neon-cyan text-xs font-bold transition"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Start Workout</span>
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {strengthOverviewList.map((item) => {
+                  const displayWeight = preferredUnit === 'LB'
+                    ? Math.round(item.maxWeightKg * KG_TO_LBS * 10) / 10
+                    : item.maxWeightKg;
 
-                return (
-                  <div
-                    key={item.name}
-                    className="p-3 rounded-xl bg-midnight-bg border border-midnight-border flex items-center justify-between hover:border-midnight-border/80 transition"
-                  >
-                    <div className="min-w-0 pr-2">
-                      <p className="text-xs font-bold text-white truncate">{item.name}</p>
-                      <p className="text-[10px] text-slate-400 font-mono">
-                        {item.reps} reps peak set
-                      </p>
-                    </div>
+                  return (
+                    <div
+                      key={item.name}
+                      className="p-3 rounded-xl bg-midnight-bg border border-midnight-border flex items-center justify-between hover:border-midnight-border/80 transition"
+                    >
+                      <div className="min-w-0 pr-2">
+                        <p className="text-xs font-bold text-white truncate">{item.name}</p>
+                        <p className="text-[10px] text-slate-400 font-mono">
+                          {item.reps} reps peak set
+                        </p>
+                      </div>
 
-                    <div className="text-right shrink-0">
-                      <span className="text-xs font-black font-mono text-neon-cyan">
-                        {displayWeight} {preferredUnit}
-                      </span>
-                      <span className="block text-[10px] text-neon-success font-mono font-bold">
-                        {item.change}
-                      </span>
+                      <div className="text-right shrink-0">
+                        <span className="text-xs font-black font-mono text-neon-cyan">
+                          {displayWeight} {preferredUnit}
+                        </span>
+                        <span className="block text-[10px] text-neon-gold font-mono font-bold">
+                          {item.change}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <div className="mt-4 pt-3 border-t border-midnight-border">
@@ -367,55 +404,85 @@ export const DashboardPage = ({ setActiveTab }) => {
             </button>
           </div>
 
-          <div className="space-y-3">
-            {workouts.slice(0, 3).map((w) => {
-              const durationMin = Math.round((w.duration || 3600) / 60);
-              const dateStr = new Date(w.date || w.createdAt).toLocaleDateString(undefined, {
-                weekday: 'short',
-                month: 'short',
-                day: 'numeric'
-              });
-
-              return (
-                <div
-                  key={w.id}
-                  onClick={() => setActiveTab('history')}
-                  className="p-4 rounded-2xl bg-midnight-bg border border-midnight-border hover:border-neon-cyan/40 cursor-pointer transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 group"
+          {workouts.length === 0 ? (
+            <div className="p-8 rounded-2xl bg-midnight-bg border border-midnight-border text-center space-y-3">
+              <div className="w-12 h-12 mx-auto rounded-2xl bg-neon-cyan/10 border border-neon-cyan/20 flex items-center justify-center text-neon-cyan">
+                <Dumbbell className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <h4 className="text-sm font-bold text-white">No workouts recorded yet</h4>
+                <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                  Welcome to PlateSync! Start tracking your training or calculate your first barbell load to begin building your workout history.
+                </p>
+              </div>
+              <div className="pt-2 flex flex-wrap justify-center gap-3">
+                <button
+                  onClick={() => setActiveTab('tracker')}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-neon-cyan text-slate-950 font-black text-xs rounded-xl shadow-md shadow-neon-cyan/20 hover:bg-[#29bfcd] transition"
                 >
-                  <div className="space-y-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px] font-semibold text-neon-cyan flex items-center gap-1">
-                        <Clock className="w-3 h-3" /> {durationMin} min
-                      </span>
-                      <span className="text-slate-600">&bull;</span>
-                      <span className="text-[11px] text-slate-400">{dateStr}</span>
-                    </div>
+                  <Plus className="w-4 h-4" />
+                  <span>Start First Workout</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('calculator')}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-midnight-elevated text-slate-200 hover:text-white border border-midnight-border font-bold text-xs rounded-xl transition"
+                >
+                  <Calculator className="w-4 h-4 text-neon-cyan" />
+                  <span>Calculate Load</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {workouts.slice(0, 3).map((w) => {
+                const durationMin = Math.round((w.duration || 3600) / 60);
+                const dateStr = new Date(w.date || w.createdAt).toLocaleDateString(undefined, {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric'
+                });
 
-                    <h4 className="text-xs font-bold text-white group-hover:text-neon-cyan transition truncate">
-                      {w.workoutName}
-                    </h4>
-
-                    <div className="flex flex-wrap gap-1.5 pt-0.5">
-                      {w.exercises?.map((ex, idx) => (
-                        <span key={idx} className="text-[10px] px-2 py-0.5 rounded bg-midnight-card border border-midnight-border text-slate-300">
-                          {ex.name}
+                return (
+                  <div
+                    key={w.id}
+                    onClick={() => setActiveTab('history')}
+                    className="p-4 rounded-2xl bg-midnight-bg border border-midnight-border hover:border-neon-cyan/40 cursor-pointer transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 group"
+                  >
+                    <div className="space-y-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-semibold text-neon-cyan flex items-center gap-1">
+                          <Clock className="w-3 h-3" /> {durationMin} min
                         </span>
-                      ))}
+                        <span className="text-slate-600">&bull;</span>
+                        <span className="text-[11px] text-slate-400">{dateStr}</span>
+                      </div>
+
+                      <h4 className="text-xs font-bold text-white group-hover:text-neon-cyan transition truncate">
+                        {w.workoutName}
+                      </h4>
+
+                      <div className="flex flex-wrap gap-1.5 pt-0.5">
+                        {w.exercises?.map((ex, idx) => (
+                          <span key={idx} className="text-[10px] px-2 py-0.5 rounded bg-midnight-card border border-midnight-border text-slate-300">
+                            {ex.name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="text-right shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-midnight-border">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Volume</span>
+                      <span className="text-sm font-black font-mono text-neon-cyan">
+                        {preferredUnit === 'LB'
+                          ? `${(w.totalVolumeLbs || ((w.totalVolumeKg || w.totalVolume || 0) * KG_TO_LBS)).toLocaleString()} LB`
+                          : `${(w.totalVolumeKg || w.totalVolume || 0).toLocaleString()} KG`}
+                      </span>
                     </div>
                   </div>
-
-                  <div className="text-right shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-midnight-border">
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Volume</span>
-                    <span className="text-sm font-black font-mono text-neon-cyan">
-                      {preferredUnit === 'LB'
-                        ? `${(w.totalVolumeLbs || ((w.totalVolumeKg || w.totalVolume || 0) * KG_TO_LBS)).toLocaleString()} LB`
-                        : `${(w.totalVolumeKg || w.totalVolume || 0).toLocaleString()} KG`}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Section E: Quick Actions */}

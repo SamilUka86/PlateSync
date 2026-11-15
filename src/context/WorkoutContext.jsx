@@ -203,18 +203,26 @@ export const WorkoutProvider = ({ children }) => {
         return;
       }
 
+      // If user explicitly activated Demo Mode, show demo workouts
+      if (isDemoMode || currentUser.isDemo) {
+        setWorkouts(DEMO_WORKOUTS);
+        setLoadingWorkouts(false);
+        return;
+      }
+
       setLoadingWorkouts(true);
       try {
         const loaded = await getUserWorkouts(currentUser.uid);
         if (isMounted) {
-          if (loaded && loaded.length > 0) {
-            setWorkouts(loaded);
-          } else {
-            setWorkouts(DEMO_WORKOUTS);
-          }
+          // Real authenticated users start with a clean slate: their actual workouts or empty array
+          setWorkouts(loaded || []);
         }
       } catch (err) {
-        if (isMounted) setWorkouts(DEMO_WORKOUTS);
+        console.warn('Notice loading athlete workouts:', err);
+        if (isMounted) {
+          // Keep clean slate for real users with 0 workouts
+          setWorkouts([]);
+        }
       } finally {
         if (isMounted) setLoadingWorkouts(false);
       }
@@ -222,7 +230,7 @@ export const WorkoutProvider = ({ children }) => {
 
     loadData();
     return () => { isMounted = false; };
-  }, [currentUser]);
+  }, [currentUser, isDemoMode]);
 
   // Save configurations to localStorage
   useEffect(() => {
