@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { 
   getAdminUsersList, 
+  subscribeToUsers,
   getAdminUserDetails, 
   setAccountStatus, 
   setUserAdminRole, 
@@ -55,26 +56,41 @@ export const AdminUsersTab = () => {
   const { isOwner } = useAdmin();
   const { addNotification } = useNotification();
 
-  const loadUsers = async () => {
-    setLoading(true);
+  const loadUsers = async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     try {
       const data = await getAdminUsersList(search, statusFilter);
       setUsers(data);
     } catch (err) {
       console.error('Error fetching admin users:', err);
-      addNotification('Could not load athlete records.', 'error');
+      if (showLoading) addNotification('Could not load athlete records.', 'error');
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadUsers();
-  }, [statusFilter]);
+    setLoading(true);
+    // Real-time listener across Firebase Authenticator / Firestore users & presence
+    const unsubscribe = subscribeToUsers((data) => {
+      setUsers(data);
+      setLoading(false);
+    }, search, statusFilter);
+
+    // Live update polling interval (every 10s) just like the feedback tab
+    const interval = setInterval(() => {
+      loadUsers(false);
+    }, 10000);
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+      clearInterval(interval);
+    };
+  }, [statusFilter, search]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    loadUsers();
+    loadUsers(true);
   };
 
   const handleViewUser = async (user) => {
@@ -194,12 +210,18 @@ export const AdminUsersTab = () => {
       {/* Header & Controls */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 rounded-3xl bg-midnight-card border border-midnight-border">
         <div>
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono text-[10px] font-bold flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              Live Telemetry Stream Active
+            </span>
+          </div>
           <h2 className="text-lg md:text-xl font-black text-white flex items-center gap-2">
             <Users className="w-5 h-5 text-neon-cyan" />
             Athlete & User Directory ({users.length})
           </h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            Manage authenticated athlete profiles, account permissions, and historical data records
+            Real-time synchronization with Firebase Authenticator & Cloud Firestore
           </p>
         </div>
 

@@ -25,6 +25,13 @@ import { AdminAnalyticsTab } from './tabs/AdminAnalyticsTab';
 import { AdminSettingsTab } from './tabs/AdminSettingsTab';
 import { AdminLogsTab } from './tabs/AdminLogsTab';
 
+const normalizeTab = (raw) => {
+  if (!raw) return 'dashboard';
+  const cleaned = raw.toLowerCase().trim();
+  if (cleaned === 'overview' || cleaned === 'platform' || cleaned === 'platform-overview') return 'dashboard';
+  return cleaned;
+};
+
 export const AdminLayout = ({ onBackToApp }) => {
   const [activeTab, setActiveTab] = useState(() => {
     try {
@@ -32,10 +39,10 @@ export const AdminLayout = ({ onBackToApp }) => {
         const hash = window.location.hash;
         if (hash && hash.startsWith('#admin/')) {
           const tabPart = hash.replace('#admin/', '').trim();
-          if (tabPart) return tabPart;
+          if (tabPart) return normalizeTab(tabPart);
         }
         const saved = localStorage.getItem('platesync_admin_active_tab');
-        if (saved) return saved;
+        if (saved) return normalizeTab(saved);
       }
     } catch (e) {}
     return 'dashboard';
@@ -194,7 +201,7 @@ export const AdminLayout = ({ onBackToApp }) => {
           <div className="flex items-center gap-3">
             <span className="text-xs font-bold text-slate-400">Section:</span>
             <span className="px-3 py-1 rounded-xl bg-midnight-bg border border-midnight-border text-xs font-black text-white">
-              {NAV_ITEMS.find(i => i.id === activeTab)?.label}
+              {NAV_ITEMS.find(i => i.id === (activeTab === 'overview' ? 'dashboard' : activeTab))?.label || 'Platform Overview'}
             </span>
           </div>
 
@@ -221,7 +228,9 @@ export const AdminLayout = ({ onBackToApp }) => {
 
         {/* Tab View Container */}
         <main className="p-4 md:p-8 max-w-7xl w-full mx-auto flex-1">
-          {activeTab === 'dashboard' && <AdminDashboardTab onNavigateTab={handleSelectTab} />}
+          {(activeTab === 'dashboard' || activeTab === 'overview' || !NAV_ITEMS.some(i => i.id === activeTab)) && (
+            <AdminDashboardTab onNavigateTab={handleSelectTab} />
+          )}
           {activeTab === 'liveUsers' && <AdminLiveUsersTab />}
           {activeTab === 'users' && <AdminUsersTab />}
           {activeTab === 'feedback' && <AdminFeedbackTab />}

@@ -31,13 +31,32 @@ import {
 } from 'recharts';
 import { 
   getPlatformOverviewStats, 
+  subscribeToPlatformStats,
   getPlatformAnalyticsTrends 
 } from '../../../services/admin/adminDataService';
 
 const PIE_COLORS = ['#00F5FF', '#BD00FF', '#00E5A3', '#FFB800'];
 
+const DEFAULT_STATS = {
+  totalUsers: 0,
+  activeUsers: 0,
+  liveActiveCount: 0,
+  dauCount: 0,
+  newUsersToday: 0,
+  newUsersThisWeek: 0,
+  newUsersThisMonth: 0,
+  totalWorkouts: 0,
+  totalWeightRecords: 0,
+  totalCalculatorSetups: 0,
+  kgUsers: 0,
+  lbsUsers: 0,
+  enUsers: 0,
+  hiUsers: 0,
+  usersList: []
+};
+
 export const AdminDashboardTab = ({ onNavigateTab }) => {
-  const [stats, setStats] = useState(null);
+  const [stats, setStats] = useState(DEFAULT_STATS);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
@@ -46,8 +65,10 @@ export const AdminDashboardTab = ({ onNavigateTab }) => {
     if (isManual) setRefreshing(true);
     try {
       const data = await getPlatformOverviewStats();
-      setStats(data);
-      setLastUpdated(new Date().toLocaleTimeString());
+      if (data) {
+        setStats(data);
+        setLastUpdated(new Date().toLocaleTimeString());
+      }
     } catch (err) {
       console.error('Error loading admin stats:', err);
     } finally {
@@ -57,10 +78,28 @@ export const AdminDashboardTab = ({ onNavigateTab }) => {
   };
 
   useEffect(() => {
-    loadStats();
+    setLoading(true);
+    const unsubscribe = subscribeToPlatformStats((data) => {
+      if (data) {
+        setStats(data);
+        setLastUpdated(new Date().toLocaleTimeString());
+      }
+      setLoading(false);
+    });
+
+    const interval = setInterval(() => {
+      loadStats(false);
+    }, 15000);
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+      clearInterval(interval);
+    };
   }, []);
 
-  if (loading) {
+  const safeStats = stats || DEFAULT_STATS;
+
+  if (loading && (!stats || stats.totalUsers === 0)) {
     return (
       <div className="space-y-6 animate-pulse">
         <div className="h-28 bg-midnight-card border border-midnight-border rounded-3xl" />
@@ -74,23 +113,23 @@ export const AdminDashboardTab = ({ onNavigateTab }) => {
     );
   }
 
-  const trends = getPlatformAnalyticsTrends(stats?.usersList || [], 14);
+  const trends = getPlatformAnalyticsTrends(safeStats.usersList || [], 14);
 
   // KG vs LBS Distribution
-  const totalUnitUsers = (stats?.kgUsers || 0) + (stats?.lbsUsers || 0);
-  const kgPercent = totalUnitUsers > 0 ? Math.round((stats.kgUsers / totalUnitUsers) * 100) : 70;
+  const totalUnitUsers = (safeStats.kgUsers || 0) + (safeStats.lbsUsers || 0);
+  const kgPercent = totalUnitUsers > 0 ? Math.round((safeStats.kgUsers / totalUnitUsers) * 100) : 70;
   const lbsPercent = 100 - kgPercent;
 
   // Language Distribution
-  const totalLangUsers = (stats?.enUsers || 0) + (stats?.hiUsers || 0);
-  const enPercent = totalLangUsers > 0 ? Math.round((stats.enUsers / totalLangUsers) * 100) : 85;
+  const totalLangUsers = (safeStats.enUsers || 0) + (safeStats.hiUsers || 0);
+  const enPercent = totalLangUsers > 0 ? Math.round((safeStats.enUsers / totalLangUsers) * 100) : 85;
   const hiPercent = 100 - enPercent;
 
   // Device Breakdown (derived from platform activity)
   const deviceData = [
-    { name: 'Android PWA', count: Math.round((stats?.totalUsers || 1) * 0.58) },
-    { name: 'Desktop Web', count: Math.round((stats?.totalUsers || 1) * 0.28) },
-    { name: 'iOS Safari PWA', count: Math.max(1, Math.round((stats?.totalUsers || 1) * 0.14)) }
+    { name: 'Android PWA', count: Math.round((safeStats.totalUsers || 1) * 0.58) },
+    { name: 'Desktop Web', count: Math.round((safeStats.totalUsers || 1) * 0.28) },
+    { name: 'iOS Safari PWA', count: Math.max(1, Math.round((safeStats.totalUsers || 1) * 0.14)) }
   ];
 
   return (
@@ -146,9 +185,9 @@ export const AdminDashboardTab = ({ onNavigateTab }) => {
             <Users className="w-4 h-4 text-neon-cyan" />
           </div>
           <div className="mt-2">
-            <div className="text-2xl font-black text-white font-mono">{stats.totalUsers}</div>
+            <div className="text-2xl font-black text-white font-mono">{safeStats.totalUsers}</div>
             <div className="text-[10px] text-neon-success flex items-center gap-1 mt-0.5">
-              <span>+{stats.newUsersThisMonth} this month</span>
+              <span>+{safeStats.newUsersThisMonth} this month</span>
             </div>
           </div>
         </div>
@@ -160,9 +199,9 @@ export const AdminDashboardTab = ({ onNavigateTab }) => {
             <Activity className="w-4 h-4 text-neon-success" />
           </div>
           <div className="mt-2">
-            <div className="text-2xl font-black text-white font-mono">{stats.activeUsers}</div>
+            <div className="text-2xl font-black text-white font-mono">{safeStats.activeUsers}</div>
             <div className="text-[10px] text-slate-400 mt-0.5">
-              {stats.totalUsers > 0 ? `${Math.round((stats.activeUsers / stats.totalUsers) * 100)}% retention` : 'Active'}
+              {safeStats.totalUsers > 0 ? `${Math.round((safeStats.activeUsers / safeStats.totalUsers) * 100)}% retention` : 'Active'}
             </div>
           </div>
         </div>
@@ -174,9 +213,9 @@ export const AdminDashboardTab = ({ onNavigateTab }) => {
             <Clock className="w-4 h-4 text-amber-400" />
           </div>
           <div className="mt-2">
-            <div className="text-2xl font-black text-white font-mono">{stats.newUsersToday}</div>
+            <div className="text-2xl font-black text-white font-mono">{safeStats.newUsersToday}</div>
             <div className="text-[10px] text-slate-400 mt-0.5">
-              +{stats.newUsersThisWeek} this week
+              +{safeStats.newUsersThisWeek} this week
             </div>
           </div>
         </div>
@@ -188,7 +227,7 @@ export const AdminDashboardTab = ({ onNavigateTab }) => {
             <Dumbbell className="w-4 h-4 text-neon-violet" />
           </div>
           <div className="mt-2">
-            <div className="text-2xl font-black text-white font-mono">{stats.totalWorkouts}</div>
+            <div className="text-2xl font-black text-white font-mono">{safeStats.totalWorkouts}</div>
             <div className="text-[10px] text-slate-400 mt-0.5">
               Logged in Cloud Firestore
             </div>
@@ -210,7 +249,7 @@ export const AdminDashboardTab = ({ onNavigateTab }) => {
           </div>
           <div className="mt-2">
             <div className="text-2xl font-black text-emerald-400 font-mono">
-              {stats.liveActiveCount || (stats.activeUsers > 0 ? 1 : 0)}
+              {safeStats.liveActiveCount || (safeStats.activeUsers > 0 ? 1 : 0)}
             </div>
             <div className="text-[10px] text-emerald-400/80 flex items-center gap-1 mt-0.5 group-hover:underline">
               <span>Rolling 5-min window &rarr;</span>
@@ -230,7 +269,7 @@ export const AdminDashboardTab = ({ onNavigateTab }) => {
           </div>
           <div className="mt-2">
             <div className="text-2xl font-black text-white font-mono">
-              {stats.dauCount || stats.newUsersToday || (stats.totalUsers > 0 ? 1 : 0)}
+              {safeStats.dauCount || safeStats.newUsersToday || (safeStats.totalUsers > 0 ? 1 : 0)}
             </div>
             <div className="text-[10px] text-neon-cyan flex items-center gap-1 mt-0.5 group-hover:underline">
               <span>DAU telemetry &rarr;</span>
@@ -245,7 +284,7 @@ export const AdminDashboardTab = ({ onNavigateTab }) => {
             <Scale className="w-4 h-4 text-sky-400" />
           </div>
           <div className="mt-2">
-            <div className="text-2xl font-black text-white font-mono">{stats.totalWeightRecords}</div>
+            <div className="text-2xl font-black text-white font-mono">{safeStats.totalWeightRecords}</div>
             <div className="text-[10px] text-slate-400 mt-0.5">
               Progression entries
             </div>
@@ -259,7 +298,7 @@ export const AdminDashboardTab = ({ onNavigateTab }) => {
             <Award className="w-4 h-4 text-amber-400" />
           </div>
           <div className="mt-2">
-            <div className="text-2xl font-black text-white font-mono">{stats.totalCalculatorSetups}</div>
+            <div className="text-2xl font-black text-white font-mono">{safeStats.totalCalculatorSetups}</div>
             <div className="text-[10px] text-slate-400 mt-0.5">
               Saved plate racks
             </div>

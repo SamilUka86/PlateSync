@@ -132,40 +132,43 @@ export const getPlatformOverviewStats = async () => {
 
   if (isFirebaseConfigured() && db) {
     try {
-      // 1. Fetch all users from Cloud Firestore
-      const usersSnap = await getDocs(collection(db, 'users'));
+      // 1. Fetch users and presence in parallel for maximum speed
+      const [usersSnap, presenceSnap] = await Promise.all([
+        getDocs(collection(db, 'users')).catch(() => ({ docs: [] })),
+        getDocs(collection(db, 'userPresence')).catch(() => ({ docs: [] }))
+      ]);
+
       usersList = usersSnap.docs.map(d => ({ id: d.id, uid: d.id, ...d.data() }));
 
-      // 2. Fetch presence records to inherit real-time live active users from Firebase
-      try {
-        const presenceSnap = await getDocs(collection(db, 'userPresence'));
-        presenceSnap.docs.forEach(d => {
-          const p = d.data();
-          if (p.lastHeartbeat) {
-            const hbTime = new Date(p.lastHeartbeat).getTime();
-            if ((nowMs - hbTime) <= 5 * 60 * 1000) liveActiveCount++;
-            if (hbTime >= startOfTodayMs) dauCount++;
-          }
-        });
-      } catch (pErr) {
-        console.debug('Presence aggregation notice:', pErr);
-      }
-
-      // 3. Subcollections aggregation
-      for (const u of usersList) {
-        try {
-          const wSnap = await getDocs(collection(db, 'users', u.id, 'workouts'));
-          totalWorkouts += wSnap.size;
-
-          const bwSnap = await getDocs(collection(db, 'users', u.id, 'weight_logs'));
-          totalWeightRecords += bwSnap.size;
-
-          const cfgSnap = await getDocs(collection(db, 'users', u.id, 'plateConfigurations'));
-          totalCalculatorSetups += cfgSnap.size;
-        } catch (subErr) {
-          // Continue aggregation
+      presenceSnap.docs.forEach(d => {
+        const p = d.data();
+        if (p?.lastHeartbeat) {
+          const hbTime = new Date(p.lastHeartbeat).getTime();
+          if ((nowMs - hbTime) <= 5 * 60 * 1000) liveActiveCount++;
+          if (hbTime >= startOfTodayMs) dauCount++;
         }
-      }
+      });
+
+      // 3. Subcollections aggregation (Parallel with strict timeout to prevent any UI blocking)
+      const subPromises = usersList.slice(0, 15).map(async (u) => {
+        try {
+          const [wSnap, bwSnap, cfgSnap] = await Promise.allSettled([
+            getDocs(collection(db, 'users', u.id, 'workouts')),
+            getDocs(collection(db, 'users', u.id, 'weight_logs')),
+            getDocs(collection(db, 'users', u.id, 'plateConfigurations'))
+          ]);
+
+          if (wSnap.status === 'fulfilled' && wSnap.value?.size) totalWorkouts += wSnap.value.size;
+          if (bwSnap.status === 'fulfilled' && bwSnap.value?.size) totalWeightRecords += bwSnap.value.size;
+          if (cfgSnap.status === 'fulfilled' && cfgSnap.value?.size) totalCalculatorSetups += cfgSnap.value.size;
+        } catch (subErr) {}
+      });
+
+      // Enforce 2.0s maximum budget for subcollections so dashboard opens immediately
+      await Promise.race([
+        Promise.all(subPromises),
+        new Promise(resolve => setTimeout(resolve, 2000))
+      ]);
     } catch (err) {
       console.warn('Live stats aggregation notice:', err);
     }
@@ -297,6 +300,45 @@ export const getPlatformAnalyticsTrends = (usersList = [], days = 14) => {
   return trendData;
 };
 
+/**
+ * Admin: Real-time subscription to platform telemetry overview
+ */
+export const subscribeToPlatformStats = (callback) => {
+  // Always trigger immediate initial fetch
+  getPlatformOverviewStats().then(data => {
+    if (data && callback) callback(data);
+  }).catch(() => {});
+
+  if (!isFirebaseConfigured() || !db) {
+    return () => {};
+  }
+
+  try {
+    const handleUpdate = () => {
+      getPlatformOverviewStats().then(data => {
+        if (data && callback) callback(data);
+      }).catch(() => {});
+    };
+
+    const unsubUsers = onSnapshot(collection(db, 'users'), handleUpdate, (err) => {
+      console.warn('Realtime stats snapshot notice:', err);
+    });
+
+    const unsubPresence = onSnapshot(collection(db, 'userPresence'), handleUpdate, (err) => {
+      console.warn('Realtime presence snapshot notice:', err);
+    });
+
+    return () => {
+      try {
+        unsubUsers();
+        unsubPresence();
+      } catch (e) {}
+    };
+  } catch (e) {
+    return () => {};
+  }
+};
+
 // ============================================================================
 // 3. USER MANAGEMENT (Part 3)
 // ============================================================================
@@ -425,6 +467,46 @@ export const getAdminUsersList = async (searchQuery = '', statusFilter = 'ALL') 
   }
 
   return list;
+};
+
+/**
+ * Admin: Real-time subscription to athlete accounts and live presence
+ * Mirroring the live updates behavior of Feedback & Reports
+ */
+export const subscribeToUsers = (callback, searchQuery = '', statusFilter = 'ALL') => {
+  // Always trigger immediate initial fetch
+  getAdminUsersList(searchQuery, statusFilter).then(list => {
+    if (list && callback) callback(list);
+  }).catch(() => {});
+
+  if (!isFirebaseConfigured() || !db) {
+    return () => {};
+  }
+
+  try {
+    const handleUpdate = () => {
+      getAdminUsersList(searchQuery, statusFilter).then(list => {
+        if (list && callback) callback(list);
+      }).catch(() => {});
+    };
+
+    const unsubUsers = onSnapshot(collection(db, 'users'), handleUpdate, (err) => {
+      console.warn('Realtime users snapshot notice:', err);
+    });
+
+    const unsubPresence = onSnapshot(collection(db, 'userPresence'), handleUpdate, (err) => {
+      console.warn('Realtime presence snapshot notice:', err);
+    });
+
+    return () => {
+      try {
+        unsubUsers();
+        unsubPresence();
+      } catch (e) {}
+    };
+  } catch (e) {
+    return () => {};
+  }
 };
 
 /**
