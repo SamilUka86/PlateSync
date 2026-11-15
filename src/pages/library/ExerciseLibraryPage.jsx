@@ -459,218 +459,33 @@ export const ExerciseLibraryPage = ({ setActiveTab }) => {
             </button>
           </div>
 
-          {/* HIERARCHICAL MUSCLE GROUPS & SUBGROUPS ACCORDION PANEL */}
+          {/* Unified Filters Bar: Search, 3 Dropdowns, 7 Horizontal Muscle Groups & Subgroups */}
           <div className="bg-midnight-card border border-midnight-border rounded-3xl p-5 md:p-6 space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-midnight-border">
-              <div className="flex items-center gap-2">
-                <FolderTree className="w-4 h-4 text-neon-cyan" />
-                <div>
-                  <h3 className="text-sm font-black text-white uppercase tracking-wider">
-                    7 Main Muscle Groups & Anatomical Subgroups
-                  </h3>
-                  <p className="text-[11px] text-slate-400">
-                    Subgroups appear directly underneath their respective main muscle group. Expand or select any category to filter exercises.
-                  </p>
-                </div>
-              </div>
-
-              {/* Accordion Controls: Expand All / Collapse All / Reset */}
-              <div className="flex items-center gap-2 text-xs">
+            {/* Search Bar */}
+            <div className="relative">
+              <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3.5 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Search 190+ exercises by name, muscle, subgroup, lats..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-3.5 py-3 bg-midnight-bg border border-midnight-border rounded-xl text-white text-xs placeholder-slate-500 focus:outline-none focus:border-neon-cyan"
+              />
+              {searchQuery && (
                 <button
                   type="button"
-                  onClick={handleExpandAll}
-                  className="px-2.5 py-1 bg-midnight-bg hover:bg-midnight-elevated text-slate-300 hover:text-white rounded-lg border border-midnight-border font-semibold flex items-center gap-1 transition"
-                  title="Expand all 7 muscle categories"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3.5 top-3.5 text-slate-500 hover:text-white"
                 >
-                  <Maximize2 className="w-3 h-3 text-neon-cyan" />
-                  <span>Expand All</span>
+                  <X className="w-4 h-4" />
                 </button>
-
-                <button
-                  type="button"
-                  onClick={handleCollapseAll}
-                  className="px-2.5 py-1 bg-midnight-bg hover:bg-midnight-elevated text-slate-300 hover:text-white rounded-lg border border-midnight-border font-semibold flex items-center gap-1 transition"
-                  title="Collapse all 7 muscle categories"
-                >
-                  <Minimize2 className="w-3 h-3 text-slate-400" />
-                  <span>Collapse All</span>
-                </button>
-
-                {selectedMuscle !== 'All' && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedMuscle('All');
-                      setSelectedSubgroup('All');
-                    }}
-                    className="px-2.5 py-1 bg-neon-cyan/10 hover:bg-neon-cyan/20 text-neon-cyan rounded-lg border border-neon-cyan/30 font-bold flex items-center gap-1 transition"
-                  >
-                    <RotateCcw className="w-3 h-3" />
-                    <span>View All (Clear Filter)</span>
-                  </button>
-                )}
-              </div>
+              )}
             </div>
 
-            {/* The 7 Main Muscle Groups Accordions with Subgroups directly underneath */}
-            <div className="space-y-3">
-              {MAIN_MUSCLE_GROUPS.map((mg, idx) => {
-                const isSelected = selectedMuscle === mg;
-                const count = categoryCounts.muscles[mg] || 0;
-                const isExpanded = Boolean(expandedMuscles[mg]);
-                const subgroups = MUSCLE_SUBGROUPS[mg] || [];
-
-                return (
-                  <div
-                    key={mg}
-                    className={`rounded-2xl border transition overflow-hidden ${
-                      isSelected
-                        ? 'border-neon-cyan/50 bg-neon-cyan/5'
-                        : 'border-midnight-border bg-midnight-bg/60 hover:border-slate-600'
-                    }`}
-                  >
-                    {/* Main Category Header Row */}
-                    <div
-                      onClick={() => handleSelectMuscle(mg)}
-                      className="p-3.5 sm:p-4 flex items-center justify-between gap-3 cursor-pointer select-none transition hover:bg-white/[0.02]"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        {/* Number Index Badge */}
-                        <div className={`w-7 h-7 rounded-xl flex items-center justify-center font-black text-xs shrink-0 transition ${
-                          isSelected
-                            ? 'bg-neon-cyan text-slate-950 shadow-md shadow-neon-cyan/30'
-                            : 'bg-midnight-elevated text-slate-300 border border-midnight-border'
-                        }`}>
-                          {idx + 1}
-                        </div>
-
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h4 className={`text-sm font-black transition ${
-                              isSelected ? 'text-neon-cyan' : 'text-white'
-                            }`}>
-                              {mg}
-                            </h4>
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-midnight-elevated text-slate-300 border border-midnight-border">
-                              {count} exercises
-                            </span>
-                            <span className="text-[10px] text-slate-400 hidden sm:inline">
-                              &bull; {subgroups.length} subgroups
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Right controls: Subgroups count & Accordion Expand Button */}
-                      <div className="flex items-center gap-2 shrink-0">
-                        <button
-                          type="button"
-                          onClick={(e) => toggleMuscleExpand(mg, e)}
-                          className={`p-1.5 rounded-xl border transition ${
-                            isExpanded
-                              ? 'bg-neon-cyan/15 text-neon-cyan border-neon-cyan/30'
-                              : 'bg-midnight-elevated text-slate-400 hover:text-white border-midnight-border'
-                          }`}
-                          title={isExpanded ? `Collapse ${mg} subgroups` : `Expand ${mg} subgroups`}
-                        >
-                          {isExpanded ? (
-                            <ChevronDown className="w-4 h-4" />
-                          ) : (
-                            <ChevronRight className="w-4 h-4" />
-                          )}
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Subgroups Container - APPEARS DIRECTLY UNDERNEATH ITS MAIN MUSCLE GROUP */}
-                    {isExpanded && (
-                      <div className="px-4 pb-4 pt-1 border-t border-midnight-border/60 bg-midnight-card/40 animate-in fade-in duration-200">
-                        <div className="border-l-2 border-neon-cyan/30 pl-3.5 space-y-2 mt-2">
-                          <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">
-                            {mg} Subgroups:
-                          </span>
-
-                          <div className="flex flex-wrap items-center gap-2">
-                            {/* All [Muscle] button */}
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedMuscle(mg);
-                                setSelectedSubgroup('All');
-                              }}
-                              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
-                                isSelected && selectedSubgroup === 'All'
-                                  ? 'bg-neon-cyan text-slate-950 shadow-md shadow-neon-cyan/25 font-black'
-                                  : 'bg-midnight-elevated text-slate-300 hover:text-white border border-midnight-border'
-                              }`}
-                            >
-                              <span>All {mg}</span>
-                              <span className="text-[10px] font-mono px-1 rounded bg-black/25">
-                                {count}
-                              </span>
-                            </button>
-
-                            {/* Individual Subgroups */}
-                            {subgroups.map(sg => {
-                              const isSgActive = isSelected && selectedSubgroup === sg;
-                              const sgCount = categoryCounts.subgroups[sg] || 0;
-
-                              return (
-                                <button
-                                  key={sg}
-                                  type="button"
-                                  onClick={(e) => handleSelectSubgroup(mg, sg, e)}
-                                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 ${
-                                    isSgActive
-                                      ? 'bg-neon-violet text-white font-bold shadow-md shadow-neon-violet/30 border border-neon-violet'
-                                      : 'bg-midnight-elevated text-slate-300 hover:text-white border border-midnight-border'
-                                  }`}
-                                >
-                                  <span>{sg}</span>
-                                  <span className={`text-[10px] font-mono px-1 rounded ${
-                                    isSgActive ? 'bg-black/35 text-white' : 'bg-black/20 text-slate-400'
-                                  }`}>
-                                    {sgCount}
-                                  </span>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Filters Bar: Search, Equipment, Type, Difficulty */}
-          <div className="bg-midnight-card border border-midnight-border rounded-2xl p-4 space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              {/* Search across ALL exercises */}
-              <div className="relative">
-                <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3 pointer-events-none" />
-                <input
-                  type="text"
-                  placeholder="Search 190+ exercises, muscles, lats..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3.5 py-2.5 bg-midnight-bg border border-midnight-border rounded-xl text-white text-xs placeholder-slate-500 focus:outline-none focus:border-neon-cyan"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-3 top-3 text-slate-500 hover:text-white"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
-
-              {/* Equipment Filter */}
+            {/* The 3 Dropdowns: Equipment, Type, Difficulty */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
+                <label className="text-[10px] font-bold text-slate-400 mb-1 block uppercase tracking-wider">Equipment</label>
                 <select
                   value={selectedEquipment}
                   onChange={(e) => setSelectedEquipment(e.target.value)}
@@ -682,8 +497,8 @@ export const ExerciseLibraryPage = ({ setActiveTab }) => {
                 </select>
               </div>
 
-              {/* Movement Type Filter (Compound / Isolation) */}
               <div>
+                <label className="text-[10px] font-bold text-slate-400 mb-1 block uppercase tracking-wider">Exercise Type</label>
                 <select
                   value={selectedType}
                   onChange={(e) => setSelectedType(e.target.value)}
@@ -695,8 +510,8 @@ export const ExerciseLibraryPage = ({ setActiveTab }) => {
                 </select>
               </div>
 
-              {/* Difficulty Filter */}
               <div>
+                <label className="text-[10px] font-bold text-slate-400 mb-1 block uppercase tracking-wider">Difficulty Level</label>
                 <select
                   value={selectedDifficulty}
                   onChange={(e) => setSelectedDifficulty(e.target.value)}
@@ -709,8 +524,138 @@ export const ExerciseLibraryPage = ({ setActiveTab }) => {
               </div>
             </div>
 
+            {/* THE 7 MAIN MUSCLE GROUPS IN HORIZONTAL BELOW THE 3 DROPDOWNS */}
+            <div className="space-y-2 pt-3 border-t border-midnight-border">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-bold text-slate-300 flex items-center gap-1.5">
+                  <FolderTree className="w-3.5 h-3.5 text-neon-cyan" />
+                  <span>7 Muscle Groups:</span>
+                </span>
+
+                {selectedMuscle !== 'All' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedMuscle('All');
+                      setSelectedSubgroup('All');
+                    }}
+                    className="text-xs text-neon-cyan hover:underline font-semibold flex items-center gap-1"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    <span>Show All Muscles</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Horizontal scrollable row of the 7 Main Muscle Groups */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedMuscle('All');
+                    setSelectedSubgroup('All');
+                  }}
+                  className={`px-3.5 py-2.5 rounded-xl text-xs font-bold transition shrink-0 flex items-center gap-1.5 ${
+                    selectedMuscle === 'All'
+                      ? 'bg-neon-cyan text-slate-950 shadow-md shadow-neon-cyan/25 font-black'
+                      : 'bg-midnight-bg text-slate-300 hover:text-white border border-midnight-border hover:border-slate-600'
+                  }`}
+                >
+                  <span>All Muscles</span>
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/25">
+                    {allExercises.length}
+                  </span>
+                </button>
+
+                {MAIN_MUSCLE_GROUPS.map((mg, idx) => {
+                  const isSelected = selectedMuscle === mg;
+                  const count = categoryCounts.muscles[mg] || 0;
+
+                  return (
+                    <button
+                      key={mg}
+                      type="button"
+                      onClick={() => handleSelectMuscle(mg)}
+                      className={`px-3.5 py-2.5 rounded-xl text-xs font-bold transition shrink-0 flex items-center gap-2 ${
+                        isSelected
+                          ? 'bg-neon-cyan text-slate-950 shadow-md shadow-neon-cyan/25 font-black'
+                          : 'bg-midnight-bg text-slate-300 hover:text-white border border-midnight-border hover:border-slate-600'
+                      }`}
+                    >
+                      <span className={`w-5 h-5 rounded-md text-[10px] flex items-center justify-center font-bold ${
+                        isSelected ? 'bg-slate-950 text-neon-cyan' : 'bg-midnight-elevated text-slate-400'
+                      }`}>
+                        {idx + 1}
+                      </span>
+                      <span>{mg}</span>
+                      <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
+                        isSelected ? 'bg-black/30 text-slate-950 font-black' : 'bg-black/25 text-slate-400'
+                      }`}>
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Horizontal Subgroups row appearing directly underneath selected muscle group */}
+              {selectedMuscle !== 'All' && MUSCLE_SUBGROUPS[selectedMuscle] && (
+                <div className="p-3 rounded-2xl bg-midnight-bg border border-midnight-border space-y-2 animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-slate-300 flex items-center gap-1.5">
+                      <Target className="w-3.5 h-3.5 text-neon-cyan" />
+                      <span>{selectedMuscle} Subgroups ({MUSCLE_SUBGROUPS[selectedMuscle].length} anatomical regions):</span>
+                    </span>
+                    <span className="text-[11px] text-slate-400">Click a subgroup to filter exercises</span>
+                  </div>
+
+                  <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedSubgroup('All')}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition shrink-0 flex items-center gap-1.5 ${
+                        selectedSubgroup === 'All'
+                          ? 'bg-neon-cyan text-slate-950 font-black'
+                          : 'bg-midnight-elevated text-slate-300 hover:text-white border border-midnight-border'
+                      }`}
+                    >
+                      <span>All {selectedMuscle}</span>
+                      <span className="text-[10px] font-mono px-1 rounded bg-black/20">
+                        {categoryCounts.muscles[selectedMuscle] || 0}
+                      </span>
+                    </button>
+
+                    {MUSCLE_SUBGROUPS[selectedMuscle].map(sg => {
+                      const isSgActive = selectedSubgroup === sg;
+                      const sgCount = categoryCounts.subgroups[sg] || 0;
+
+                      return (
+                        <button
+                          key={sg}
+                          type="button"
+                          onClick={(e) => handleSelectSubgroup(selectedMuscle, sg, e)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 flex items-center gap-1.5 ${
+                            isSgActive
+                              ? 'bg-neon-violet text-white font-bold shadow-md shadow-neon-violet/30 border border-neon-violet'
+                              : 'bg-midnight-elevated text-slate-300 hover:text-white border border-midnight-border'
+                          }`}
+                        >
+                          <span>{sg}</span>
+                          <span className={`text-[10px] font-mono px-1 rounded ${
+                            isSgActive ? 'bg-black/30 text-white' : 'bg-black/20 text-slate-400'
+                          }`}>
+                            {sgCount}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Active Filters Summary & Reset */}
-            <div className="flex flex-wrap items-center justify-between text-xs text-slate-400 pt-1 gap-2 border-t border-midnight-border">
+            <div className="flex flex-wrap items-center justify-between text-xs text-slate-400 pt-2 gap-2 border-t border-midnight-border">
               <div className="flex items-center gap-2 flex-wrap">
                 <span>
                   Showing <strong className="text-white">{filteredExercises.length}</strong> of {allExercises.length} exercises
@@ -729,6 +674,7 @@ export const ExerciseLibraryPage = ({ setActiveTab }) => {
 
               {(searchQuery || selectedMuscle !== 'All' || selectedSubgroup !== 'All' || selectedEquipment !== 'All Equipment' || selectedDifficulty !== 'All Levels' || selectedType !== 'All Types') && (
                 <button
+                  type="button"
                   onClick={handleResetFilters}
                   className="text-neon-cyan hover:underline font-semibold flex items-center gap-1"
                 >

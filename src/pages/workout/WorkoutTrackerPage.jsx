@@ -1076,157 +1076,133 @@ export const WorkoutTrackerPage = ({ setActiveTab }) => {
                 </select>
               </div>
 
-              {/* Hierarchical Accordions for 7 Main Muscle Groups & Subgroups */}
+              {/* 7 Main Muscle Groups in Horizontal below the 3 dropdowns */}
               <div className="space-y-2 pt-2 border-t border-midnight-border">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-bold text-slate-300 flex items-center gap-1.5">
                     <FolderTree className="w-3.5 h-3.5 text-neon-cyan" />
-                    <span>7 Muscle Groups & Subgroups:</span>
+                    <span>Muscle Groups:</span>
                   </span>
 
-                  <div className="flex items-center gap-1.5 text-[11px]">
+                  {selectedMuscleFilter !== 'All' && (
                     <button
                       type="button"
-                      onClick={handleExpandAllInModal}
-                      className="px-2 py-0.5 rounded bg-midnight-elevated text-slate-300 hover:text-white"
-                      title="Expand all categories"
+                      onClick={() => {
+                        setSelectedMuscleFilter('All');
+                        setSelectedSubgroupFilter('All');
+                      }}
+                      className="text-[11px] text-neon-cyan hover:underline font-semibold flex items-center gap-1"
                     >
-                      Expand All
+                      <RotateCcw className="w-3 h-3" />
+                      <span>Show All</span>
                     </button>
-                    <button
-                      type="button"
-                      onClick={handleCollapseAllInModal}
-                      className="px-2 py-0.5 rounded bg-midnight-elevated text-slate-400 hover:text-white"
-                      title="Collapse all categories"
-                    >
-                      Collapse All
-                    </button>
-                    {selectedMuscleFilter !== 'All' && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedMuscleFilter('All');
-                          setSelectedSubgroupFilter('All');
-                        }}
-                        className="px-2 py-0.5 rounded bg-neon-cyan/15 text-neon-cyan font-bold"
-                      >
-                        Clear
-                      </button>
-                    )}
-                  </div>
+                  )}
                 </div>
 
-                {/* 7 Muscle Group Accordions */}
-                <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                {/* Horizontal scrollable row of the 7 Main Muscle Groups */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedMuscleFilter('All');
+                      setSelectedSubgroupFilter('All');
+                    }}
+                    className={`px-3 py-2 rounded-xl text-xs font-bold transition shrink-0 flex items-center gap-1.5 ${
+                      selectedMuscleFilter === 'All'
+                        ? 'bg-neon-cyan text-slate-950 shadow-md shadow-neon-cyan/25 font-black'
+                        : 'bg-midnight-elevated text-slate-300 hover:text-white border border-midnight-border hover:border-slate-600'
+                    }`}
+                  >
+                    <span>All Muscles</span>
+                    <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-black/25">
+                      {allAvailableExercises.length}
+                    </span>
+                  </button>
+
                   {MAIN_MUSCLE_GROUPS.map((mg, idx) => {
                     const isSelected = selectedMuscleFilter === mg;
                     const count = trackerCategoryCounts.muscles[mg] || 0;
-                    const isExpanded = Boolean(expandedMusclesInModal[mg]);
-                    const subs = MUSCLE_SUBGROUPS[mg] || [];
 
                     return (
-                      <div
+                      <button
                         key={mg}
-                        className={`rounded-xl border transition overflow-hidden text-xs ${
+                        type="button"
+                        onClick={() => {
+                          if (selectedMuscleFilter === mg && selectedSubgroupFilter === 'All') {
+                            setSelectedMuscleFilter('All');
+                            setSelectedSubgroupFilter('All');
+                          } else {
+                            setSelectedMuscleFilter(mg);
+                            setSelectedSubgroupFilter('All');
+                          }
+                        }}
+                        className={`px-3 py-2 rounded-xl text-xs font-bold transition shrink-0 flex items-center gap-1.5 ${
                           isSelected
-                            ? 'border-neon-cyan/40 bg-neon-cyan/5'
-                            : 'border-midnight-border bg-midnight-bg/60'
+                            ? 'bg-neon-cyan text-slate-950 shadow-md shadow-neon-cyan/25 font-black'
+                            : 'bg-midnight-elevated text-slate-300 hover:text-white border border-midnight-border hover:border-slate-600'
                         }`}
                       >
-                        {/* Muscle Header Row */}
-                        <div
-                          onClick={() => {
-                            if (selectedMuscleFilter === mg && selectedSubgroupFilter === 'All') {
-                              setSelectedMuscleFilter('All');
-                              setSelectedSubgroupFilter('All');
-                            } else {
-                              setSelectedMuscleFilter(mg);
-                              setSelectedSubgroupFilter('All');
-                              setExpandedMusclesInModal(prev => ({ ...prev, [mg]: true }));
-                            }
-                          }}
-                          className="p-2.5 flex items-center justify-between cursor-pointer select-none hover:bg-white/[0.02]"
-                        >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className={`w-5 h-5 rounded-md flex items-center justify-center font-bold text-[10px] ${
-                              isSelected ? 'bg-neon-cyan text-slate-950' : 'bg-midnight-elevated text-slate-300'
-                            }`}>
-                              {idx + 1}
-                            </span>
-                            <span className={`font-bold truncate ${isSelected ? 'text-neon-cyan' : 'text-white'}`}>
-                              {mg}
-                            </span>
-                            <span className="text-[10px] text-slate-400 font-mono">
-                              ({count})
-                            </span>
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={(e) => toggleMuscleExpandInModal(mg, e)}
-                            className="p-1 rounded text-slate-400 hover:text-white"
-                          >
-                            {isExpanded ? (
-                              <ChevronDown className="w-3.5 h-3.5 text-neon-cyan" />
-                            ) : (
-                              <ChevronRight className="w-3.5 h-3.5" />
-                            )}
-                          </button>
-                        </div>
-
-                        {/* Subgroups Container Nested Directly Under Main Muscle Group */}
-                        {isExpanded && (
-                          <div className="px-3 pb-2.5 pt-1 border-t border-midnight-border/50 bg-midnight-card/40">
-                            <div className="border-l-2 border-neon-cyan/30 pl-2.5 space-y-1.5 mt-1">
-                              <div className="flex flex-wrap items-center gap-1.5">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedMuscleFilter(mg);
-                                    setSelectedSubgroupFilter('All');
-                                  }}
-                                  className={`px-2 py-0.5 rounded-lg text-[11px] font-bold transition ${
-                                    isSelected && selectedSubgroupFilter === 'All'
-                                      ? 'bg-neon-cyan text-slate-950 font-black'
-                                      : 'bg-midnight-elevated text-slate-300 hover:text-white'
-                                  }`}
-                                >
-                                  All {mg} ({count})
-                                </button>
-
-                                {subs.map(sg => {
-                                  const isSgActive = isSelected && selectedSubgroupFilter === sg;
-                                  const sgCount = trackerCategoryCounts.subgroups[sg] || 0;
-
-                                  return (
-                                    <button
-                                      key={sg}
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setSelectedMuscleFilter(mg);
-                                        setSelectedSubgroupFilter(sg);
-                                      }}
-                                      className={`px-2 py-0.5 rounded-lg text-[11px] transition flex items-center gap-1 ${
-                                        isSgActive
-                                          ? 'bg-neon-violet text-white font-bold border border-neon-violet shadow-sm'
-                                          : 'bg-midnight-elevated text-slate-300 hover:text-white'
-                                      }`}
-                                    >
-                                      <span>{sg}</span>
-                                      <span className="text-[9px] font-mono opacity-80">({sgCount})</span>
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                        <span className={`w-4 h-4 rounded-md text-[10px] flex items-center justify-center font-bold ${
+                          isSelected ? 'bg-slate-950 text-neon-cyan' : 'bg-midnight-card text-slate-400'
+                        }`}>
+                          {idx + 1}
+                        </span>
+                        <span>{mg}</span>
+                        <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded ${
+                          isSelected ? 'bg-black/30 text-slate-950 font-black' : 'bg-black/25 text-slate-400'
+                        }`}>
+                          {count}
+                        </span>
+                      </button>
                     );
                   })}
                 </div>
+
+                {/* Subgroups Horizontal Row (Appears directly underneath selected muscle group) */}
+                {selectedMuscleFilter !== 'All' && MUSCLE_SUBGROUPS[selectedMuscleFilter] && (
+                  <div className="p-2.5 rounded-xl bg-midnight-card/80 border border-midnight-border space-y-1.5 animate-in fade-in duration-200">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                      {selectedMuscleFilter} Subgroups:
+                    </span>
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedSubgroupFilter('All')}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition shrink-0 flex items-center gap-1 ${
+                          selectedSubgroupFilter === 'All'
+                            ? 'bg-neon-cyan text-slate-950 shadow-sm font-black'
+                            : 'bg-midnight-elevated text-slate-300 hover:text-white'
+                        }`}
+                      >
+                        <span>All {selectedMuscleFilter}</span>
+                        <span className="text-[9px] font-mono opacity-80">
+                          ({trackerCategoryCounts.muscles[selectedMuscleFilter] || 0})
+                        </span>
+                      </button>
+
+                      {MUSCLE_SUBGROUPS[selectedMuscleFilter].map(sg => {
+                        const isSgActive = selectedSubgroupFilter === sg;
+                        const sgCount = trackerCategoryCounts.subgroups[sg] || 0;
+
+                        return (
+                          <button
+                            key={sg}
+                            type="button"
+                            onClick={() => setSelectedSubgroupFilter(sg)}
+                            className={`px-2.5 py-1 rounded-lg text-[11px] transition shrink-0 flex items-center gap-1 ${
+                              isSgActive
+                                ? 'bg-neon-violet text-white font-bold border border-neon-violet shadow-sm'
+                                : 'bg-midnight-elevated text-slate-300 hover:text-white'
+                            }`}
+                          >
+                            <span>{sg}</span>
+                            <span className="text-[9px] font-mono opacity-80">({sgCount})</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Active Filter Breadcrumb */}
