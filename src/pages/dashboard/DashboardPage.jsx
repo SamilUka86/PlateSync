@@ -130,22 +130,65 @@ export const DashboardPage = ({ setActiveTab }) => {
             </div>
           </div>
 
-          {/* Quick Action CTAs */}
-          <div className="flex flex-wrap items-center gap-3 shrink-0">
+          {/* Circular Workout Agent for Starting the Workout */}
+          <div className="flex flex-col items-center justify-center shrink-0 pt-2 md:pt-0">
             <button
-              onClick={() => setActiveTab('calculator')}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-midnight-border bg-midnight-elevated hover:bg-[#1f2f50] text-slate-200 text-xs font-bold transition hover:text-white"
-            >
-              <Calculator className="w-4 h-4 text-neon-cyan" />
-              <span>Open Weight Calculator</span>
-            </button>
-
-            <button
+              type="button"
               onClick={() => setActiveTab('tracker')}
-              className="flex items-center gap-2 px-5 py-2.5 bg-neon-cyan hover:bg-[#29bfcd] text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-neon-cyan/25 transition active:scale-95"
+              className="relative group focus:outline-none flex flex-col items-center cursor-pointer transition-all duration-300 active:scale-95 hover:scale-105"
+              aria-label="Start Workout Session"
+              title="Start Today's Workout Session"
             >
-              <Plus className="w-4 h-4" />
-              <span>Quick Start Workout</span>
+              {/* Outer Ambient Glowing Atmosphere */}
+              <div className="absolute -inset-4 rounded-full bg-gradient-to-tr from-neon-cyan/40 via-neon-violet/30 to-neon-cyan/40 blur-2xl opacity-60 group-hover:opacity-100 transition-opacity duration-500 animate-pulse pointer-events-none" />
+
+              {/* Concentric Rotating / Glowing Outer Ring */}
+              <div className="relative w-32 h-32 sm:w-36 sm:h-36 rounded-full p-[2.5px] bg-gradient-to-tr from-neon-cyan via-neon-violet to-neon-cyan shadow-[0_0_30px_rgba(53,217,232,0.45)] group-hover:shadow-[0_0_50px_rgba(53,217,232,0.8)] transition-all duration-300">
+                
+                {/* Secondary Inset Bezel */}
+                <div className="w-full h-full rounded-full p-1 bg-midnight-bg/95 backdrop-blur-xl flex items-center justify-center">
+                  
+                  {/* Innermost Core Agent Orb */}
+                  <div className="w-full h-full rounded-full bg-gradient-to-br from-[#0c182e] via-[#08101f] to-[#132242] border border-neon-cyan/40 group-hover:border-neon-cyan flex flex-col items-center justify-center relative overflow-hidden transition-all duration-300 shadow-inner">
+                    
+                    {/* Background Radial Sheen */}
+                    <div className="absolute inset-0 bg-radial from-neon-cyan/20 via-transparent to-transparent opacity-60 group-hover:opacity-100 transition-opacity" />
+
+                    {/* Agent Pulse Wave Ring */}
+                    <div className="absolute w-16 h-16 rounded-full border border-neon-cyan/30 animate-ping pointer-events-none" />
+
+                    {/* Central Play / Dumbbell Icon */}
+                    <div className="relative z-10 w-11 h-11 rounded-2xl bg-gradient-to-tr from-neon-cyan/20 to-neon-violet/20 border border-neon-cyan/50 flex items-center justify-center text-neon-cyan group-hover:bg-neon-cyan group-hover:text-slate-950 transition-all duration-300 shadow-glow-cyan">
+                      <Play className="w-5 h-5 fill-current ml-0.5 group-hover:scale-110 transition-transform" />
+                    </div>
+
+                    {/* Primary Button Text */}
+                    <div className="relative z-10 mt-1.5 text-center leading-none">
+                      <span className="block text-[11px] sm:text-xs font-black uppercase tracking-wider text-white group-hover:text-neon-cyan transition-colors">
+                        START
+                      </span>
+                      <span className="block text-[8px] font-bold text-slate-400 group-hover:text-slate-200 tracking-wider">
+                        WORKOUT
+                      </span>
+                    </div>
+
+                    {/* Audio / Agent Pulse Dots */}
+                    <div className="relative z-10 flex items-center gap-1 mt-1">
+                      <span className="w-1 h-2 rounded-full bg-neon-cyan/80 animate-pulse" />
+                      <span className="w-1 h-3.5 rounded-full bg-neon-cyan" />
+                      <span className="w-1 h-2 rounded-full bg-neon-cyan/80 animate-pulse" />
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+
+              {/* Status Pill Badge underneath the orb */}
+              <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-midnight-bg/90 border border-midnight-border group-hover:border-neon-cyan/50 text-[10px] font-bold text-slate-300 shadow-lg transition">
+                <span className="w-1.5 h-1.5 rounded-full bg-neon-cyan animate-ping" />
+                <span className="text-white font-mono font-bold">Workout Agent</span>
+                <span className="text-neon-cyan text-[9px] uppercase tracking-wider">&bull; Tap to Start</span>
+              </div>
             </button>
           </div>
         </div>

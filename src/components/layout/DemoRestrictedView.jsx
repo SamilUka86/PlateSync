@@ -24,6 +24,7 @@ export const DemoRestrictedView = ({ activeTab, setActiveTab, onOpenAuth }) => {
       case 'history': return 'Workout History & Logs';
       case 'analytics': return 'Progress & Performance Analytics';
       case 'records': return 'Personal Records & Milestones';
+      case 'bodyweight': return 'Body Weight Tracker';
       case 'profile': return 'Athlete Profile';
       case 'settings': return 'Platform Settings';
       default: return 'Feature';

@@ -14,7 +14,10 @@ import {
   RotateCcw, 
   X,
   LineChart as ChartIcon,
-  Sparkles
+  Sparkles,
+  Lock,
+  LogIn,
+  Maximize2
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -67,9 +70,11 @@ export const formatDisplayDate = (dateStr) => {
   return dateStr;
 };
 
-export const SidebarWeightTracker = ({ collapsed = false, onExpandSidebar }) => {
-  const { currentUser, userProfile, updateProfile, isDemoMode } = useAuth();
+export const SidebarWeightTracker = ({ collapsed = false, onExpandSidebar, onOpenAuth, onNavigateToSection }) => {
+  const { currentUser, userProfile, updateProfile, isDemoMode, demoAccessMode } = useAuth();
   const { addNotification } = useNotification();
+
+  const isLocked = (!currentUser || (isDemoMode && demoAccessMode === 'calculator-only'));
 
   const userId = currentUser?.uid || (isDemoMode ? 'demo_athlete_platesync' : 'guest_local');
   const preferredUnit = userProfile?.preferredUnit || 'KG';
@@ -268,6 +273,23 @@ export const SidebarWeightTracker = ({ collapsed = false, onExpandSidebar }) => 
   // 1. COLLAPSED SIDEBAR VIEW
   // ==========================================
   if (collapsed) {
+    if (isLocked) {
+      return (
+        <div className="flex flex-col items-center">
+          <button
+            type="button"
+            onClick={onOpenAuth}
+            className="relative p-2.5 rounded-xl bg-midnight-card border border-midnight-border hover:border-neon-cyan/50 text-slate-500 hover:text-white transition group"
+            title="Sign in to track Body Weight"
+            aria-label="Sign in to track Body Weight"
+          >
+            <Scale className="w-4 h-4" />
+            <Lock className="w-2.5 h-2.5 absolute -top-1 -right-1 text-neon-cyan" />
+          </button>
+        </div>
+      );
+    }
+
     return (
       <div className="flex flex-col items-center">
         <button
@@ -437,6 +459,38 @@ export const SidebarWeightTracker = ({ collapsed = false, onExpandSidebar }) => 
   // ==========================================
   // 2. EXPANDED SIDEBAR VIEW
   // ==========================================
+  if (isLocked) {
+    return (
+      <div className="rounded-2xl bg-midnight-card border border-midnight-border p-3 transition-all duration-200">
+        <div className="flex items-center justify-between pb-2 border-b border-midnight-border/60">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-lg bg-midnight-bg border border-midnight-border flex items-center justify-center text-slate-500">
+              <Scale className="w-3.5 h-3.5" />
+            </div>
+            <span className="text-[11px] font-bold text-slate-300">Body Weight</span>
+          </div>
+          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-midnight-bg text-slate-500 border border-midnight-border flex items-center gap-0.5">
+            <Lock className="w-2.5 h-2.5 text-neon-cyan" />
+            <span>Login Required</span>
+          </span>
+        </div>
+        <div className="pt-2.5 text-center space-y-2">
+          <p className="text-[10px] text-slate-400 leading-tight">
+            Sign in to record body weight in KG/LB and view your progression curve.
+          </p>
+          <button
+            type="button"
+            onClick={onOpenAuth}
+            className="w-full py-1.5 px-3 rounded-xl bg-neon-cyan/10 hover:bg-neon-cyan/20 border border-neon-cyan/30 text-neon-cyan font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-95"
+          >
+            <LogIn className="w-3 h-3" />
+            <span>Sign In to Track</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="rounded-2xl bg-midnight-card border border-midnight-border p-3 transition-all duration-200 hover:border-neon-cyan/30">
@@ -468,6 +522,16 @@ export const SidebarWeightTracker = ({ collapsed = false, onExpandSidebar }) => 
             <span className="text-xs font-mono font-bold text-neon-cyan bg-neon-cyan/10 px-1.5 py-0.5 rounded border border-neon-cyan/20">
               {displayCurrentWeight}
             </span>
+            {onNavigateToSection && (
+              <button
+                type="button"
+                onClick={() => onNavigateToSection('bodyweight')}
+                className="p-1 rounded text-slate-400 hover:text-neon-cyan transition"
+                title="Open full Body Weight section"
+              >
+                <Maximize2 className="w-3 h-3" />
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setIsExpanded(!isExpanded)}

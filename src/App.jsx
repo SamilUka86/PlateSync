@@ -17,6 +17,7 @@ import { ExerciseLibraryPage } from './pages/library/ExerciseLibraryPage';
 import { WorkoutHistoryPage } from './pages/history/WorkoutHistoryPage';
 import { AnalyticsPage } from './pages/analytics/AnalyticsPage';
 import { PersonalRecordsPage } from './pages/records/PersonalRecordsPage';
+import { BodyWeightPage } from './pages/bodyweight/BodyWeightPage';
 import { ProfilePage } from './pages/profile/ProfilePage';
 import { SettingsPage } from './pages/settings/SettingsPage';
 
@@ -126,6 +127,7 @@ const MainAppLayout = () => {
               {activeTab === 'history' && <WorkoutHistoryPage setActiveTab={setActiveTab} />}
               {activeTab === 'analytics' && <AnalyticsPage setActiveTab={setActiveTab} />}
               {activeTab === 'records' && <PersonalRecordsPage setActiveTab={setActiveTab} />}
+              {activeTab === 'bodyweight' && <BodyWeightPage setActiveTab={setActiveTab} />}
               {activeTab === 'profile' && <ProfilePage setActiveTab={setActiveTab} />}
               {activeTab === 'settings' && <SettingsPage setActiveTab={setActiveTab} />}
             </>

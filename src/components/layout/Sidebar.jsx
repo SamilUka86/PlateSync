@@ -16,7 +16,8 @@ import {
   ChevronRight,
   Sparkles,
   Download,
-  Lock
+  Lock,
+  Scale
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { SidebarWeightTracker } from './SidebarWeightTracker';
@@ -30,6 +31,7 @@ const NAV_ITEMS = [
   { id: 'history', label: 'Workout History', icon: History },
   { id: 'analytics', label: 'Progress & Analytics', icon: TrendingUp },
   { id: 'records', label: 'Personal Records', icon: Trophy, badge: 'PRs' },
+  { id: 'bodyweight', label: 'Body Weight', icon: Scale, badge: 'Track' },
   { id: 'profile', label: 'Profile', icon: User },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
@@ -179,6 +181,8 @@ export const Sidebar = ({ activeTab, setActiveTab, isMobileOpen, setIsMobileOpen
             <SidebarWeightTracker
               collapsed={collapsed}
               onExpandSidebar={() => setCollapsed(false)}
+              onOpenAuth={onOpenAuth}
+              onNavigateToSection={(tab) => handleSelectTab(tab)}
             />
           </div>
         </div>

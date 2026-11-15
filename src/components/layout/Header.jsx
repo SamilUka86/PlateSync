@@ -55,6 +55,7 @@ export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, s
       case 'history': return 'Workout History & Logs';
       case 'analytics': return 'Performance & Analytics';
       case 'records': return 'Personal Records & Achievements';
+      case 'bodyweight': return 'Body Weight Tracker & Analytics';
       case 'profile': return 'Athlete Profile';
       case 'settings': return 'Platform Settings';
       default: return 'PlateSync';
