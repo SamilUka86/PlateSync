@@ -1,5 +1,6 @@
 import React from 'react';
 import { Heart, Mail } from 'lucide-react';
+import { getPrimaryAdminEmail } from '../../utils/adminSecurity';
 
 /**
  * =========================================================================
@@ -18,7 +19,9 @@ export const SOCIAL_LINKS = {
   github: 'https://github.com/SamilUka86',
 
   // Direct Contact Email:
-  email: 'mailto:platesync86@gmail.com'
+  get email() {
+    return `mailto:${getPrimaryAdminEmail()}`;
+  }
 };
 
 // Scalable Vector Icons for Social Platforms
@@ -125,7 +128,7 @@ export const Footer = ({ className = "" }) => {
           <a
             href={SOCIAL_LINKS.email}
             aria-label="Contact via Email"
-            title="Contact Support: platesync86@gmail.com"
+            title={`Contact Support: ${getPrimaryAdminEmail()}`}
             className="w-8 h-8 rounded-xl bg-midnight-bg border border-midnight-border flex items-center justify-center text-slate-400 hover:text-neon-cyan hover:border-neon-cyan/40 hover:bg-neon-cyan/10 transition duration-200 transform hover:scale-110 active:scale-95 shadow-sm"
           >
             <Mail className="w-4 h-4" />
@@ -135,7 +138,7 @@ export const Footer = ({ className = "" }) => {
         {/* Contact Email Note & Brand Copyright */}
         <div className="space-y-0.5">
           <p className="text-[11.5px] text-slate-400 font-mono">
-            Contact: <a href={SOCIAL_LINKS.email} className="text-neon-cyan hover:underline">platesync86@gmail.com</a>
+            Contact: <a href={SOCIAL_LINKS.email} className="text-neon-cyan hover:underline">{getPrimaryAdminEmail()}</a>
           </p>
           <p className="text-[10.5px] text-slate-500 font-medium">
             PlateSync &copy; {new Date().getFullYear()} &bull; Smart Mixed-Unit Barbell &amp; Workout Tracking Platform

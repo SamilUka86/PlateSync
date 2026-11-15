@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useAdmin } from '../../context/AdminContext';
+import { isDesignatedAdminEmail } from '../../utils/adminSecurity';
 
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -42,12 +43,11 @@ export const Sidebar = ({ activeTab, setActiveTab, isMobileOpen, setIsMobileOpen
   const { isAdmin, adminSession } = useAdmin();
   const [logoClicks, setLogoClicks] = useState(0);
 
-  // Switch to admin portal & admin features available strictly ONLY if logged-in user email is platesync86@gmail.com
+  // Switch to admin portal & admin features available strictly ONLY if logged-in user email is authorized administrator
   const isAdminUser = Boolean(
     currentUser &&
     !isDemoMode &&
-    (currentUser.email?.toLowerCase() === 'platesync86@gmail.com' ||
-     currentUser.email?.toLowerCase() === 'samilplatesync@gmail.com')
+    isDesignatedAdminEmail(currentUser.email)
   );
 
   const handleLogoAction = () => {

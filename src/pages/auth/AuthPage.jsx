@@ -21,6 +21,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useAdmin } from '../../context/AdminContext';
 import { useNotification } from '../../context/NotificationContext';
 import { OWNER_EMAIL } from '../../services/admin/adminAuthService';
+import { isDesignatedAdminEmail, getPrimaryAdminEmail } from '../../utils/adminSecurity';
 import { ForgotPasswordModal } from '../../components/auth/ForgotPasswordModal';
 import { FirebaseSetupModal } from '../../components/auth/FirebaseSetupModal';
 import { GoogleAuthSetupModal } from '../../components/auth/GoogleAuthSetupModal';
@@ -161,7 +162,7 @@ export const AuthPage = ({ onClose, onSuccess, onActivateAdminPortal }) => {
     }
 
     const trimmedEmail = email.trim().toLowerCase();
-    const isAdminTarget = isAdminLogin || (!isSignUp && (trimmedEmail === (OWNER_EMAIL || 'platesync86@gmail.com').toLowerCase() || trimmedEmail === 'samilplatesync@gmail.com'));
+    const isAdminTarget = isAdminLogin || (!isSignUp && isDesignatedAdminEmail(trimmedEmail));
 
     if (isAdminTarget) {
       try {
@@ -259,7 +260,7 @@ export const AuthPage = ({ onClose, onSuccess, onActivateAdminPortal }) => {
         return;
       }
       const gEmail = gUser?.email?.toLowerCase();
-      if (gEmail !== 'platesync86@gmail.com' && gEmail !== 'samilplatesync@gmail.com') {
+      if (!isDesignatedAdminEmail(gEmail)) {
         if (logoutAdminAccount) logoutAdminAccount();
       }
       addNotification('Signed in with Google successfully!', 'success');
@@ -836,7 +837,7 @@ export const AuthPage = ({ onClose, onSuccess, onActivateAdminPortal }) => {
                   onClick={() => {
                     setIsAdminLogin(true);
                     setIsSignUp(false);
-                    setEmail(OWNER_EMAIL || 'platesync86@gmail.com');
+                    setEmail(OWNER_EMAIL || getPrimaryAdminEmail());
                     setPassword('');
                     setErrorMessage('');
                   }}

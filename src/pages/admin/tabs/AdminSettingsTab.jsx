@@ -18,6 +18,7 @@ import {
   getGlobalExercises,
   getAdminWorkoutPrograms 
 } from '../../../services/admin/adminDataService';
+import { getPrimaryAdminEmail } from '../../../utils/adminSecurity';
 import { useNotification } from '../../../context/NotificationContext';
 
 export const AdminSettingsTab = () => {
@@ -37,10 +38,11 @@ export const AdminSettingsTab = () => {
         getGlobalExercises(),
         getAdminWorkoutPrograms()
       ]);
+      const defaultAdminMail = getPrimaryAdminEmail();
       const normalizedCfg = {
         ...cfg,
-        supportEmail: (cfg.supportEmail === 'support@platesync.app' || !cfg.supportEmail) ? 'platesync86@gmail.com' : cfg.supportEmail,
-        adminEmail: cfg.adminEmail || 'platesync86@gmail.com'
+        supportEmail: (cfg.supportEmail === 'support@platesync.app' || !cfg.supportEmail) ? defaultAdminMail : cfg.supportEmail,
+        adminEmail: cfg.adminEmail || defaultAdminMail
       };
       setSettings(normalizedCfg);
       setExercises(exList);
@@ -287,9 +289,9 @@ export const AdminSettingsTab = () => {
               </label>
               <input
                 type="email"
-                value={settings.supportEmail || 'platesync86@gmail.com'}
+                value={settings.supportEmail || getPrimaryAdminEmail()}
                 onChange={(e) => setSettings({ ...settings, supportEmail: e.target.value })}
-                placeholder="platesync86@gmail.com"
+                placeholder={getPrimaryAdminEmail()}
                 className="w-full px-3 py-2 bg-midnight-bg border border-midnight-border rounded-xl text-white text-xs font-mono"
               />
             </div>
@@ -301,9 +303,9 @@ export const AdminSettingsTab = () => {
               </label>
               <input
                 type="email"
-                value={settings.adminEmail || 'platesync86@gmail.com'}
+                value={settings.adminEmail || getPrimaryAdminEmail()}
                 onChange={(e) => setSettings({ ...settings, adminEmail: e.target.value })}
-                placeholder="platesync86@gmail.com"
+                placeholder={getPrimaryAdminEmail()}
                 className="w-full px-3 py-2 bg-midnight-bg border border-midnight-border rounded-xl text-white text-xs font-mono"
               />
             </div>

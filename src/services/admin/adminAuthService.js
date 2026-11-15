@@ -15,9 +15,15 @@ import {
 import { auth, db, isFirebaseConfigured } from '../firebase/config';
 import { createUserProfileDocument } from '../firestore/firestoreService';
 import { logAdminAction } from './adminDataService';
+import { 
+  getPrimaryAdminEmail, 
+  getLegacyAdminEmail, 
+  isDesignatedAdminEmail, 
+  verifyMasterAdminPassword 
+} from '../../utils/adminSecurity';
 
-export const OWNER_EMAIL = 'platesync86@gmail.com';
-export const LEGACY_OWNER_EMAIL = 'samilplatesync@gmail.com';
+export const OWNER_EMAIL = getPrimaryAdminEmail();
+export const LEGACY_OWNER_EMAIL = getLegacyAdminEmail();
 const ADMIN_SESSION_KEY = 'platesync_admin_session';
 const FAILED_ATTEMPTS_KEY = 'platesync_admin_failed_attempts';
 const MAX_FAILED_ATTEMPTS = 5;
@@ -83,7 +89,7 @@ export const verifyAdminPrivileges = async (user) => {
         uid: user.uid,
         email: user.email,
         role: tokenResult.claims.owner ? 'owner' : (tokenResult.claims.role || 'admin'),
-        isOwner: Boolean(tokenResult.claims.owner || user.email?.toLowerCase() === OWNER_EMAIL.toLowerCase() || user.email?.toLowerCase() === LEGACY_OWNER_EMAIL.toLowerCase()),
+        isOwner: Boolean(tokenResult.claims.owner || isDesignatedAdminEmail(user.email)),
         customClaimsVerified: true
       };
     }
@@ -100,7 +106,7 @@ export const verifyAdminPrivileges = async (user) => {
       if (adminSnap.exists()) {
         const adminData = adminSnap.data();
         if (adminData.active !== false) {
-          const isOwner = user.email?.toLowerCase() === OWNER_EMAIL.toLowerCase() || user.email?.toLowerCase() === LEGACY_OWNER_EMAIL.toLowerCase() || adminData.role === 'owner';
+          const isOwner = isDesignatedAdminEmail(user.email) || adminData.role === 'owner';
           return {
             uid: user.uid,
             email: user.email,
@@ -113,7 +119,7 @@ export const verifyAdminPrivileges = async (user) => {
       }
 
       // 3. Special owner bootstrap check: If authenticated user matches designated admin email and record doesn't exist yet
-      if (user.email?.toLowerCase() === OWNER_EMAIL.toLowerCase() || user.email?.toLowerCase() === LEGACY_OWNER_EMAIL.toLowerCase()) {
+      if (isDesignatedAdminEmail(user.email)) {
         const ownerPayload = {
           uid: user.uid,
           email: user.email,
@@ -151,7 +157,7 @@ export const verifyAdminPrivileges = async (user) => {
  */
 export const loginAdmin = async (email, password) => {
   const trimmedEmail = (email || '').trim().toLowerCase();
-  const isDesignatedAdmin = trimmedEmail === OWNER_EMAIL.toLowerCase() || trimmedEmail === LEGACY_OWNER_EMAIL.toLowerCase();
+  const isDesignatedAdmin = isDesignatedAdminEmail(trimmedEmail);
 
   // If designated admin, clear any previous client lockout
   if (isDesignatedAdmin) {
@@ -165,8 +171,8 @@ export const loginAdmin = async (email, password) => {
     }
   }
 
-  // Designated platform administrator master credentials verification
-  const isMasterPasswordMatch = isDesignatedAdmin && (password === 'Samil_platesync86.');
+  // Designated platform administrator master credentials verification via SHA-256 hash
+  const isMasterPasswordMatch = isDesignatedAdmin && (await verifyMasterAdminPassword(password));
 
   let user = null;
   let adminAuthInfo = null;

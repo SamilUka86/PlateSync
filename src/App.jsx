@@ -15,6 +15,7 @@ import { AdminLoginPage } from './pages/admin/AdminLoginPage';
 import { UserFeedbackModal } from './components/feedback/UserFeedbackModal';
 import { getPlatformSettings } from './services/admin/adminDataService';
 import { useUserActivityTracker } from './hooks/useUserActivityTracker';
+import { isDesignatedAdminEmail } from './utils/adminSecurity';
 
 // Pages
 import { DashboardPage } from './pages/dashboard/DashboardPage';
@@ -93,7 +94,7 @@ const MainAppLayout = () => {
     }
     if (currentUser) {
       const email = currentUser.email?.toLowerCase();
-      if (email !== 'platesync86@gmail.com' && email !== 'samilplatesync@gmail.com') {
+      if (!isDesignatedAdminEmail(email)) {
         setIsAdminViewOpen(false);
         try {
           localStorage.removeItem('platesync_admin_view_active');

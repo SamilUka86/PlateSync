@@ -5,6 +5,7 @@ import {
   getActiveAdminSession, 
   verifyAdminPrivileges 
 } from '../services/admin/adminAuthService';
+import { isDesignatedAdminEmail } from '../utils/adminSecurity';
 import { auth, isFirebaseConfigured } from '../services/firebase/config';
 
 const AdminContext = createContext({});
@@ -16,7 +17,7 @@ export const AdminProvider = ({ children }) => {
     try {
       const cur = auth?.currentUser;
       const curEmail = cur?.email?.toLowerCase();
-      if (curEmail === 'platesync86@gmail.com' || curEmail === 'samilplatesync@gmail.com') {
+      if (isDesignatedAdminEmail(curEmail)) {
         const session = {
           uid: cur.uid,
           email: curEmail,
@@ -45,7 +46,7 @@ export const AdminProvider = ({ children }) => {
         if (isFirebaseConfigured() && auth) {
           const cur = auth.currentUser;
           const curEmail = cur?.email?.toLowerCase();
-          if (curEmail === 'platesync86@gmail.com' || curEmail === 'samilplatesync@gmail.com') {
+          if (isDesignatedAdminEmail(curEmail)) {
             const session = {
               uid: cur.uid,
               email: curEmail,
@@ -71,7 +72,7 @@ export const AdminProvider = ({ children }) => {
 
       // If saved session email is not the admin email, purge it immediately
       const savedEmail = savedSession.email?.toLowerCase();
-      if (savedEmail !== 'platesync86@gmail.com' && savedEmail !== 'samilplatesync@gmail.com') {
+      if (!isDesignatedAdminEmail(savedEmail)) {
         logoutAdmin();
         if (isMounted) {
           setAdminSession(null);
@@ -85,8 +86,8 @@ export const AdminProvider = ({ children }) => {
         const currentUser = auth.currentUser;
         if (currentUser) {
           const userEmail = currentUser.email?.toLowerCase();
-          // If the logged-in user is an athlete (not platesync86@gmail.com), purge admin session
-          if (userEmail !== 'platesync86@gmail.com' && userEmail !== 'samilplatesync@gmail.com') {
+          // If the logged-in user is an athlete (not designated admin), purge admin session
+          if (!isDesignatedAdminEmail(userEmail)) {
             logoutAdmin();
             if (isMounted) {
               setAdminSession(null);
@@ -123,7 +124,7 @@ export const AdminProvider = ({ children }) => {
         authUnsubscribe = auth.onAuthStateChanged((user) => {
           if (user) {
             const userEmail = user.email?.toLowerCase();
-            if (userEmail !== 'platesync86@gmail.com' && userEmail !== 'samilplatesync@gmail.com') {
+            if (!isDesignatedAdminEmail(userEmail)) {
               logoutAdmin();
               if (isMounted) {
                 setAdminSession(null);
@@ -187,10 +188,8 @@ export const AdminProvider = ({ children }) => {
 
   const isCurrentAdmin = Boolean(
     (adminSession?.uid && (adminSession.role === 'admin' || adminSession.role === 'owner')) ||
-    adminSession?.email?.toLowerCase() === 'platesync86@gmail.com' ||
-    adminSession?.email?.toLowerCase() === 'samilplatesync@gmail.com' ||
-    auth?.currentUser?.email?.toLowerCase() === 'platesync86@gmail.com' ||
-    auth?.currentUser?.email?.toLowerCase() === 'samilplatesync@gmail.com'
+    isDesignatedAdminEmail(adminSession?.email) ||
+    isDesignatedAdminEmail(auth?.currentUser?.email)
   );
 
   const value = {

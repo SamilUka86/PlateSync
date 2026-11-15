@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useAdmin } from '../../context/AdminContext';
+import { isDesignatedAdminEmail, getPrimaryAdminEmail } from '../../utils/adminSecurity';
 import { useNotification } from '../../context/NotificationContext';
 import { FirebaseSetupModal } from '../../components/auth/FirebaseSetupModal';
 import { isFirebaseConfigured } from '../../services/firebase/config';
@@ -40,12 +41,11 @@ export const SettingsPage = ({ onOpenFeedback, onOpenAdmin }) => {
   const { isAdmin, adminSession } = useAdmin();
   const { addNotification } = useNotification();
 
-  // Switch to admin portal & admin features available strictly ONLY if logged-in user email is platesync86@gmail.com
+  // Switch to admin portal & admin features available strictly ONLY if logged-in user email is authorized administrator
   const isAdminUser = Boolean(
     currentUser &&
     !isDemoMode &&
-    (currentUser.email?.toLowerCase() === 'platesync86@gmail.com' ||
-     currentUser.email?.toLowerCase() === 'samilplatesync@gmail.com')
+    isDesignatedAdminEmail(currentUser.email)
   );
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [isVibrating, setIsVibrating] = useState(false);
@@ -333,7 +333,7 @@ export const SettingsPage = ({ onOpenFeedback, onOpenAdmin }) => {
                   Administrator Portal Access
                 </h3>
                 <span className="px-2 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/30 text-[10px] font-bold text-amber-300 font-mono">
-                  {currentUser?.email || 'platesync86@gmail.com'}
+                  {currentUser?.email || getPrimaryAdminEmail()}
                 </span>
               </div>
               <p className="text-xs text-slate-400">

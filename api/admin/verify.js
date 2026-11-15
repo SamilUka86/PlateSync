@@ -1,7 +1,23 @@
+import crypto from 'crypto';
+
 /**
  * PlateSync - Secure Serverless Admin Verification Endpoint
  * Vercel Serverless Function (/api/admin/verify)
  */
+
+const AUTHORIZED_ADMIN_HASHES = [
+  'aa4c8870f4f8c8064425a739d17bd0c6015ab2232d386940c86b09a980106c3d',
+  '7e1c2e330ae7e10055a28b650d2a406dc25f82a4ad3d8ee977b016aad2b068cb'
+];
+
+function isDesignatedAdmin(email) {
+  if (!email) return false;
+  const normalized = email.trim().toLowerCase();
+  if (process.env.ADMIN_EMAIL && normalized === process.env.ADMIN_EMAIL.trim().toLowerCase()) return true;
+  if (process.env.VITE_ADMIN_EMAIL && normalized === process.env.VITE_ADMIN_EMAIL.trim().toLowerCase()) return true;
+  const hash = crypto.createHash('sha256').update(normalized).digest('hex');
+  return AUTHORIZED_ADMIN_HASHES.includes(hash);
+}
 
 export default async function handler(req, res) {
   // CORS & Security Headers
@@ -41,7 +57,7 @@ export default async function handler(req, res) {
     }
 
     const email = (payload.email || '').toLowerCase();
-    const isOwner = email === 'platesync86@gmail.com' || email === 'samilplatesync@gmail.com';
+    const isOwner = isDesignatedAdmin(email);
     const isAdmin = isOwner || payload.admin === true || payload.role === 'admin';
 
     if (!isAdmin) {

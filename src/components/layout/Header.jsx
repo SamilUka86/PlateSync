@@ -27,18 +27,18 @@ import {
   changeWebsiteLanguage,
   toggleEnglishHindi
 } from '../../services/translation/websiteTranslator';
+import { isDesignatedAdminEmail } from '../../utils/adminSecurity';
 
 export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, setCollapsed, onOpenAuth, onOpenFeedback, onOpenAdmin }) => {
   const { currentUser, userProfile, updateProfile, isDemoMode, isDevTester, demoAccessMode, toggleDemoAccessMode, logout } = useAuth();
   const { isAdmin, adminSession } = useAdmin();
   const { addNotification } = useNotification();
 
-  // Switch to admin portal & admin features available strictly ONLY if logged-in user email is platesync86@gmail.com
+  // Switch to admin portal & admin features available strictly ONLY if logged-in user email is authorized administrator
   const isAdminUser = Boolean(
     currentUser &&
     !isDemoMode &&
-    (currentUser.email?.toLowerCase() === 'platesync86@gmail.com' ||
-     currentUser.email?.toLowerCase() === 'samilplatesync@gmail.com')
+    isDesignatedAdminEmail(currentUser.email)
   );
 
   // Integrated PWA Installation Hook with Android, iOS and Desktop support

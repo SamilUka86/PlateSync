@@ -17,6 +17,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { useAdmin } from '../../context/AdminContext';
+import { getPrimaryAdminEmail } from '../../utils/adminSecurity';
 import { AdminDashboardTab } from './tabs/AdminDashboardTab';
 import { AdminLiveUsersTab } from './tabs/AdminLiveUsersTab';
 import { AdminUsersTab } from './tabs/AdminUsersTab';
@@ -164,7 +165,7 @@ export const AdminLayout = ({ onBackToApp }) => {
             <Shield className="w-4 h-4 text-amber-400 shrink-0" />
             <div className="min-w-0 flex-1">
               <p className="text-[11px] font-bold text-white truncate font-mono">
-                {adminSession?.email || 'platesync86@gmail.com'}
+                {adminSession?.email || getPrimaryAdminEmail()}
               </p>
               <p className="text-[9.5px] text-neon-success flex items-center gap-1 font-mono">
                 <span className="w-1.5 h-1.5 rounded-full bg-neon-success animate-pulse" />
