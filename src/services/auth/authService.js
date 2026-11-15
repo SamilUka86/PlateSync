@@ -109,7 +109,19 @@ export const loginWithEmail = async (email, password) => {
 
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    return userCredential.user;
+    const user = userCredential.user;
+
+    // Immediately synchronize authentic Firebase Authenticator metadata to Firestore
+    try {
+      await createUserProfileDocument(user, {
+        displayName: user.displayName || email.split('@')[0],
+        email: user.email
+      });
+    } catch (syncErr) {
+      console.warn('Profile sync notice on email login:', syncErr);
+    }
+
+    return user;
   } catch (error) {
     console.error('Email Login Error:', error);
     throw error;
@@ -150,11 +162,22 @@ export const logoutUser = async () => {
 
 /**
  * Subscribe to Auth State Changes
+ * Automatically keeps Firestore user record synchronized with Firebase Authenticator
  */
 export const subscribeToAuthChanges = (callback) => {
   if (!isFirebaseConfigured() || !auth) {
     callback(null);
     return () => {};
   }
-  return onAuthStateChanged(auth, callback);
+  return onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      try {
+        await createUserProfileDocument(user, {
+          displayName: user.displayName || user.email?.split('@')[0],
+          email: user.email
+        });
+      } catch (err) {}
+    }
+    callback(user);
+  });
 };

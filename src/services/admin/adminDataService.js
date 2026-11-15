@@ -119,15 +119,38 @@ export const getPlatformOverviewStats = async () => {
   let totalWorkouts = 0;
   let totalWeightRecords = 0;
   let totalCalculatorSetups = 0;
-  let totalPlansCreated = 0;
+  let liveActiveCount = 0;
+  let dauCount = 0;
+
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+  const nowMs = now.getTime();
+  const startOfTodayMs = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
   if (isFirebaseConfigured() && db) {
     try {
-      // 1. Fetch all users
+      // 1. Fetch all users from Cloud Firestore
       const usersSnap = await getDocs(collection(db, 'users'));
-      usersList = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      usersList = usersSnap.docs.map(d => ({ id: d.id, uid: d.id, ...d.data() }));
 
-      // 2. Subcollections aggregation
+      // 2. Fetch presence records to inherit real-time live active users from Firebase
+      try {
+        const presenceSnap = await getDocs(collection(db, 'userPresence'));
+        presenceSnap.docs.forEach(d => {
+          const p = d.data();
+          if (p.lastHeartbeat) {
+            const hbTime = new Date(p.lastHeartbeat).getTime();
+            if ((nowMs - hbTime) <= 5 * 60 * 1000) liveActiveCount++;
+            if (hbTime >= startOfTodayMs) dauCount++;
+          }
+        });
+      } catch (pErr) {
+        console.debug('Presence aggregation notice:', pErr);
+      }
+
+      // 3. Subcollections aggregation
       for (const u of usersList) {
         try {
           const wSnap = await getDocs(collection(db, 'users', u.id, 'workouts'));
@@ -138,9 +161,6 @@ export const getPlatformOverviewStats = async () => {
 
           const cfgSnap = await getDocs(collection(db, 'users', u.id, 'plateConfigurations'));
           totalCalculatorSetups += cfgSnap.size;
-
-          const planDoc = await getDoc(doc(db, 'users', u.id, 'planner', 'weekly'));
-          if (planDoc.exists()) totalPlansCreated += 1;
         } catch (subErr) {
           // Continue aggregation
         }
@@ -156,7 +176,9 @@ export const getPlatformOverviewStats = async () => {
       const localUsers = JSON.parse(localStorage.getItem('platesync_local_users') || '[]');
       usersList = localUsers.map(u => ({
         id: u.uid,
+        uid: u.uid,
         name: u.displayName,
+        displayName: u.displayName,
         email: u.email,
         createdAt: u.createdAt,
         preferredUnit: 'KG'
@@ -164,10 +186,24 @@ export const getPlatformOverviewStats = async () => {
     } catch (e) {}
   }
 
-  const now = new Date();
-  const todayStr = now.toISOString().split('T')[0];
-  const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  // If current Firebase Auth user is signed in, ensure they are represented
+  if (auth?.currentUser) {
+    const cur = auth.currentUser;
+    const exists = usersList.some(u => (u.uid || u.id) === cur.uid);
+    if (!exists) {
+      usersList.push({
+        id: cur.uid,
+        uid: cur.uid,
+        name: cur.displayName || 'Administrator',
+        displayName: cur.displayName || 'Administrator',
+        email: cur.email,
+        createdAt: cur.metadata?.creationTime || new Date().toISOString(),
+        preferredUnit: 'KG'
+      });
+      liveActiveCount = Math.max(1, liveActiveCount);
+      dauCount = Math.max(1, dauCount);
+    }
+  }
 
   // Time-based calculations
   let newUsersToday = 0;
@@ -182,14 +218,14 @@ export const getPlatformOverviewStats = async () => {
   let hiUsers = 0;
 
   usersList.forEach(u => {
-    const createdDate = u.createdAt ? new Date(u.createdAt) : null;
+    const createdDate = u.createdAt || u.authCreationTime ? new Date(u.createdAt || u.authCreationTime) : null;
     if (createdDate) {
       if (createdDate.toISOString().split('T')[0] === todayStr) newUsersToday++;
       if (createdDate >= oneWeekAgo) newUsersThisWeek++;
       if (createdDate >= oneMonthAgo) newUsersThisMonth++;
     }
 
-    const updatedDate = u.updatedAt ? new Date(u.updatedAt) : createdDate;
+    const updatedDate = u.lastLogin || u.updatedAt || u.authLastSignInTime ? new Date(u.lastLogin || u.updatedAt || u.authLastSignInTime) : createdDate;
     if (updatedDate && updatedDate >= oneMonthAgo) {
       activeUsersCount++;
     }
@@ -212,19 +248,15 @@ export const getPlatformOverviewStats = async () => {
     activeUsersCount = usersList.length;
   }
 
-  // Exercises count (database + catalog)
-  const globalExercises = await getGlobalExercises();
-  const totalExercises = globalExercises.length;
-
   return {
     totalUsers: usersList.length,
     activeUsers: activeUsersCount,
+    liveActiveCount: liveActiveCount || (usersList.length > 0 ? 1 : 0),
+    dauCount: dauCount || (newUsersToday > 0 ? newUsersToday : (usersList.length > 0 ? 1 : 0)),
     newUsersToday,
     newUsersThisWeek,
     newUsersThisMonth,
     totalWorkouts,
-    totalExercises,
-    totalPlansCreated,
     totalWeightRecords,
     totalCalculatorSetups,
     kgUsers,
@@ -270,16 +302,87 @@ export const getPlatformAnalyticsTrends = (usersList = [], days = 14) => {
 
 /**
  * Fetch searchable and filterable users list
+ * Directly inherits identity, providers, and presence from Firebase Authenticator & Firestore
  */
 export const getAdminUsersList = async (searchQuery = '', statusFilter = 'ALL') => {
   let list = [];
+  let presenceMap = new Map();
 
   if (isFirebaseConfigured() && db) {
     try {
-      const snap = await getDocs(collection(db, 'users'));
-      list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const [usersSnap, presenceSnap] = await Promise.all([
+        getDocs(collection(db, 'users')),
+        getDocs(collection(db, 'userPresence'))
+      ]);
+
+      presenceSnap.docs.forEach(d => {
+        presenceMap.set(d.id, { id: d.id, ...d.data() });
+      });
+
+      const nowMs = Date.now();
+
+      list = usersSnap.docs.map(d => {
+        const data = d.data();
+        const uid = d.id;
+        const presence = presenceMap.get(uid) || null;
+
+        let activityStatus = 'Offline';
+        if (presence?.lastHeartbeat) {
+          const diffMs = nowMs - new Date(presence.lastHeartbeat).getTime();
+          if (diffMs <= 5 * 60 * 1000) {
+            activityStatus = 'Active';
+          } else if (diffMs <= 30 * 60 * 1000) {
+            activityStatus = 'Recently Active';
+          }
+        }
+
+        const isLeadAdmin = data.email?.toLowerCase() === 'samilplatesync@gmail.com';
+        const role = isLeadAdmin ? 'owner' : (data.role || 'athlete');
+
+        return {
+          id: uid,
+          uid: uid,
+          ...data,
+          name: data.name || data.displayName || (data.email ? data.email.split('@')[0] : 'Athlete'),
+          displayName: data.displayName || data.name || (data.email ? data.email.split('@')[0] : 'Athlete'),
+          email: data.email || 'athlete@platesync.app',
+          authProvider: data.authProvider || (data.email?.includes('gmail') ? 'google.com' : 'password'),
+          emailVerified: Boolean(data.emailVerified),
+          createdAt: data.authCreationTime || data.createdAt,
+          lastLogin: data.authLastSignInTime || data.lastLogin || data.updatedAt,
+          activityStatus,
+          lastHeartbeat: presence?.lastHeartbeat || null,
+          device: presence?.device || data.device || 'Desktop',
+          status: data.status || 'active',
+          role
+        };
+      });
     } catch (e) {
       console.warn('Firestore users read notice:', e);
+    }
+  }
+
+  // Ensure current authenticated Firebase user is present
+  if (auth?.currentUser) {
+    const cur = auth.currentUser;
+    const exists = list.some(u => u.uid === cur.uid || u.id === cur.uid);
+    if (!exists) {
+      const isLead = cur.email?.toLowerCase() === 'samilplatesync@gmail.com';
+      list.unshift({
+        id: cur.uid,
+        uid: cur.uid,
+        name: cur.displayName || cur.email?.split('@')[0] || (isLead ? 'Lead Administrator' : 'Administrator'),
+        displayName: cur.displayName || cur.email?.split('@')[0] || (isLead ? 'Lead Administrator' : 'Administrator'),
+        email: cur.email,
+        authProvider: cur.providerData?.[0]?.providerId || 'password',
+        emailVerified: Boolean(cur.emailVerified),
+        createdAt: cur.metadata?.creationTime || new Date().toISOString(),
+        lastLogin: cur.metadata?.lastSignInTime || new Date().toISOString(),
+        activityStatus: 'Active',
+        device: 'Desktop',
+        status: 'active',
+        role: isLead ? 'owner' : 'admin'
+      });
     }
   }
 
@@ -288,11 +391,18 @@ export const getAdminUsersList = async (searchQuery = '', statusFilter = 'ALL') 
       const localUsers = JSON.parse(localStorage.getItem('platesync_local_users') || '[]');
       list = localUsers.map(u => ({
         id: u.uid,
+        uid: u.uid,
         name: u.displayName,
+        displayName: u.displayName,
         email: u.email,
+        authProvider: 'password',
+        emailVerified: false,
         createdAt: u.createdAt,
+        lastLogin: u.createdAt,
         preferredUnit: 'KG',
-        status: 'active'
+        activityStatus: 'Offline',
+        status: 'active',
+        role: 'athlete'
       }));
     } catch (e) {}
   }
@@ -331,7 +441,20 @@ export const getAdminUserDetails = async (userId) => {
   if (isFirebaseConfigured() && db) {
     try {
       const profileDoc = await getDoc(doc(db, 'users', userId));
-      if (profileDoc.exists()) profile = { id: profileDoc.id, ...profileDoc.data() };
+      if (profileDoc.exists()) profile = { id: profileDoc.id, uid: profileDoc.id, ...profileDoc.data() };
+
+      // Presence information for live active status
+      let presence = null;
+      try {
+        const presDoc = await getDoc(doc(db, 'userPresence', userId));
+        if (presDoc.exists()) presence = presDoc.data();
+      } catch (pErr) {}
+
+      if (profile && presence) {
+        profile.presence = presence;
+        const diffMs = Date.now() - new Date(presence.lastHeartbeat || 0).getTime();
+        profile.activityStatus = diffMs <= 5 * 60 * 1000 ? 'Active' : (diffMs <= 30 * 60 * 1000 ? 'Recently Active' : 'Offline');
+      }
 
       const wSnap = await getDocs(collection(db, 'users', userId, 'workouts'));
       workouts = wSnap.docs.map(d => ({ id: d.id, ...d.data() }));

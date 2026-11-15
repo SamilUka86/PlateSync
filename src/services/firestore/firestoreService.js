@@ -34,23 +34,40 @@ const setLocalItem = (key, data) => {
 
 /**
  * 1. User Profile Document
+ * Synchronizes authentic Firebase Authenticator identity & metadata to Cloud Firestore (/users/{uid})
  */
 export const createUserProfileDocument = async (user, additionalData = {}) => {
-  if (!user) return null;
+  if (!user || !user.uid) return null;
+
+  const authProvider = user.providerData && user.providerData.length > 0 
+    ? user.providerData[0].providerId 
+    : (user.provider || (user.email ? 'password' : 'custom'));
+
+  const creationTime = user.metadata?.creationTime || user.createdAt || new Date().toISOString();
+  const lastSignInTime = user.metadata?.lastSignInTime || user.lastLogin || new Date().toISOString();
+  const isEmailVerified = Boolean(user.emailVerified);
 
   const defaultProfile = {
     uid: user.uid,
-    name: user.displayName || additionalData.displayName || 'Athlete',
+    name: user.displayName || additionalData.displayName || user.name || (user.email ? user.email.split('@')[0] : 'Athlete'),
+    displayName: user.displayName || additionalData.displayName || user.name || (user.email ? user.email.split('@')[0] : 'Athlete'),
     email: user.email || '',
-    profileImage: user.photoURL || null,
+    profileImage: user.photoURL || additionalData.photoURL || null,
+    photoURL: user.photoURL || additionalData.photoURL || null,
     height: 178, // in cm
     bodyWeight: 75, // in kg
     preferredUnit: 'KG', // 'KG' | 'LB'
     defaultBarbellWeight: 20,
     defaultBarbellUnit: 'KG',
     theme: 'midnight-neon',
-    createdAt: new Date().toISOString(),
+    createdAt: creationTime,
     updatedAt: new Date().toISOString(),
+    authProvider,
+    authCreationTime: creationTime,
+    authLastSignInTime: lastSignInTime,
+    emailVerified: isEmailVerified,
+    status: 'active',
+    source: 'Firebase Authenticator',
     ...additionalData
   };
 
@@ -67,19 +84,33 @@ export const createUserProfileDocument = async (user, additionalData = {}) => {
       await setDoc(userRef, {
         ...defaultProfile,
         createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
+        lastLogin: serverTimestamp()
       });
       return defaultProfile;
     } else {
       const existing = snap.data();
-      const updates = {};
-      if (user.displayName && user.displayName !== existing.name) updates.name = user.displayName;
-      if (user.photoURL && user.photoURL !== existing.profileImage) updates.profileImage = user.photoURL;
-      if (user.email && user.email !== existing.email) updates.email = user.email;
-      if (Object.keys(updates).length > 0) {
-        updates.updatedAt = serverTimestamp();
-        await updateDoc(userRef, updates);
+      const updates = {
+        lastLogin: serverTimestamp(),
+        authLastSignInTime: lastSignInTime,
+        emailVerified: Boolean(user.emailVerified !== undefined ? user.emailVerified : existing.emailVerified)
+      };
+
+      if (user.displayName && user.displayName !== existing.name) {
+        updates.name = user.displayName;
+        updates.displayName = user.displayName;
       }
+      if (user.photoURL && user.photoURL !== existing.profileImage) {
+        updates.profileImage = user.photoURL;
+        updates.photoURL = user.photoURL;
+      }
+      if (user.email && user.email !== existing.email) updates.email = user.email;
+      if (authProvider && !existing.authProvider) updates.authProvider = authProvider;
+      if (!existing.authCreationTime) updates.authCreationTime = creationTime;
+      if (additionalData.role && additionalData.role !== existing.role) updates.role = additionalData.role;
+
+      updates.updatedAt = serverTimestamp();
+      await updateDoc(userRef, updates);
       return { id: snap.id, ...existing, ...updates };
     }
   } catch (error) {

@@ -2,10 +2,8 @@ import React, { useState } from 'react';
 import { 
   Shield, 
   LayoutDashboard, 
-  Activity,
+  Activity, 
   Users, 
-  Layers, 
-  Calendar, 
   MessageSquare, 
   BarChart3, 
   Settings, 
@@ -22,8 +20,6 @@ import { useAdmin } from '../../context/AdminContext';
 import { AdminDashboardTab } from './tabs/AdminDashboardTab';
 import { AdminLiveUsersTab } from './tabs/AdminLiveUsersTab';
 import { AdminUsersTab } from './tabs/AdminUsersTab';
-import { AdminExercisesTab } from './tabs/AdminExercisesTab';
-import { AdminProgramsTab } from './tabs/AdminProgramsTab';
 import { AdminFeedbackTab } from './tabs/AdminFeedbackTab';
 import { AdminAnalyticsTab } from './tabs/AdminAnalyticsTab';
 import { AdminSettingsTab } from './tabs/AdminSettingsTab';
@@ -39,8 +35,6 @@ export const AdminLayout = ({ onBackToApp }) => {
     { id: 'dashboard', label: 'Platform Overview', icon: LayoutDashboard },
     { id: 'liveUsers', label: 'Live Active Users', icon: Activity, badge: 'Live' },
     { id: 'users', label: 'User Directory', icon: Users },
-    { id: 'exercises', label: 'Exercise Library', icon: Layers },
-    { id: 'programs', label: 'Workout Programs', icon: Calendar },
     { id: 'feedback', label: 'Feedback & Reports', icon: MessageSquare },
     { id: 'analytics', label: 'Training Analytics', icon: BarChart3 },
     { id: 'settings', label: 'Platform Settings', icon: Settings },
@@ -214,8 +208,6 @@ export const AdminLayout = ({ onBackToApp }) => {
           {activeTab === 'dashboard' && <AdminDashboardTab onNavigateTab={handleSelectTab} />}
           {activeTab === 'liveUsers' && <AdminLiveUsersTab />}
           {activeTab === 'users' && <AdminUsersTab />}
-          {activeTab === 'exercises' && <AdminExercisesTab />}
-          {activeTab === 'programs' && <AdminProgramsTab />}
           {activeTab === 'feedback' && <AdminFeedbackTab />}
           {activeTab === 'analytics' && <AdminAnalyticsTab />}
           {activeTab === 'settings' && <AdminSettingsTab />}

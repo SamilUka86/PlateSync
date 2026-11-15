@@ -21,7 +21,10 @@ import {
   ShieldCheck, 
   Play, 
   Pause,
-  ArrowUpRight
+  ArrowUpRight,
+  Lock,
+  Globe2,
+  Copy
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -226,7 +229,7 @@ export const AdminLiveUsersTab = () => {
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Real-time verified presence heartbeats, authenticated session telemetry, and engagement tracking.
+            Directly inherited from Firebase Console Authenticator & Cloud Firestore real-time presence heartbeats.
           </p>
         </div>
 
@@ -546,9 +549,11 @@ export const AdminLiveUsersTab = () => {
           {/* User Activity Table */}
           <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-900/60 shadow-xl">
             <table className="w-full text-left text-sm text-slate-300">
-              <thead className="bg-slate-950/80 text-xs uppercase text-slate-400 border-b border-slate-800">
+              <thead className="bg-slate-950/80 text-[10.5px] uppercase text-slate-400 border-b border-slate-800 font-mono font-bold tracking-wider">
                 <tr>
-                  <th className="py-3 px-4">Athlete / Email</th>
+                  <th className="py-3 px-4">Athlete / Firebase Identity</th>
+                  <th className="py-3 px-4">Provider</th>
+                  <th className="py-3 px-4">Verified</th>
                   <th className="py-3 px-4">Status</th>
                   <th className="py-3 px-4">Device</th>
                   <th className="py-3 px-4">Active Today</th>
@@ -561,58 +566,90 @@ export const AdminLiveUsersTab = () => {
               <tbody className="divide-y divide-slate-800/60">
                 {filteredUsers.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="py-12 text-center text-slate-500">
+                    <td colSpan="10" className="py-12 text-center text-slate-500">
                       No matching athletes found for this filter criteria.
                     </td>
                   </tr>
                 ) : (
-                  filteredUsers.map((user) => (
-                    <tr
-                      key={user.uid}
-                      onClick={() => handleOpenUserHistory(user)}
-                      className="hover:bg-slate-800/40 cursor-pointer transition-colors group"
-                    >
-                      <td className="py-3.5 px-4">
-                        <div className="font-semibold text-white group-hover:text-cyan-400 transition-colors">
-                          {user.name}
-                        </div>
-                        <div className="text-xs text-slate-400 font-mono">{user.email}</div>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        {renderStatusBadge(user.status)}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-1.5 text-xs text-slate-300">
-                          {renderDeviceIcon(user.device)}
-                          <span>{user.device}</span>
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-4 font-mono text-emerald-400 font-medium">
-                        {formatDuration(user.durationTodaySec)}
-                      </td>
-                      <td className="py-3.5 px-4 font-mono text-slate-300">
-                        {formatDuration(user.durationWeekSec)}
-                      </td>
-                      <td className="py-3.5 px-4 text-center font-bold text-white">
-                        {user.sessionsTodayCount}
-                      </td>
-                      <td className="py-3.5 px-4 text-xs text-slate-400">
-                        {formatTimestamp(user.lastActivityTime)}
-                      </td>
-                      <td className="py-3.5 px-4 text-right">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenUserHistory(user);
-                          }}
-                          className="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:bg-cyan-500/20 hover:text-cyan-300 border border-slate-700 hover:border-cyan-500/40 transition-colors inline-flex items-center gap-1"
-                        >
-                          <span>History</span>
-                          <ChevronRight className="w-3.5 h-3.5" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
+                  filteredUsers.map((user) => {
+                    const isGoogle = (user.authProvider || '').includes('google');
+                    return (
+                      <tr
+                        key={user.uid}
+                        onClick={() => handleOpenUserHistory(user)}
+                        className="hover:bg-slate-800/40 cursor-pointer transition-colors group"
+                      >
+                        <td className="py-3.5 px-4">
+                          <div className="font-semibold text-white group-hover:text-cyan-400 transition-colors">
+                            {user.name}
+                          </div>
+                          <div className="text-xs text-slate-400 font-mono truncate max-w-[150px]">{user.email}</div>
+                          <div className="text-[9.5px] text-slate-500 font-mono flex items-center gap-1 mt-0.5">
+                            <span>UID:</span>
+                            <span className="text-slate-400" title={user.uid}>{user.uid ? `${user.uid.substring(0, 8)}...` : 'N/A'}</span>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          {isGoogle ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/10 text-sky-400 border border-sky-500/30 font-mono">
+                              <Globe2 className="w-2.5 h-2.5" />
+                              <span>Google</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30 font-mono">
+                              <Lock className="w-2.5 h-2.5" />
+                              <span>Password</span>
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          {user.emailVerified ? (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-mono">
+                              <CheckCircle2 className="w-2.5 h-2.5" />
+                              <span>Verified</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-slate-800 text-slate-400 border border-slate-700 font-mono">
+                              <span>Pending</span>
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          {renderStatusBadge(user.status)}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <div className="flex items-center gap-1.5 text-xs text-slate-300">
+                            {renderDeviceIcon(user.device)}
+                            <span>{user.device}</span>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4 font-mono text-emerald-400 font-medium">
+                          {formatDuration(user.durationTodaySec)}
+                        </td>
+                        <td className="py-3.5 px-4 font-mono text-slate-300">
+                          {formatDuration(user.durationWeekSec)}
+                        </td>
+                        <td className="py-3.5 px-4 text-center font-bold text-white">
+                          {user.sessionsTodayCount}
+                        </td>
+                        <td className="py-3.5 px-4 text-xs text-slate-400">
+                          {formatTimestamp(user.lastActivityTime)}
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenUserHistory(user);
+                            }}
+                            className="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:bg-cyan-500/20 hover:text-cyan-300 border border-slate-700 hover:border-cyan-500/40 transition-colors inline-flex items-center gap-1"
+                          >
+                            <span>History</span>
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>

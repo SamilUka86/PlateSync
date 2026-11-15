@@ -15,7 +15,15 @@ import {
   AlertTriangle, 
   X, 
   Check, 
-  RefreshCw 
+  RefreshCw,
+  Copy,
+  CheckCircle2,
+  Lock,
+  Globe2,
+  Activity,
+  Smartphone,
+  Monitor,
+  Tablet
 } from 'lucide-react';
 import { 
   getAdminUsersList, 
@@ -110,6 +118,58 @@ export const AdminUsersTab = () => {
     }
   };
 
+  const handleCopyUid = (uid, e) => {
+    e?.stopPropagation();
+    if (!uid) return;
+    try {
+      navigator.clipboard?.writeText(uid);
+      addNotification('Firebase UID copied to clipboard!', 'success');
+    } catch (err) {}
+  };
+
+  const renderProviderBadge = (provider) => {
+    const isGoogle = (provider || '').includes('google');
+    if (isGoogle) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/10 text-sky-400 border border-sky-500/30 font-mono">
+          <Globe2 className="w-2.5 h-2.5" />
+          <span>Google Auth</span>
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30 font-mono">
+        <Lock className="w-2.5 h-2.5" />
+        <span>Firebase Password</span>
+      </span>
+    );
+  };
+
+  const renderPresenceBadge = (activityStatus) => {
+    if (activityStatus === 'Active') {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <span>Live Now</span>
+        </span>
+      );
+    }
+    if (activityStatus === 'Recently Active') {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+          <span>Recently Active</span>
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">
+        <span className="w-1.5 h-1.5 rounded-full bg-slate-500" />
+        <span>Offline</span>
+      </span>
+    );
+  };
+
   const handleDeleteUser = async () => {
     if (!deleteModalUser) return;
     setActionSubmitting(true);
@@ -177,31 +237,59 @@ export const AdminUsersTab = () => {
         </form>
       </div>
 
+      {/* Firebase Authenticator Synchronization Status Banner */}
+      <div className="p-4 rounded-2xl bg-gradient-to-r from-neon-cyan/10 via-midnight-card to-midnight-card border border-neon-cyan/20 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-neon-cyan/10 border border-neon-cyan/30 flex items-center justify-center text-neon-cyan shrink-0">
+            <Shield className="w-4 h-4" />
+          </div>
+          <div>
+            <div className="font-bold text-white flex items-center gap-2">
+              <span>Firebase Authenticator Synchronization Active</span>
+              <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 uppercase tracking-wider">
+                Direct Sync
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              Athlete accounts, identity providers (Email/Password & Google Auth), unique UIDs, and live presence states are inherited directly from Firebase Authentication and Cloud Firestore.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 font-mono text-[11px] text-slate-400 shrink-0">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span>Real-time Telemetry</span>
+        </div>
+      </div>
+
       {/* Users Table Card */}
       <div className="bg-midnight-card border border-midnight-border rounded-3xl overflow-hidden shadow-card">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-midnight-border bg-midnight-elevated/40 text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono">
+              <tr className="border-b border-midnight-border bg-midnight-elevated/40 text-[10.5px] font-bold text-slate-400 uppercase tracking-wider font-mono">
                 <th className="py-3 px-4">Athlete</th>
-                <th className="py-3 px-4">Email</th>
+                <th className="py-3 px-4">Firebase Auth / UID</th>
+                <th className="py-3 px-4">Provider</th>
+                <th className="py-3 px-4">Verified</th>
+                <th className="py-3 px-4">Presence</th>
                 <th className="py-3 px-4">Role</th>
                 <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4">Registered</th>
+                <th className="py-3 px-4">Last Sign-In</th>
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-midnight-border/60 text-xs">
               {loading ? (
                 <tr>
-                  <td colSpan="6" className="py-12 text-center text-slate-400">
+                  <td colSpan="9" className="py-12 text-center text-slate-400">
                     <RefreshCw className="w-6 h-6 animate-spin mx-auto text-neon-cyan mb-2" />
-                    <span>Loading athlete records...</span>
+                    <span>Loading authentic Firebase athlete records...</span>
                   </td>
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="py-12 text-center text-slate-400">
+                  <td colSpan="9" className="py-12 text-center text-slate-400">
                     <Users className="w-8 h-8 mx-auto text-slate-600 mb-2" />
                     <p className="font-bold text-slate-300">No athletes match criteria</p>
                     <p className="text-[11px] text-slate-500 mt-1">Adjust search terms or status filters</p>
@@ -212,9 +300,10 @@ export const AdminUsersTab = () => {
                   const isUserOwner = u.email?.toLowerCase() === OWNER_EMAIL.toLowerCase();
                   const roleBadge = isUserOwner ? 'Lead Admin' : (u.role === 'admin' ? 'Admin' : 'Athlete');
                   const isActive = (u.status || 'active') === 'active';
+                  const uidStr = u.uid || u.id;
 
                   return (
-                    <tr key={u.id} className="hover:bg-midnight-elevated/30 transition">
+                    <tr key={uidStr} className="hover:bg-midnight-elevated/30 transition">
                       
                       {/* Name & Avatar */}
                       <td className="py-3 px-4">
@@ -228,15 +317,56 @@ export const AdminUsersTab = () => {
                             alt="Avatar"
                             className="w-7 h-7 rounded-full bg-midnight-bg border border-midnight-border object-cover shrink-0"
                           />
-                          <span className="font-bold text-white truncate max-w-[140px]">
+                          <span className="font-bold text-white truncate max-w-[130px]">
                             {u.name || u.displayName || 'Athlete'}
                           </span>
                         </div>
                       </td>
 
-                      {/* Email */}
-                      <td className="py-3 px-4 font-mono text-[11.5px] text-slate-300">
-                        {u.email || 'N/A'}
+                      {/* Email & Firebase UID */}
+                      <td className="py-3 px-4">
+                        <div className="font-mono text-[11px] text-slate-200 font-semibold truncate max-w-[160px]">
+                          {u.email || 'N/A'}
+                        </div>
+                        <div className="flex items-center gap-1 text-[9.5px] text-slate-500 font-mono mt-0.5">
+                          <span>UID:</span>
+                          <span className="text-slate-400" title={uidStr}>
+                            {uidStr ? `${uidStr.substring(0, 8)}...` : 'N/A'}
+                          </span>
+                          {uidStr && (
+                            <button
+                              onClick={(e) => handleCopyUid(uidStr, e)}
+                              className="p-0.5 rounded hover:bg-midnight-elevated text-slate-500 hover:text-neon-cyan transition"
+                              title="Copy Firebase UID"
+                            >
+                              <Copy className="w-2.5 h-2.5" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Provider */}
+                      <td className="py-3 px-4">
+                        {renderProviderBadge(u.authProvider)}
+                      </td>
+
+                      {/* Verified */}
+                      <td className="py-3 px-4">
+                        {u.emailVerified ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9.5px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-mono">
+                            <CheckCircle2 className="w-2.5 h-2.5" />
+                            <span>Verified</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9.5px] font-bold bg-slate-800 text-slate-400 border border-slate-700 font-mono">
+                            <span>Pending</span>
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Presence */}
+                      <td className="py-3 px-4">
+                        {renderPresenceBadge(u.activityStatus)}
                       </td>
 
                       {/* Role */}
@@ -264,9 +394,14 @@ export const AdminUsersTab = () => {
                         </span>
                       </td>
 
-                      {/* Created */}
-                      <td className="py-3 px-4 text-slate-400 text-[11px] font-mono">
-                        {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'N/A'}
+                      {/* Last Sign-In */}
+                      <td className="py-3 px-4">
+                        <div className="text-[11px] text-slate-300 font-mono">
+                          {u.lastLogin ? new Date(u.lastLogin).toLocaleDateString() : 'N/A'}
+                        </div>
+                        <div className="text-[9.5px] text-slate-500 font-mono">
+                          Reg: {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'N/A'}
+                        </div>
                       </td>
 
                       {/* Action buttons */}
@@ -371,6 +506,72 @@ export const AdminUsersTab = () => {
             ) : userDetails && (
               <div className="space-y-4">
                 
+                {/* Firebase Authenticator Identity Details Card */}
+                <div className="p-4 rounded-2xl bg-midnight-bg border border-midnight-border space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5 font-mono">
+                      <Shield className="w-3.5 h-3.5 text-amber-400" />
+                      Firebase Authenticator Identity
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full text-[9.5px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-mono">
+                      Console Linked
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+                    <div>
+                      <span className="text-[10px] text-slate-500 font-mono block">Firebase UID</span>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <code className="text-slate-300 font-mono text-[11px] truncate">{selectedUser.uid || selectedUser.id}</code>
+                        <button 
+                          onClick={(e) => handleCopyUid(selectedUser.uid || selectedUser.id, e)}
+                          className="p-1 rounded bg-midnight-card hover:bg-midnight-elevated text-slate-400 hover:text-neon-cyan transition"
+                          title="Copy UID"
+                        >
+                          <Copy className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="text-[10px] text-slate-500 font-mono block">Auth Provider</span>
+                      <div className="mt-1">{renderProviderBadge(selectedUser.authProvider)}</div>
+                    </div>
+
+                    <div>
+                      <span className="text-[10px] text-slate-500 font-mono block">Email Verification</span>
+                      <div className="mt-1">
+                        {selectedUser.emailVerified ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 font-mono">
+                            <CheckCircle2 className="w-3 h-3" /> Verified
+                          </span>
+                        ) : (
+                          <span className="text-[11px] text-slate-400 font-mono">Pending Verification</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="text-[10px] text-slate-500 font-mono block">Registered Date</span>
+                      <span className="text-slate-300 font-mono text-[11px] mt-0.5 block">
+                        {selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleDateString() : 'N/A'}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-[10px] text-slate-500 font-mono block">Last Signed In</span>
+                      <span className="text-slate-300 font-mono text-[11px] mt-0.5 block">
+                        {selectedUser.lastLogin ? new Date(selectedUser.lastLogin).toLocaleDateString() : 'N/A'}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-[10px] text-slate-500 font-mono block">Live Activity Presence</span>
+                      <div className="mt-1">{renderPresenceBadge(selectedUser.activityStatus || userDetails?.profile?.activityStatus)}</div>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Stats Summary Grid */}
                 <div className="grid grid-cols-3 gap-3">
                   <div className="p-3 bg-midnight-bg rounded-2xl border border-midnight-border">

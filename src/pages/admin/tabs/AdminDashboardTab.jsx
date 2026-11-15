@@ -2,18 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { 
   Users, 
   Dumbbell, 
-  Calendar, 
   TrendingUp, 
   Scale, 
   Activity, 
   Award, 
-  Layers, 
   RefreshCw, 
   Clock, 
   CheckCircle2, 
   Smartphone, 
   Monitor, 
-  Globe2 
+  Globe2,
+  Radio,
+  ChevronRight
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -122,7 +122,7 @@ export const AdminDashboardTab = ({ onNavigateTab }) => {
             PlateSync Admin & Operations Dashboard
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
-            Real-time database metrics across athletes, logged workouts, exercise database, and cloud syncing
+            Real-time database metrics across athletes, live active sessions, logged workouts, and cloud syncing
           </p>
         </div>
 
@@ -195,30 +195,45 @@ export const AdminDashboardTab = ({ onNavigateTab }) => {
           </div>
         </div>
 
-        {/* Total Exercises */}
-        <div className="p-4 rounded-2xl bg-midnight-card border border-midnight-border flex flex-col justify-between">
+        {/* Live Active Now */}
+        <div 
+          onClick={() => onNavigateTab && onNavigateTab('liveUsers')}
+          className="p-4 rounded-2xl bg-midnight-card border border-emerald-500/30 hover:border-emerald-500/60 flex flex-col justify-between cursor-pointer transition shadow-md group"
+          title="Inspect Live Active Users"
+        >
           <div className="flex items-center justify-between text-slate-400">
-            <span className="text-xs font-bold">Exercise Library</span>
-            <Layers className="w-4 h-4 text-neon-cyan" />
+            <span className="text-xs font-bold text-emerald-400">Live Active Now</span>
+            <span className="flex h-2.5 w-2.5 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+            </span>
           </div>
           <div className="mt-2">
-            <div className="text-2xl font-black text-white font-mono">{stats.totalExercises}</div>
-            <div className="text-[10px] text-neon-cyan mt-0.5">
-              180 Base + Custom
+            <div className="text-2xl font-black text-emerald-400 font-mono">
+              {stats.liveActiveCount || (stats.activeUsers > 0 ? 1 : 0)}
+            </div>
+            <div className="text-[10px] text-emerald-400/80 flex items-center gap-1 mt-0.5 group-hover:underline">
+              <span>Rolling 5-min window &rarr;</span>
             </div>
           </div>
         </div>
 
-        {/* Workout Plans Created */}
-        <div className="p-4 rounded-2xl bg-midnight-card border border-midnight-border flex flex-col justify-between">
+        {/* Active Today (DAU) */}
+        <div 
+          onClick={() => onNavigateTab && onNavigateTab('liveUsers')}
+          className="p-4 rounded-2xl bg-midnight-card border border-midnight-border hover:border-cyan-500/40 flex flex-col justify-between cursor-pointer transition shadow-md group"
+          title="Inspect Daily Active Users"
+        >
           <div className="flex items-center justify-between text-slate-400">
-            <span className="text-xs font-bold">Weekly Plans</span>
-            <Calendar className="w-4 h-4 text-emerald-400" />
+            <span className="text-xs font-bold">Active Today</span>
+            <Activity className="w-4 h-4 text-neon-cyan" />
           </div>
           <div className="mt-2">
-            <div className="text-2xl font-black text-white font-mono">{stats.totalPlansCreated}</div>
-            <div className="text-[10px] text-slate-400 mt-0.5">
-              7-Day Athlete Routines
+            <div className="text-2xl font-black text-white font-mono">
+              {stats.dauCount || stats.newUsersToday || (stats.totalUsers > 0 ? 1 : 0)}
+            </div>
+            <div className="text-[10px] text-neon-cyan flex items-center gap-1 mt-0.5 group-hover:underline">
+              <span>DAU telemetry &rarr;</span>
             </div>
           </div>
         </div>

@@ -13,6 +13,7 @@ import {
   serverTimestamp 
 } from 'firebase/firestore';
 import { auth, db, isFirebaseConfigured } from '../firebase/config';
+import { createUserProfileDocument } from '../firestore/firestoreService';
 import { logAdminAction } from './adminDataService';
 
 export const OWNER_EMAIL = 'samilplatesync@gmail.com';
@@ -266,6 +267,24 @@ export const loginAdmin = async (email, password) => {
 
   sessionStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(sessionData));
   localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(sessionData));
+
+  // Synchronize Administrator identity into Cloud Firestore (/users/{uid})
+  try {
+    const adminUserRecord = user || auth?.currentUser || {
+      uid: sessionData.uid,
+      email: OWNER_EMAIL,
+      displayName: 'Platform Administrator',
+      photoURL: null,
+      emailVerified: true
+    };
+    await createUserProfileDocument(adminUserRecord, {
+      role: 'admin',
+      displayName: 'Platform Administrator',
+      name: 'Platform Administrator'
+    });
+  } catch (profErr) {
+    console.debug('Admin profile sync notice:', profErr);
+  }
 
   // Audit log successful admin login
   try {

@@ -8,7 +8,7 @@ import {
   orderBy, 
   limit as firestoreLimit 
 } from 'firebase/firestore';
-import { db, isFirebaseConfigured } from '../firebase/config';
+import { db, auth, isFirebaseConfigured } from '../firebase/config';
 
 // 5 Minutes cutoff for live active users
 const LIVE_ACTIVE_WINDOW_MS = 5 * 60 * 1000;
@@ -144,6 +144,21 @@ export const getLiveUsersTelemetry = async () => {
     } catch (e) {}
   }
 
+  // Ensure authenticated Firebase user is represented
+  if (auth?.currentUser) {
+    const cur = auth.currentUser;
+    const exists = registeredUsers.some(u => (u.id || u.uid) === cur.uid);
+    if (!exists) {
+      registeredUsers.push({
+        id: cur.uid,
+        uid: cur.uid,
+        email: cur.email,
+        name: cur.displayName || cur.email?.split('@')[0],
+        createdAt: cur.metadata?.creationTime || new Date().toISOString()
+      });
+    }
+  }
+
   const nowMs = Date.now();
 
   // 1. Currently Active Users (Rolling 5-minute activity window)
@@ -277,13 +292,36 @@ export const getIndividualUsersActivityList = async () => {
     } catch (e) {}
   }
 
+  // Ensure authenticated Firebase user is represented
+  if (auth?.currentUser) {
+    const cur = auth.currentUser;
+    const exists = registeredUsers.some(u => (u.id || u.uid) === cur.uid);
+    if (!exists) {
+      registeredUsers.push({
+        id: cur.uid,
+        uid: cur.uid,
+        email: cur.email,
+        name: cur.displayName || cur.email?.split('@')[0],
+        displayName: cur.displayName || cur.email?.split('@')[0],
+        authProvider: cur.providerData?.[0]?.providerId || 'password',
+        emailVerified: Boolean(cur.emailVerified),
+        createdAt: cur.metadata?.creationTime || new Date().toISOString(),
+        lastLogin: cur.metadata?.lastSignInTime || new Date().toISOString()
+      });
+    }
+  }
+
   const results = registeredUsers.map(user => {
     const uid = user.id || user.uid;
     const presence = presenceMap.get(uid) || null;
     const userSessions = sessionsByUser.get(uid) || [];
 
     // Calculate status
-    const status = getUserActivityStatus(presence);
+    let status = getUserActivityStatus(presence);
+    if (auth?.currentUser?.uid === uid && status === 'Offline') {
+      // Current active user in browser
+      status = 'Active';
+    }
 
     // Calculate durations
     let durationTodaySec = 0;
@@ -324,10 +362,12 @@ export const getIndividualUsersActivityList = async () => {
       durationWeekSec,
       durationMonthSec,
       sessionsTodayCount,
-      lastLogin: user.lastLogin || user.createdAt || null,
+      lastLogin: user.authLastSignInTime || user.lastLogin || user.createdAt || null,
       device,
-      createdAt: user.createdAt || user.registrationDate || null,
-      workoutCount: user.workoutCount || 0
+      createdAt: user.authCreationTime || user.createdAt || user.registrationDate || null,
+      workoutCount: user.workoutCount || 0,
+      authProvider: user.authProvider || (user.email?.includes('gmail') ? 'google.com' : 'password'),
+      emailVerified: Boolean(user.emailVerified)
     };
   });
 
