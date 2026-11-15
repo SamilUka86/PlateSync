@@ -249,9 +249,16 @@ export const AuthProvider = ({ children }) => {
       } else {
         const isDemo = localStorage.getItem('platesync_demo_active') === 'true';
         const cached = getStoredGoogleUser();
-        if (cached && (cached.uid?.startsWith('local_user_') || cached.provider === 'google.com')) {
+        if (cached && cached.uid && !cached.uid.includes('demo')) {
+          // Persist logged-in session across mobile and desktop page refreshes
           setCurrentUser(cached);
           setIsDemoMode(false);
+          getUserProfile(cached.uid).then((prof) => {
+            if (prof) {
+              const savedUnit = localStorage.getItem('platesync_preferred_unit');
+              setUserProfile(savedUnit ? { ...prof, preferredUnit: savedUnit } : prof);
+            }
+          }).catch(() => {});
         } else if (isDemo) {
           setCurrentUser(DEMO_USER);
           setIsDemoMode(true);

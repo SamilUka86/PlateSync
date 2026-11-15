@@ -10,7 +10,8 @@ import {
   where, 
   orderBy, 
   limit as firestoreLimit,
-  serverTimestamp 
+  serverTimestamp,
+  onSnapshot
 } from 'firebase/firestore';
 import { db, auth, isFirebaseConfigured } from '../firebase/config';
 import { EXERCISE_DATABASE, PREBUILT_WORKOUT_PROGRAMS } from '../../utils/exerciseData';
@@ -907,6 +908,60 @@ export const getAllFeedback = async (statusFilter = 'ALL', categoryFilter = 'ALL
   }
 
   return list;
+};
+
+/**
+ * Admin: Real-time subscription to athlete feedback submissions
+ */
+export const subscribeToFeedback = (callback, statusFilter = 'ALL', categoryFilter = 'ALL') => {
+  if (!isFirebaseConfigured() || !db) {
+    const local = getLocalFallback('user_feedback', []);
+    callback(local);
+    return () => {};
+  }
+
+  try {
+    const q = collection(db, 'userFeedback');
+    const unsub = onSnapshot(q, (snap) => {
+      let list = snap.docs.map(d => {
+        const data = d.data();
+        let createdAt = data.createdAt;
+        if (createdAt && typeof createdAt.toDate === 'function') {
+          createdAt = createdAt.toDate().toISOString();
+        } else if (createdAt && createdAt.seconds) {
+          createdAt = new Date(createdAt.seconds * 1000).toISOString();
+        } else if (!createdAt) {
+          createdAt = new Date().toISOString();
+        }
+        return { id: d.id, ...data, createdAt };
+      });
+
+      const localList = getLocalFallback('user_feedback', []);
+      const seenIds = new Set(list.map(f => f.id));
+      for (const item of localList) {
+        if (!seenIds.has(item.id)) list.push(item);
+      }
+
+      list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+      if (statusFilter !== 'ALL') {
+        list = list.filter(f => (f.status || 'pending').toLowerCase() === statusFilter.toLowerCase());
+      }
+      if (categoryFilter !== 'ALL') {
+        list = list.filter(f => (f.category || '').toLowerCase() === categoryFilter.toLowerCase());
+      }
+
+      callback(list);
+    }, (err) => {
+      console.warn('Feedback snapshot notice, fallback to fetch:', err);
+      getAllFeedback(statusFilter, categoryFilter).then(callback);
+    });
+
+    return unsub;
+  } catch (e) {
+    getAllFeedback(statusFilter, categoryFilter).then(callback);
+    return () => {};
+  }
 };
 
 /**

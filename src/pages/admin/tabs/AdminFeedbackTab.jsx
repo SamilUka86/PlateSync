@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { 
   getAllFeedback, 
+  subscribeToFeedback,
   updateFeedbackStatus 
 } from '../../../services/admin/adminDataService';
 import { useNotification } from '../../../context/NotificationContext';
@@ -49,7 +50,15 @@ export const AdminFeedbackTab = () => {
   };
 
   useEffect(() => {
-    loadFeedback();
+    setLoading(true);
+    const unsubscribe = subscribeToFeedback((data) => {
+      setFeedbackList(data);
+      setLoading(false);
+    }, statusFilter, categoryFilter);
+
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
   }, [statusFilter, categoryFilter]);
 
   const openDetailModal = (item) => {
