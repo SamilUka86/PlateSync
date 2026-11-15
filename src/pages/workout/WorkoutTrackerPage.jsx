@@ -455,9 +455,7 @@ export const WorkoutTrackerPage = ({ setActiveTab }) => {
       completedAt: new Date().toISOString()
     };
 
-    // Save workout to local cache & Cloud Firestore
-    const currentList = JSON.parse(localStorage.getItem('platesync_v2_workouts_local') || '[]');
-    localStorage.setItem('platesync_v2_workouts_local', JSON.stringify([finished, ...currentList]));
+    // Save workout session via unified WorkoutContext handler
     if (saveWorkout) {
       saveWorkout(finished);
     }

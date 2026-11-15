@@ -131,15 +131,14 @@ export const saveWorkoutSession = async (userId, workoutData) => {
   const payload = {
     ...workoutData,
     userId,
-    createdAt: new Date().toISOString()
+    createdAt: workoutData.date || workoutData.createdAt || new Date().toISOString()
   };
 
-  const localList = getLocalItem(`workouts_${userId}`, []);
-  const tempId = `local_${Date.now()}`;
-  const localSaved = { id: tempId, ...payload };
-  setLocalItem(`workouts_${userId}`, [localSaved, ...localList]);
-
   if (!isFirebaseConfigured() || !db) {
+    const localList = getLocalItem(`workouts_${userId}`, []);
+    const tempId = workoutData.id || `local_${Date.now()}`;
+    const localSaved = { id: tempId, ...payload };
+    setLocalItem(`workouts_${userId}`, [localSaved, ...localList.filter(w => w.id !== tempId)]);
     return localSaved;
   }
 
@@ -149,9 +148,16 @@ export const saveWorkoutSession = async (userId, workoutData) => {
       ...payload,
       createdAt: serverTimestamp()
     });
-    return { id: docRef.id, ...payload };
+    const saved = { id: docRef.id, ...payload };
+    const localList = getLocalItem(`workouts_${userId}`, []);
+    setLocalItem(`workouts_${userId}`, [saved, ...localList.filter(w => w.id !== docRef.id && w.id !== workoutData.id)]);
+    return saved;
   } catch (err) {
-    console.warn('Firestore save notice:', err);
+    console.warn('Firestore save notice, falling back to local:', err);
+    const localList = getLocalItem(`workouts_${userId}`, []);
+    const tempId = workoutData.id || `local_${Date.now()}`;
+    const localSaved = { id: tempId, ...payload };
+    setLocalItem(`workouts_${userId}`, [localSaved, ...localList.filter(w => w.id !== tempId)]);
     return localSaved;
   }
 };
@@ -169,17 +175,21 @@ export const getUserWorkouts = async (userId) => {
     const q = query(colRef, orderBy('createdAt', 'desc'));
     const snapshot = await getDocs(q);
 
-    if (!snapshot.empty) {
-      const remoteWorkouts = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate ? doc.data().createdAt.toDate().toISOString() : doc.data().createdAt || new Date().toISOString()
-      }));
-      setLocalItem(`workouts_${userId}`, remoteWorkouts);
-      return remoteWorkouts;
+    // If Firestore query succeeded and returned 0 documents, user has 0 workouts!
+    if (snapshot.empty) {
+      setLocalItem(`workouts_${userId}`, []);
+      return [];
     }
-    return localWorkouts;
+
+    const remoteWorkouts = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      createdAt: doc.data().createdAt?.toDate ? doc.data().createdAt.toDate().toISOString() : doc.data().createdAt || new Date().toISOString()
+    }));
+    setLocalItem(`workouts_${userId}`, remoteWorkouts);
+    return remoteWorkouts;
   } catch (err) {
+    console.warn('Notice reading from Firestore, using local cache:', err);
     return localWorkouts;
   }
 };
@@ -187,7 +197,16 @@ export const getUserWorkouts = async (userId) => {
 export const deleteWorkoutSession = async (userId, workoutId) => {
   if (!userId || !workoutId) return false;
   const localWorkouts = getLocalItem(`workouts_${userId}`, []);
-  setLocalItem(`workouts_${userId}`, localWorkouts.filter(w => w.id !== workoutId));
+  const remaining = localWorkouts.filter(w => w.id !== workoutId);
+  setLocalItem(`workouts_${userId}`, remaining);
+
+  // Clean any legacy keys if present
+  try {
+    const legacy = getLocalItem('workouts_local', []);
+    if (legacy && legacy.length > 0) {
+      setLocalItem('workouts_local', legacy.filter(w => w.id !== workoutId));
+    }
+  } catch (e) {}
 
   if (!isFirebaseConfigured() || !db) return true;
 
@@ -196,6 +215,7 @@ export const deleteWorkoutSession = async (userId, workoutId) => {
     await deleteDoc(docRef);
     return true;
   } catch (err) {
+    console.warn('Firestore delete notice:', err);
     return true;
   }
 };

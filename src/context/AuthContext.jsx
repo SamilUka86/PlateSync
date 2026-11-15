@@ -202,6 +202,7 @@ export const AuthProvider = ({ children }) => {
     if (isDemoMode) {
       localStorage.removeItem('platesync_demo_active');
       localStorage.removeItem('platesync_demo_access_mode');
+      localStorage.removeItem('platesync_demo_workouts');
       setIsDemoMode(false);
       setDemoAccessMode('calculator-only');
       setCurrentUser(null);

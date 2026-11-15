@@ -203,10 +203,23 @@ export const WorkoutProvider = ({ children }) => {
         return;
       }
 
-      // If user explicitly activated Demo Mode, show demo workouts
+      // If user explicitly activated Demo Mode, check persisted demo workouts first
       if (isDemoMode || currentUser.isDemo) {
-        setWorkouts(DEMO_WORKOUTS);
-        setLoadingWorkouts(false);
+        const savedDemo = localStorage.getItem('platesync_demo_workouts');
+        if (savedDemo !== null) {
+          try {
+            const parsed = JSON.parse(savedDemo);
+            if (isMounted) setWorkouts(Array.isArray(parsed) ? parsed : []);
+          } catch (e) {
+            if (isMounted) setWorkouts([]);
+          }
+        } else {
+          if (isMounted) {
+            setWorkouts(DEMO_WORKOUTS);
+            localStorage.setItem('platesync_demo_workouts', JSON.stringify(DEMO_WORKOUTS));
+          }
+        }
+        if (isMounted) setLoadingWorkouts(false);
         return;
       }
 
@@ -262,7 +275,7 @@ export const WorkoutProvider = ({ children }) => {
       id: workoutData.id || `workout_${Date.now()}`
     };
 
-    if (currentUser?.uid && !isDemoMode) {
+    if (currentUser?.uid && !isDemoMode && !currentUser?.isDemo) {
       try {
         const remoteSaved = await saveWorkoutSession(currentUser.uid, workoutData);
         if (remoteSaved) savedWorkout = remoteSaved;
@@ -271,15 +284,27 @@ export const WorkoutProvider = ({ children }) => {
       }
     }
 
-    setWorkouts(prev => [savedWorkout, ...prev.filter(w => w.id !== savedWorkout.id)]);
+    setWorkouts(prev => {
+      const updated = [savedWorkout, ...prev.filter(w => w.id !== savedWorkout.id)];
+      if (isDemoMode || currentUser?.isDemo) {
+        localStorage.setItem('platesync_demo_workouts', JSON.stringify(updated));
+      }
+      return updated;
+    });
     return savedWorkout;
   };
 
   // Delete workout session (Cloud Firestore + local state)
   const deleteWorkout = async (workoutId) => {
-    setWorkouts(prev => prev.filter(w => w.id !== workoutId));
+    setWorkouts(prev => {
+      const updated = prev.filter(w => w.id !== workoutId);
+      if (isDemoMode || currentUser?.isDemo) {
+        localStorage.setItem('platesync_demo_workouts', JSON.stringify(updated));
+      }
+      return updated;
+    });
 
-    if (currentUser?.uid && !isDemoMode) {
+    if (currentUser?.uid && !isDemoMode && !currentUser?.isDemo) {
       try {
         await deleteWorkoutSession(currentUser.uid, workoutId);
       } catch (err) {
