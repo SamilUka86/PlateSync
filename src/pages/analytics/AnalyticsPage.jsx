@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   TrendingUp, 
   Dumbbell, 
@@ -6,7 +6,8 @@ import {
   BarChart3, 
   Layers, 
   Award,
-  ChevronDown
+  ChevronDown,
+  Scale
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -24,13 +25,47 @@ import {
 import { useWorkout } from '../../context/WorkoutContext';
 import { useAuth } from '../../context/AuthContext';
 import { KG_TO_LBS } from '../../utils/weightCalculations';
+import { getWeightLogs } from '../../services/firestore/firestoreService';
 
 export const AnalyticsPage = () => {
   const { workouts, metrics } = useWorkout();
-  const { userProfile } = useAuth();
+  const { userProfile, currentUser, isDemoMode } = useAuth();
   const preferredUnit = userProfile?.preferredUnit || 'KG';
 
   const [selectedExerciseName, setSelectedExerciseName] = useState('Barbell Bench Press');
+  const [weightLogs, setWeightLogs] = useState([]);
+
+  const userId = currentUser?.uid || (isDemoMode ? 'demo_athlete_platesync' : 'guest_local');
+
+  useEffect(() => {
+    let mounted = true;
+    getWeightLogs(userId).then(logs => {
+      if (mounted && logs) setWeightLogs(logs);
+    });
+    return () => { mounted = false; };
+  }, [userId, userProfile?.bodyWeight]);
+
+  // Body weight progression over time
+  const weightTrendData = useMemo(() => {
+    if (!weightLogs || weightLogs.length === 0) {
+      const baseKg = Number(userProfile?.bodyWeight) || 75;
+      return [
+        {
+          date: 'Current',
+          weight: preferredUnit === 'LB' ? Math.round(baseKg * KG_TO_LBS * 10) / 10 : baseKg,
+          kg: baseKg,
+          lbs: Math.round(baseKg * KG_TO_LBS * 10) / 10
+        }
+      ];
+    }
+    return [...weightLogs].reverse().map(l => ({
+      date: new Date(l.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+      weight: preferredUnit === 'LB' ? (l.weightLb || Math.round(l.weightKg * KG_TO_LBS * 10) / 10) : l.weightKg,
+      kg: l.weightKg,
+      lbs: l.weightLb || Math.round(l.weightKg * KG_TO_LBS * 10) / 10,
+      fullDate: l.date
+    }));
+  }, [weightLogs, preferredUnit, userProfile?.bodyWeight]);
 
   // Volume progression over time data
   const volumeData = useMemo(() => {
@@ -214,6 +249,78 @@ export const AnalyticsPage = () => {
                     activeDot={{ r: 6, fill: '#c084fc' }} 
                   />
                 </LineChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+
+        {/* Chart 3: Body Weight Progression (Cyan Area Chart) */}
+        <div className="bg-midnight-card border border-midnight-border rounded-3xl p-6 space-y-4 lg:col-span-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Scale className="w-4 h-4 text-neon-cyan" />
+                Athlete Body Weight Trajectory
+              </h3>
+              <p className="text-xs text-slate-400">Track body weight fluctuations over time ({preferredUnit})</p>
+            </div>
+            <div className="text-right">
+              <span className="text-[10px] text-slate-400 block font-mono">Current Weight</span>
+              <span className="text-xs font-mono font-bold text-neon-cyan bg-neon-cyan/10 px-2 py-0.5 rounded border border-neon-cyan/20">
+                {preferredUnit === 'LB' ? `${Math.round((userProfile?.bodyWeight || 75) * KG_TO_LBS * 10) / 10} lbs` : `${userProfile?.bodyWeight || 75} kg`}
+              </span>
+            </div>
+          </div>
+
+          <div className="h-64 w-full">
+            {weightTrendData.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-xs text-slate-500">
+                Log your body weight in the sidebar to see your progression curve!
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={weightTrendData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="weightGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#35D9E8" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#35D9E8" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#17233B" vertical={false} />
+                  <XAxis dataKey="date" stroke="#64748B" fontSize={11} tickLine={false} axisLine={{ stroke: '#26334D' }} />
+                  <YAxis 
+                    stroke="#64748B" 
+                    fontSize={11} 
+                    tickLine={false} 
+                    axisLine={{ stroke: '#26334D' }}
+                    domain={['dataMin - 1', 'dataMax + 1']}
+                  />
+                  <Tooltip
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload;
+                        return (
+                          <div className="bg-midnight-bg border border-midnight-border p-3 rounded-xl shadow-xl text-xs space-y-1">
+                            <p className="font-bold text-white">Body Weight</p>
+                            <p className="text-neon-cyan font-mono font-bold">{data.weight} {preferredUnit}</p>
+                            <p className="text-slate-400 text-[10px] font-mono">
+                              ({preferredUnit === 'LB' ? `${data.kg} KG` : `${data.lbs} LB`}) &bull; {data.date}
+                            </p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="weight"
+                    stroke="#35D9E8"
+                    strokeWidth={2.5}
+                    fillOpacity={1}
+                    fill="url(#weightGrad)"
+                  />
+                </AreaChart>
               </ResponsiveContainer>
             )}
           </div>

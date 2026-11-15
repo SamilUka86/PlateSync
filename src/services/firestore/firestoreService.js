@@ -297,3 +297,126 @@ export const getWeeklyRoutine = async (userId) => {
     return localPlan;
   }
 };
+
+/**
+ * 4. Body Weight Logs Tracker
+ */
+const KG_TO_LBS_CONST = 2.2046226218;
+
+export const saveWeightLog = async (userId, weightEntry) => {
+  if (!userId) throw new Error('User ID required');
+  const entryId = weightEntry.id || `bw_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  
+  const unit = (weightEntry.unit || 'KG').toUpperCase();
+  const weightVal = Number(weightEntry.weight) || 0;
+  const weightKg = unit === 'LB' ? Math.round((weightVal / KG_TO_LBS_CONST) * 10) / 10 : Math.round(weightVal * 10) / 10;
+  const weightLb = unit === 'KG' ? Math.round((weightVal * KG_TO_LBS_CONST) * 10) / 10 : Math.round(weightVal * 10) / 10;
+
+  const payload = {
+    id: entryId,
+    userId,
+    date: weightEntry.date || new Date().toISOString().split('T')[0],
+    weight: weightVal,
+    unit,
+    weightKg,
+    weightLb,
+    notes: weightEntry.notes || '',
+    createdAt: weightEntry.createdAt || new Date().toISOString()
+  };
+
+  // 1. Immediate Local Storage cache
+  const localLogs = getLocalItem(`weight_logs_${userId}`, []);
+  const updatedLogs = [payload, ...localLogs.filter(l => l.id !== entryId)];
+  updatedLogs.sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt));
+  setLocalItem(`weight_logs_${userId}`, updatedLogs);
+
+  // Update profile bodyWeight cache
+  const currentProfile = getLocalItem(`profile_${userId}`, {});
+  if (currentProfile) {
+    setLocalItem(`profile_${userId}`, {
+      ...currentProfile,
+      bodyWeight: weightKg,
+      updatedAt: new Date().toISOString()
+    });
+  }
+
+  if (!isFirebaseConfigured() || !db) {
+    return payload;
+  }
+
+  // 2. Cloud Firestore
+  try {
+    const docRef = doc(db, 'users', userId, 'weight_logs', entryId);
+    await setDoc(docRef, {
+      ...payload,
+      createdAt: serverTimestamp()
+    }, { merge: true });
+
+    // Update bodyWeight on users/{userId}
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, {
+      bodyWeight: weightKg,
+      updatedAt: serverTimestamp()
+    });
+
+    return payload;
+  } catch (err) {
+    console.warn('Firestore weight log save notice, cached locally:', err);
+    return payload;
+  }
+};
+
+export const getWeightLogs = async (userId) => {
+  if (!userId) return [];
+  const localLogs = getLocalItem(`weight_logs_${userId}`, []);
+
+  if (!isFirebaseConfigured() || !db) {
+    return localLogs;
+  }
+
+  try {
+    const colRef = collection(db, 'users', userId, 'weight_logs');
+    let snapshot;
+    try {
+      const q = query(colRef, orderBy('date', 'desc'));
+      snapshot = await getDocs(q);
+    } catch (indexErr) {
+      snapshot = await getDocs(colRef);
+    }
+
+    if (snapshot.empty) {
+      return localLogs;
+    }
+
+    const remoteLogs = snapshot.docs.map(doc => ({
+      ...doc.data(),
+      id: doc.id
+    }));
+    remoteLogs.sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt));
+    setLocalItem(`weight_logs_${userId}`, remoteLogs);
+    return remoteLogs;
+  } catch (err) {
+    console.warn('Firestore weight logs read notice:', err);
+    return localLogs;
+  }
+};
+
+export const deleteWeightLog = async (userId, entryId) => {
+  if (!userId || !entryId) return false;
+
+  const localLogs = getLocalItem(`weight_logs_${userId}`, []);
+  const remaining = localLogs.filter(l => l.id !== entryId);
+  setLocalItem(`weight_logs_${userId}`, remaining);
+
+  if (!isFirebaseConfigured() || !db) return true;
+
+  try {
+    const docRef = doc(db, 'users', userId, 'weight_logs', entryId);
+    await deleteDoc(docRef);
+    return true;
+  } catch (err) {
+    console.warn('Firestore weight log delete notice:', err);
+    return true;
+  }
+};
+

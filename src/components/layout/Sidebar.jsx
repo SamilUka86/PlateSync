@@ -19,6 +19,7 @@ import {
   Lock
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { SidebarWeightTracker } from './SidebarWeightTracker';
 
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -76,8 +77,7 @@ export const Sidebar = ({ activeTab, setActiveTab, isMobileOpen, setIsMobileOpen
         } ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         {/* Top: Logo & Collapse Button */}
-        <div>
-          <div className={`border-b border-midnight-border transition-all duration-200 ${
+        <div className={`border-b border-midnight-border transition-all duration-200 shrink-0 ${
             collapsed ? 'p-3 flex flex-col items-center gap-2.5' : 'p-4 md:p-5 flex items-center justify-between'
           }`}>
             <button
@@ -123,10 +123,11 @@ export const Sidebar = ({ activeTab, setActiveTab, isMobileOpen, setIsMobileOpen
             >
               {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
             </button>
-          </div>
+        </div>
 
-          {/* Navigation Links */}
-          <nav className="p-3 space-y-1 mt-2">
+        {/* Scrollable Center: Navigation Links + Body Weight Tracker */}
+        <div className="flex-1 overflow-y-auto scrollbar-none p-3 space-y-3">
+          <nav className="space-y-1">
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -172,6 +173,14 @@ export const Sidebar = ({ activeTab, setActiveTab, isMobileOpen, setIsMobileOpen
               );
             })}
           </nav>
+
+          {/* Body Weight Tracker in Sidebar */}
+          <div className="pt-1">
+            <SidebarWeightTracker
+              collapsed={collapsed}
+              onExpandSidebar={() => setCollapsed(false)}
+            />
+          </div>
         </div>
 
         {/* Bottom: User Profile & Session Controls */}
