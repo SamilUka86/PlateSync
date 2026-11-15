@@ -12,11 +12,11 @@ service cloud.firestore {
     }
 
     // Verify requesting user matches the document or path owner UID
-    function isDocOwner(userId) {
+    function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    // Verify requesting user has admin privileges (via token custom claims or adminUsers collection)
+    // Verify requesting user is an authorized platform administrator
     function isAdmin() {
       return isAuthenticated() && (
         request.auth.token.admin == true ||
@@ -57,177 +57,222 @@ service cloud.firestore {
     }
 
     // =========================================================================
-    // 1. ATHLETE USER PROFILES & SUBCOLLECTIONS: /users/{userId}
+    // 1. ATHLETE USER PROFILES: /users/{userId}
     // =========================================================================
     match /users/{userId} {
-      // Authenticated athlete can read their own profile; authorized admins can read for user management
-      allow read: if isDocOwner(userId) || isAdmin();
-      allow delete: if isDocOwner(userId) || isPlatformOwner();
+      // Authenticated athlete can read their own profile; authorized admins can read for user management & live telemetry
+      allow read: if isOwner(userId) || isAdmin();
+      allow delete: if isOwner(userId) || isPlatformOwner();
 
-      // Create athlete profile
-      allow create: if isDocOwner(userId)
+      // Create athlete profile: enforce UID match and validate data fields
+      allow create: if isOwner(userId)
         && request.resource.data.uid == userId
         && (!('name' in request.resource.data) || isValidString(request.resource.data.name, 100))
         && (!('displayName' in request.resource.data) || isValidString(request.resource.data.displayName, 100))
         && (!('email' in request.resource.data) || isValidString(request.resource.data.email, 150))
+        && (!('profileImage' in request.resource.data) || request.resource.data.profileImage == null || request.resource.data.profileImage is string)
+        && (!('photoURL' in request.resource.data) || request.resource.data.photoURL == null || request.resource.data.photoURL is string)
         && (!('height' in request.resource.data) || (isStrictlyPositiveNumber(request.resource.data.height) && request.resource.data.height <= 300))
         && (!('bodyWeight' in request.resource.data) || (isStrictlyPositiveNumber(request.resource.data.bodyWeight) && request.resource.data.bodyWeight <= 600))
-        && (!('preferredUnit' in request.resource.data) || isValidUnit(request.resource.data.preferredUnit));
+        && (!('preferredUnit' in request.resource.data) || isValidUnit(request.resource.data.preferredUnit))
+        && (!('defaultBarbellWeight' in request.resource.data) || (isPositiveNumber(request.resource.data.defaultBarbellWeight) && request.resource.data.defaultBarbellWeight <= 200))
+        && (!('defaultBarbellUnit' in request.resource.data) || isValidUnit(request.resource.data.defaultBarbellUnit))
+        && (!('theme' in request.resource.data) || isValidString(request.resource.data.theme, 50))
+        && (!('bio' in request.resource.data) || isValidString(request.resource.data.bio, 500));
 
-      // Update athlete profile: user can update own profile, admins can update account status
-      allow update: if (isDocOwner(userId) && (!('role' in request.resource.data) || request.resource.data.role == resource.data.role))
-        || isAdmin();
+      // Update athlete profile: user can update own profile, admins can manage account status
+      allow update: if isOwner(userId) || isAdmin();
 
-      // 1.1 Workout Sessions
+      // =======================================================================
+      // 1.1 WORKOUT SESSIONS: /users/{userId}/workouts/{workoutId}
+      // =======================================================================
       match /workouts/{workoutId} {
-        allow read: if isDocOwner(userId) || isAdmin();
-        allow create, update, delete: if isDocOwner(userId) || isAdmin();
+        allow read: if isOwner(userId) || isAdmin();
+        allow delete: if isOwner(userId) || isAdmin();
+
+        allow create, update: if (isOwner(userId) || isAdmin())
+          && (!('userId' in request.resource.data) || request.resource.data.userId == userId)
+          && (!('workoutName' in request.resource.data) || isValidString(request.resource.data.workoutName, 150))
+          && (!('title' in request.resource.data) || isValidString(request.resource.data.title, 150))
+          && (!('duration' in request.resource.data) || isPositiveNumber(request.resource.data.duration))
+          && (!('exercises' in request.resource.data) || request.resource.data.exercises is list)
+          && (!('totalVolume' in request.resource.data) || isPositiveNumber(request.resource.data.totalVolume))
+          && (!('totalVolumeKg' in request.resource.data) || isPositiveNumber(request.resource.data.totalVolumeKg))
+          && (!('totalVolumeLbs' in request.resource.data) || isPositiveNumber(request.resource.data.totalVolumeLbs))
+          && (!('totalSets' in request.resource.data) || isPositiveNumber(request.resource.data.totalSets))
+          && (!('totalReps' in request.resource.data) || isPositiveNumber(request.resource.data.totalReps));
       }
 
-      // 1.2 Saved Plate & Barbell Setups
+      // =======================================================================
+      // 1.2 SAVED PLATE & BARBELL SETUPS: /users/{userId}/plateConfigurations/{configId}
+      // =======================================================================
       match /plateConfigurations/{configId} {
-        allow read: if isDocOwner(userId) || isAdmin();
-        allow create, update, delete: if isDocOwner(userId) || isAdmin();
+        allow read, delete: if isOwner(userId) || isAdmin();
+
+        allow create, update: if (isOwner(userId) || isAdmin())
+          && (!('name' in request.resource.data) || isValidString(request.resource.data.name, 100))
+          && (!('barbellWeight' in request.resource.data) || (isPositiveNumber(request.resource.data.barbellWeight) && request.resource.data.barbellWeight <= 200))
+          && (!('barbellUnit' in request.resource.data) || isValidUnit(request.resource.data.barbellUnit))
+          && (!('leftPlates' in request.resource.data) || request.resource.data.leftPlates is list)
+          && (!('rightPlates' in request.resource.data) || request.resource.data.rightPlates is list)
+          && (!('totalKg' in request.resource.data) || isPositiveNumber(request.resource.data.totalKg))
+          && (!('totalLbs' in request.resource.data) || isPositiveNumber(request.resource.data.totalLbs));
       }
 
-      // 1.3 Personal Records (PRs)
+      // =======================================================================
+      // 1.3 PERSONAL RECORDS (PRs): /users/{userId}/personalRecords/{recordId}
+      // =======================================================================
       match /personalRecords/{recordId} {
-        allow read: if isDocOwner(userId) || isAdmin();
-        allow create, update, delete: if isDocOwner(userId) || isAdmin();
+        allow read, delete: if isOwner(userId) || isAdmin();
+
+        allow create, update: if (isOwner(userId) || isAdmin())
+          && (!('exerciseName' in request.resource.data) || isValidString(request.resource.data.exerciseName, 100))
+          && (!('name' in request.resource.data) || isValidString(request.resource.data.name, 100))
+          && (!('maxWeightKg' in request.resource.data) || isPositiveNumber(request.resource.data.maxWeightKg))
+          && (!('maxWeightLbs' in request.resource.data) || isPositiveNumber(request.resource.data.maxWeightLbs))
+          && (!('reps' in request.resource.data) || isPositiveNumber(request.resource.data.reps));
       }
 
-      // 1.4 Workout Routine Templates
+      // =======================================================================
+      // 1.4 WORKOUT ROUTINE TEMPLATES: /users/{userId}/templates/{templateId}
+      // =======================================================================
       match /templates/{templateId} {
-        allow read: if isDocOwner(userId) || isAdmin();
-        allow create, update, delete: if isDocOwner(userId) || isAdmin();
+        allow read, delete: if isOwner(userId) || isAdmin();
+
+        allow create, update: if (isOwner(userId) || isAdmin())
+          && (!('name' in request.resource.data) || isValidString(request.resource.data.name, 100))
+          && (!('title' in request.resource.data) || isValidString(request.resource.data.title, 100))
+          && (!('split' in request.resource.data) || isValidString(request.resource.data.split, 50))
+          && (!('exercises' in request.resource.data) || request.resource.data.exercises is list);
       }
 
-      // 1.5 Custom Athlete Exercises
+      // =======================================================================
+      // 1.5 CUSTOM ATHLETE EXERCISES: /users/{userId}/customExercises/{exerciseId}
+      // =======================================================================
       match /customExercises/{exerciseId} {
-        allow read: if isDocOwner(userId) || isAdmin();
-        allow create, update, delete: if isDocOwner(userId) || isAdmin();
+        allow read, delete: if isOwner(userId) || isAdmin();
+
+        allow create, update: if (isOwner(userId) || isAdmin())
+          && (!('name' in request.resource.data) || isValidString(request.resource.data.name, 100))
+          && (!('muscle' in request.resource.data) || isValidString(request.resource.data.muscle, 50))
+          && (!('category' in request.resource.data) || isValidString(request.resource.data.category, 50))
+          && (!('equipment' in request.resource.data) || isValidString(request.resource.data.equipment, 50));
       }
 
-      // 1.6 Body Weight Logs
+      // =======================================================================
+      // 1.6 BODY WEIGHT LOGS: /users/{userId}/weight_logs/{logId}
+      // =======================================================================
       match /weight_logs/{logId} {
-        allow read: if isDocOwner(userId) || isAdmin();
-        allow create, update, delete: if isDocOwner(userId) || isAdmin();
+        allow read, write: if isOwner(userId) || isAdmin();
       }
 
-      // 1.7 Weekly Planner
+      // =======================================================================
+      // 1.7 WEEKLY PLANNER: /users/{userId}/planner/{planId}
+      // =======================================================================
       match /planner/{planId} {
-        allow read: if isDocOwner(userId) || isAdmin();
-        allow create, update, delete: if isDocOwner(userId) || isAdmin();
+        allow read, write: if isOwner(userId) || isAdmin();
+      }
+
+      // =======================================================================
+      // 1.8 USER FEEDBACK COPIES: /users/{userId}/feedback/{feedbackId}
+      // =======================================================================
+      match /feedback/{feedbackId} {
+        allow read, write: if isOwner(userId) || isAdmin();
       }
     }
 
     // =========================================================================
-    // 2. ADMIN ACCOUNTS & PERMISSIONS: /adminUsers/{adminId}
-    // =========================================================================
-    match /adminUsers/{adminId} {
-      // Admins can read admin records
-      allow read: if isAdmin();
-      
-      // Only the platform owner can create, update, or remove admin privileges
-      allow create, update, delete: if isPlatformOwner() || (
-        // Allow initial bootstrap if owner account authenticates
-        isAuthenticated() && (request.auth.token.email == 'platesync86@gmail.com' || request.auth.token.email == 'samilplatesync@gmail.com')
-      );
-    }
-
-    // =========================================================================
-    // 3. GLOBAL EXERCISE DATABASE: /exercises/{exerciseId}
-    // =========================================================================
-    match /exercises/{exerciseId} {
-      // Publicly readable by all athletes
-      allow read: if true;
-      // Only authorized administrators can add, edit, or delete exercises
-      allow create, update, delete: if isAdmin();
-    }
-
-    // =========================================================================
-    // 4. PREBUILT & COMMUNITY WORKOUT PROGRAMS: /workoutPrograms/{programId}
-    // =========================================================================
-    match /workoutPrograms/{programId} {
-      // Athletes can read published programs; admins can read all
-      allow read: if resource.data.published == true || isAdmin();
-      // Only admins can create, update, or delete programs
-      allow create, update, delete: if isAdmin();
-    }
-
-    // =========================================================================
-    // 5. USER FEEDBACK & REPORTS: /userFeedback/{feedbackId}
+    // 2. ATHLETE FEEDBACK & BUG REPORTS: /userFeedback/{feedbackId}
     // =========================================================================
     match /userFeedback/{feedbackId} {
-      // Athletes, guests, and admins can submit and read feedback reports
-      allow read, write: if true;
-    }
-
-    // =========================================================================
-    // 6. PLATFORM APPLICATION SETTINGS: /adminSettings/{settingId}
-    // =========================================================================
-    match /adminSettings/{settingId} {
-      // Publicly readable for global settings (announcement banners, maintenance status)
+      // Any athlete, guest, or user can submit feedback; admins and creators can read & manage
+      allow create: if true;
       allow read: if true;
-      // Only admins can modify platform configuration
-      allow write: if isAdmin();
+      allow update, delete: if isAdmin();
     }
 
     // =========================================================================
-    // 7. IMMUTABLE ADMIN AUDIT LOGS: /adminAuditLogs/{logId}
-    // =========================================================================
-    match /adminAuditLogs/{logId} {
-      // Admins can read audit logs
-      allow read: if isAdmin();
-      // Admins can append audit logs
-      allow create: if isAdmin();
-      // Modifying or deleting audit logs is strictly blocked
-      allow update, delete: if false;
-    }
-
-    // =========================================================================
-    // 8. LIVE USER PRESENCE: /userPresence/{userId}
+    // 3. LIVE USER PRESENCE: /userPresence/{userId}
     // =========================================================================
     match /userPresence/{userId} {
-      // Athlete can read own presence, Admins can read all presence
-      allow read: if isDocOwner(userId) || isAdmin();
-      // Athlete can update own presence (heartbeats, current session, status)
-      allow write: if isDocOwner(userId) || isAdmin();
+      // User can update their own presence heartbeats; Admins can read all presence
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId) || isAdmin();
     }
 
     // =========================================================================
-    // 9. USER SESSIONS: /userSessions/{sessionId}
+    // 4. USER SESSIONS: /userSessions/{sessionId}
     // =========================================================================
     match /userSessions/{sessionId} {
-      // Athletes can read their own sessions, Admins can inspect any user session
+      // Athletes create and update their session records; Admins can read and audit all sessions
       allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isAdmin();
-      // Athletes can create their session records
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      // Athletes can update their active session heartbeats/duration; Admins can manage
       allow update: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isAdmin();
       allow delete: if isAdmin();
     }
 
     // =========================================================================
-    // 10. REAL-TIME USER ACTIVITY EVENTS: /userActivityEvents/{eventId}
+    // 5. REAL-TIME USER ACTIVITY EVENTS: /userActivityEvents/{eventId}
     // =========================================================================
     match /userActivityEvents/{eventId} {
-      // Admins read all live events; Athletes can read their own events
+      // Athletes append qualifying interaction events; Admins read all live events
       allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isAdmin();
-      // Athletes append qualifying interaction events with their own UID
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      // Activity events are immutable audit trails
+      allow update, delete: if isAdmin();
+    }
+
+    // =========================================================================
+    // 6. DAILY USER ACTIVITY AGGREGATES: /dailyUserActivity/{date}
+    // =========================================================================
+    match /dailyUserActivity/{date} {
+      allow read: if isAdmin();
+      allow write: if isAuthenticated() || isAdmin();
+    }
+
+    // =========================================================================
+    // 7. PLATFORM APPLICATION SETTINGS: /adminSettings/{settingId}
+    // =========================================================================
+    match /adminSettings/{settingId} {
+      // Publicly readable for global maintenance mode check and broadcast banner announcements
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // =========================================================================
+    // 8. ADMIN USER DIRECTORY & PRIVILEGES: /adminUsers/{adminId}
+    // =========================================================================
+    match /adminUsers/{adminId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if isPlatformOwner() || (
+        isAuthenticated() && (
+          request.auth.token.email == 'platesync86@gmail.com' ||
+          request.auth.token.email == 'samilplatesync@gmail.com'
+        )
+      );
+    }
+
+    // =========================================================================
+    // 9. ADMIN SECURITY AUDIT LOGS: /adminAuditLogs/{logId}
+    // =========================================================================
+    match /adminAuditLogs/{logId} {
+      allow read, create: if isAdmin();
       allow update, delete: if false;
     }
 
     // =========================================================================
-    // 11. DAILY USER ACTIVITY AGGREGATES: /dailyUserActivity/{date}
+    // 10. GLOBAL EXERCISE DATABASE: /exercises/{exerciseId}
     // =========================================================================
-    match /dailyUserActivity/{date} {
-      // Admins can read aggregate DAU reports
-      allow read: if isAdmin();
-      // Authenticated users and admins can record daily activity telemetry
-      allow write: if isAuthenticated() || isAdmin();
+    match /exercises/{exerciseId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // =========================================================================
+    // 11. GLOBAL PREBUILT WORKOUT PROGRAMS: /workoutPrograms/{programId}
+    // =========================================================================
+    match /workoutPrograms/{programId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     // =========================================================================
