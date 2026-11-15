@@ -43,12 +43,32 @@ import { AddToPlannerModal } from '../../components/planner/AddToPlannerModal';
 import { useNotification } from '../../context/NotificationContext';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useAuth } from '../../context/AuthContext';
+import { getGlobalExercises, getAdminWorkoutPrograms } from '../../services/admin/adminDataService';
 
 export const ExerciseLibraryPage = ({ setActiveTab }) => {
   const { addNotification } = useNotification();
   const { updateDayRoutine, saveWeeklyRoutineState, weeklyRoutine } = useWorkout();
   const { userProfile } = useAuth();
   const [expandedPrograms, setExpandedPrograms] = useState({});
+
+  // Dynamic Firestore exercises & programs with core presets fallback
+  const [globalExercises, setGlobalExercises] = useState(EXERCISE_DATABASE);
+  const [availablePrograms, setAvailablePrograms] = useState(PREBUILT_WORKOUT_PROGRAMS);
+
+  useEffect(() => {
+    let mounted = true;
+    getGlobalExercises().then(data => {
+      if (mounted && data?.length) setGlobalExercises(data);
+    }).catch(() => {});
+
+    getAdminWorkoutPrograms().then(progs => {
+      if (mounted && progs?.length) {
+        setAvailablePrograms(progs.filter(p => p.published !== false));
+      }
+    }).catch(() => {});
+
+    return () => { mounted = false; };
+  }, []);
 
   // Scroll to top on mount
   useEffect(() => {
@@ -146,10 +166,10 @@ export const ExerciseLibraryPage = ({ setActiveTab }) => {
     } catch (e) {}
   }, [customExercises]);
 
-  // Combine built-in exercises with user custom exercises
+  // Combine built-in exercises with user custom exercises and Firestore global catalog
   const allExercises = useMemo(() => {
-    return [...customExercises, ...EXERCISE_DATABASE];
-  }, [customExercises]);
+    return [...customExercises, ...globalExercises];
+  }, [customExercises, globalExercises]);
 
   // Strict 1-to-1 category and subgroup counts
   const categoryCounts = useMemo(() => {
@@ -617,7 +637,7 @@ export const ExerciseLibraryPage = ({ setActiveTab }) => {
             }`}
           >
             <Play className="w-3.5 h-3.5" />
-            <span>Workout Programs ({PREBUILT_WORKOUT_PROGRAMS.length})</span>
+            <span>Workout Programs ({availablePrograms.length})</span>
           </button>
           <button
             onClick={() => setActiveTab && setActiveTab('planner')}
@@ -1089,7 +1109,7 @@ export const ExerciseLibraryPage = ({ setActiveTab }) => {
         /* Workout Programs Section (All 12 Prebuilt Programs) */
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {PREBUILT_WORKOUT_PROGRAMS.map((prog) => {
+            {availablePrograms.map((prog) => {
               const isExpanded = Boolean(expandedPrograms[prog.id]);
               const totalMovements = prog.days.reduce((acc, d) => acc + (d.exercises?.length || 0), 0);
 

@@ -17,7 +17,8 @@ import {
   Sparkles,
   Download,
   Lock,
-  Scale
+  Scale,
+  Shield
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -35,7 +36,7 @@ const NAV_ITEMS = [
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
-export const Sidebar = ({ activeTab, setActiveTab, isMobileOpen, setIsMobileOpen, collapsed, setCollapsed, onOpenAuth }) => {
+export const Sidebar = ({ activeTab, setActiveTab, isMobileOpen, setIsMobileOpen, collapsed, setCollapsed, onOpenAuth, onOpenAdmin }) => {
   const { currentUser, userProfile, logout, isDemoMode, isFirebaseReady, demoAccessMode, toggleDemoAccessMode, isDevTester, toggleDevTester } = useAuth();
   const [logoClicks, setLogoClicks] = useState(0);
 
@@ -173,6 +174,20 @@ export const Sidebar = ({ activeTab, setActiveTab, isMobileOpen, setIsMobileOpen
                 </button>
               );
             })}
+
+            {/* Owner Suite Link */}
+            {currentUser?.email?.toLowerCase() === 'samilplatesync@gmail.com' && (
+              <button
+                onClick={onOpenAdmin || (() => window.dispatchEvent(new CustomEvent('platesync_open_admin')))}
+                className={`w-full mt-2 flex items-center ${collapsed ? 'justify-center' : 'justify-between'} px-3 py-2.5 rounded-xl text-xs font-bold transition bg-amber-400/10 hover:bg-amber-400/20 text-amber-300 border border-amber-400/30 shadow-sm`}
+                title="Owner Administration Suite"
+              >
+                <div className="flex items-center gap-3">
+                  <Shield className="w-4 h-4 text-amber-400 shrink-0" />
+                  {!collapsed && <span>Owner Suite</span>}
+                </div>
+              </button>
+            )}
           </nav>
         </div>
 

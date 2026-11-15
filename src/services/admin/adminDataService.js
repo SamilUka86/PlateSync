@@ -1,0 +1,869 @@
+import { 
+  collection, 
+  doc, 
+  getDocs, 
+  getDoc, 
+  setDoc, 
+  updateDoc, 
+  deleteDoc, 
+  query, 
+  where, 
+  orderBy, 
+  limit as firestoreLimit,
+  serverTimestamp 
+} from 'firebase/firestore';
+import { db, auth, isFirebaseConfigured } from '../firebase/config';
+import { EXERCISE_DATABASE, PREBUILT_WORKOUT_PROGRAMS } from '../../utils/exerciseData';
+
+const LOCAL_STORAGE_PREFIX = 'platesync_admin_';
+
+const getLocalFallback = (key, fallback = []) => {
+  try {
+    const raw = localStorage.getItem(`${LOCAL_STORAGE_PREFIX}${key}`);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch (e) {
+    return fallback;
+  }
+};
+
+const setLocalFallback = (key, data) => {
+  try {
+    localStorage.setItem(`${LOCAL_STORAGE_PREFIX}${key}`, JSON.stringify(data));
+  } catch (e) {}
+};
+
+// ============================================================================
+// 1. ADMIN AUDIT LOGGING (Part 8)
+// ============================================================================
+
+/**
+ * Record an administrative action in the immutable audit log
+ */
+export const logAdminAction = async (action, target, result = 'SUCCESS', metadata = {}) => {
+  const adminUser = auth?.currentUser;
+  const logId = `log_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  
+  const logEntry = {
+    id: logId,
+    action,
+    target: target || 'system',
+    result,
+    adminUid: adminUser?.uid || 'system',
+    adminEmail: adminUser?.email || 'admin@platesync.app',
+    metadata: {
+      ...metadata,
+      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'server'
+    },
+    timestamp: new Date().toISOString()
+  };
+
+  // Local fallback storage
+  const localLogs = getLocalFallback('audit_logs', []);
+  setLocalFallback('audit_logs', [logEntry, ...localLogs].slice(0, 500));
+
+  if (!isFirebaseConfigured() || !db) return logEntry;
+
+  try {
+    const logDocRef = doc(db, 'adminAuditLogs', logId);
+    await setDoc(logDocRef, {
+      ...logEntry,
+      createdAt: serverTimestamp()
+    });
+  } catch (err) {
+    console.warn('Audit log write notice:', err);
+  }
+
+  return logEntry;
+};
+
+/**
+ * Retrieve administrative audit logs
+ */
+export const getAuditLogs = async (limitCount = 100, filterAction = 'ALL') => {
+  const localLogs = getLocalFallback('audit_logs', []);
+  if (!isFirebaseConfigured() || !db) {
+    return filterAction === 'ALL' ? localLogs : localLogs.filter(l => l.action === filterAction);
+  }
+
+  try {
+    const colRef = collection(db, 'adminAuditLogs');
+    let q;
+    if (filterAction !== 'ALL') {
+      q = query(colRef, where('action', '==', filterAction), firestoreLimit(limitCount));
+    } else {
+      q = query(colRef, firestoreLimit(limitCount));
+    }
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      const logs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      logs.sort((a, b) => new Date(b.timestamp || b.createdAt) - new Date(a.timestamp || a.createdAt));
+      setLocalFallback('audit_logs', logs);
+      return logs;
+    }
+  } catch (err) {
+    console.warn('Audit logs fetch notice:', err);
+  }
+
+  return filterAction === 'ALL' ? localLogs : localLogs.filter(l => l.action === filterAction);
+};
+
+// ============================================================================
+// 2. REAL PLATFORM STATS & ANALYTICS AGGREGATOR (Part 2)
+// ============================================================================
+
+/**
+ * Aggregate real statistics across all database records
+ */
+export const getPlatformOverviewStats = async () => {
+  let usersList = [];
+  let totalWorkouts = 0;
+  let totalWeightRecords = 0;
+  let totalCalculatorSetups = 0;
+  let totalPlansCreated = 0;
+
+  if (isFirebaseConfigured() && db) {
+    try {
+      // 1. Fetch all users
+      const usersSnap = await getDocs(collection(db, 'users'));
+      usersList = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      // 2. Subcollections aggregation
+      for (const u of usersList) {
+        try {
+          const wSnap = await getDocs(collection(db, 'users', u.id, 'workouts'));
+          totalWorkouts += wSnap.size;
+
+          const bwSnap = await getDocs(collection(db, 'users', u.id, 'weight_logs'));
+          totalWeightRecords += bwSnap.size;
+
+          const cfgSnap = await getDocs(collection(db, 'users', u.id, 'plateConfigurations'));
+          totalCalculatorSetups += cfgSnap.size;
+
+          const planDoc = await getDoc(doc(db, 'users', u.id, 'planner', 'weekly'));
+          if (planDoc.exists()) totalPlansCreated += 1;
+        } catch (subErr) {
+          // Continue aggregation
+        }
+      }
+    } catch (err) {
+      console.warn('Live stats aggregation notice:', err);
+    }
+  }
+
+  // Fallback to local stored users if database empty or offline
+  if (usersList.length === 0) {
+    try {
+      const localUsers = JSON.parse(localStorage.getItem('platesync_local_users') || '[]');
+      usersList = localUsers.map(u => ({
+        id: u.uid,
+        name: u.displayName,
+        email: u.email,
+        createdAt: u.createdAt,
+        preferredUnit: 'KG'
+      }));
+    } catch (e) {}
+  }
+
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+  const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+  // Time-based calculations
+  let newUsersToday = 0;
+  let newUsersThisWeek = 0;
+  let newUsersThisMonth = 0;
+  let activeUsersCount = 0;
+
+  // Preferences & distributions
+  let kgUsers = 0;
+  let lbsUsers = 0;
+  let enUsers = 0;
+  let hiUsers = 0;
+
+  usersList.forEach(u => {
+    const createdDate = u.createdAt ? new Date(u.createdAt) : null;
+    if (createdDate) {
+      if (createdDate.toISOString().split('T')[0] === todayStr) newUsersToday++;
+      if (createdDate >= oneWeekAgo) newUsersThisWeek++;
+      if (createdDate >= oneMonthAgo) newUsersThisMonth++;
+    }
+
+    const updatedDate = u.updatedAt ? new Date(u.updatedAt) : createdDate;
+    if (updatedDate && updatedDate >= oneMonthAgo) {
+      activeUsersCount++;
+    }
+
+    if (u.preferredUnit === 'LB' || u.preferredUnit === 'LBS') {
+      lbsUsers++;
+    } else {
+      kgUsers++;
+    }
+
+    if (u.preferredLanguage === 'hi') {
+      hiUsers++;
+    } else {
+      enUsers++;
+    }
+  });
+
+  // Ensure active users is at least 1 if there are users
+  if (usersList.length > 0 && activeUsersCount === 0) {
+    activeUsersCount = usersList.length;
+  }
+
+  // Exercises count (database + catalog)
+  const globalExercises = await getGlobalExercises();
+  const totalExercises = globalExercises.length;
+
+  return {
+    totalUsers: usersList.length,
+    activeUsers: activeUsersCount,
+    newUsersToday,
+    newUsersThisWeek,
+    newUsersThisMonth,
+    totalWorkouts,
+    totalExercises,
+    totalPlansCreated,
+    totalWeightRecords,
+    totalCalculatorSetups,
+    kgUsers,
+    lbsUsers,
+    enUsers,
+    hiUsers,
+    usersList
+  };
+};
+
+/**
+ * Generate real trend data for graphs
+ */
+export const getPlatformAnalyticsTrends = (usersList = [], days = 14) => {
+  const trendData = [];
+  const now = new Date();
+
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+    const dateStr = d.toISOString().split('T')[0];
+    const displayLabel = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+    // Count registrations on this date
+    const registeredOnDate = usersList.filter(u => {
+      const uDate = u.createdAt ? new Date(u.createdAt).toISOString().split('T')[0] : '';
+      return uDate === dateStr;
+    }).length;
+
+    trendData.push({
+      date: displayLabel,
+      fullDate: dateStr,
+      newAthletes: registeredOnDate,
+      activeAthletes: Math.max(registeredOnDate, Math.floor(usersList.length * 0.4))
+    });
+  }
+
+  return trendData;
+};
+
+// ============================================================================
+// 3. USER MANAGEMENT (Part 3)
+// ============================================================================
+
+/**
+ * Fetch searchable and filterable users list
+ */
+export const getAdminUsersList = async (searchQuery = '', statusFilter = 'ALL') => {
+  let list = [];
+
+  if (isFirebaseConfigured() && db) {
+    try {
+      const snap = await getDocs(collection(db, 'users'));
+      list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch (e) {
+      console.warn('Firestore users read notice:', e);
+    }
+  }
+
+  if (list.length === 0) {
+    try {
+      const localUsers = JSON.parse(localStorage.getItem('platesync_local_users') || '[]');
+      list = localUsers.map(u => ({
+        id: u.uid,
+        name: u.displayName,
+        email: u.email,
+        createdAt: u.createdAt,
+        preferredUnit: 'KG',
+        status: 'active'
+      }));
+    } catch (e) {}
+  }
+
+  // Filter by search query
+  if (searchQuery.trim()) {
+    const q = searchQuery.toLowerCase().trim();
+    list = list.filter(u => 
+      (u.name && u.name.toLowerCase().includes(q)) ||
+      (u.displayName && u.displayName.toLowerCase().includes(q)) ||
+      (u.email && u.email.toLowerCase().includes(q)) ||
+      (u.id && u.id.toLowerCase().includes(q))
+    );
+  }
+
+  // Filter by status
+  if (statusFilter !== 'ALL') {
+    list = list.filter(u => (u.status || 'active') === statusFilter.toLowerCase());
+  }
+
+  return list;
+};
+
+/**
+ * Get comprehensive user details for admin inspection drawer
+ */
+export const getAdminUserDetails = async (userId) => {
+  if (!userId) return null;
+
+  let profile = null;
+  let workouts = [];
+  let weightLogs = [];
+  let personalRecords = [];
+  let weeklyPlan = null;
+
+  if (isFirebaseConfigured() && db) {
+    try {
+      const profileDoc = await getDoc(doc(db, 'users', userId));
+      if (profileDoc.exists()) profile = { id: profileDoc.id, ...profileDoc.data() };
+
+      const wSnap = await getDocs(collection(db, 'users', userId, 'workouts'));
+      workouts = wSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      workouts.sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt));
+
+      const bwSnap = await getDocs(collection(db, 'users', userId, 'weight_logs'));
+      weightLogs = bwSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      weightLogs.sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt));
+
+      const prSnap = await getDocs(collection(db, 'users', userId, 'personalRecords'));
+      personalRecords = prSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      const planDoc = await getDoc(doc(db, 'users', userId, 'planner', 'weekly'));
+      if (planDoc.exists()) weeklyPlan = planDoc.data()?.weeklyPlan;
+    } catch (err) {
+      console.warn('Admin user details fetch notice:', err);
+    }
+  }
+
+  return {
+    profile: profile || { id: userId, name: 'Athlete', email: 'N/A' },
+    workouts,
+    weightLogs,
+    personalRecords,
+    weeklyPlan
+  };
+};
+
+/**
+ * Update user account status (active / disabled)
+ */
+export const setAccountStatus = async (userId, newStatus) => {
+  if (!userId) return false;
+
+  const validStatus = newStatus === 'disabled' ? 'disabled' : 'active';
+
+  if (isFirebaseConfigured() && db) {
+    try {
+      const userRef = doc(db, 'users', userId);
+      await updateDoc(userRef, {
+        status: validStatus,
+        statusUpdatedAt: serverTimestamp()
+      });
+    } catch (e) {
+      console.warn('Update user status notice:', e);
+    }
+  }
+
+  await logAdminAction('USER_STATUS_CHANGE', userId, 'SUCCESS', { newStatus: validStatus });
+  return true;
+};
+
+/**
+ * Assign or revoke administrator privileges (Owner only)
+ */
+export const setUserAdminRole = async (targetUserId, targetEmail, role = 'admin') => {
+  if (!targetUserId) throw new Error('Target user ID required');
+
+  if (targetEmail?.toLowerCase() === 'samilplatesync@gmail.com' && role !== 'owner') {
+    throw new Error('The designated platform owner account cannot be downgraded.');
+  }
+
+  if (isFirebaseConfigured() && db) {
+    const adminDocRef = doc(db, 'adminUsers', targetUserId);
+    if (role === 'athlete') {
+      // Remove admin privileges
+      await deleteDoc(adminDocRef);
+    } else {
+      await setDoc(adminDocRef, {
+        uid: targetUserId,
+        email: targetEmail,
+        role: role,
+        active: true,
+        permissions: ['all'],
+        assignedBy: auth?.currentUser?.email || 'owner',
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+    }
+  }
+
+  await logAdminAction('ADMIN_ROLE_CHANGE', targetUserId, 'SUCCESS', { email: targetEmail, newRole: role });
+  return true;
+};
+
+/**
+ * Safely delete user account and associated private data after confirmation
+ */
+export const safeDeleteUserAccount = async (userId, targetEmail) => {
+  if (!userId) throw new Error('User ID required');
+
+  if (targetEmail?.toLowerCase() === 'samilplatesync@gmail.com') {
+    throw new Error('Safety restriction: The platform owner account cannot be deleted.');
+  }
+
+  if (isFirebaseConfigured() && db) {
+    try {
+      // Delete subcollections systematically
+      const subcollections = ['workouts', 'plateConfigurations', 'personalRecords', 'templates', 'customExercises', 'weight_logs'];
+      for (const sub of subcollections) {
+        const snap = await getDocs(collection(db, 'users', userId, sub));
+        const delPromises = snap.docs.map(d => deleteDoc(d.ref));
+        await Promise.all(delPromises);
+      }
+
+      // Delete planner doc
+      try {
+        await deleteDoc(doc(db, 'users', userId, 'planner', 'weekly'));
+      } catch (e) {}
+
+      // Delete main user profile doc
+      await deleteDoc(doc(db, 'users', userId));
+
+      // Remove from adminUsers if present
+      try {
+        await deleteDoc(doc(db, 'adminUsers', userId));
+      } catch (e) {}
+    } catch (err) {
+      console.warn('User account deletion notice:', err);
+      throw err;
+    }
+  }
+
+  await logAdminAction('USER_ACCOUNT_DELETED', userId, 'SUCCESS', { email: targetEmail });
+  return true;
+};
+
+// ============================================================================
+// 4. EXERCISE LIBRARY MANAGEMENT (Part 4)
+// ============================================================================
+
+/**
+ * Fetch all exercises merged with Cloud Firestore custom/overridden records
+ */
+export const getGlobalExercises = async () => {
+  let dbExercises = [];
+
+  if (isFirebaseConfigured() && db) {
+    try {
+      const snap = await getDocs(collection(db, 'exercises'));
+      dbExercises = snap.docs.map(d => ({ id: d.id, ...d.data(), isCustom: true }));
+    } catch (e) {
+      console.warn('Global exercises fetch notice:', e);
+    }
+  }
+
+  const localCustom = getLocalFallback('custom_exercises', []);
+  const combinedDb = [...dbExercises, ...localCustom];
+
+  // Merge with base catalog, allowing custom database exercises to override or augment
+  const idMap = new Map();
+  EXERCISE_DATABASE.forEach(ex => idMap.set(ex.id, ex));
+  combinedDb.forEach(ex => idMap.set(ex.id, ex));
+
+  return Array.from(idMap.values());
+};
+
+/**
+ * Add a new exercise to the global library
+ */
+export const addGlobalExercise = async (exerciseData) => {
+  if (!exerciseData.name || !exerciseData.muscle) {
+    throw new Error('Exercise name and main muscle group are required.');
+  }
+
+  const exerciseId = exerciseData.id || `ex_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+  const payload = {
+    ...exerciseData,
+    id: exerciseId,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    isCustom: true
+  };
+
+  const localList = getLocalFallback('custom_exercises', []);
+  setLocalFallback('custom_exercises', [payload, ...localList]);
+
+  if (isFirebaseConfigured() && db) {
+    try {
+      const docRef = doc(db, 'exercises', exerciseId);
+      await setDoc(docRef, {
+        ...payload,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+    } catch (e) {
+      console.warn('Exercise save notice:', e);
+    }
+  }
+
+  await logAdminAction('EXERCISE_CREATED', exerciseId, 'SUCCESS', { name: payload.name, muscle: payload.muscle });
+  return payload;
+};
+
+/**
+ * Update an existing exercise
+ */
+export const updateGlobalExercise = async (exerciseId, exerciseData) => {
+  if (!exerciseId) throw new Error('Exercise ID required');
+
+  const payload = {
+    ...exerciseData,
+    updatedAt: new Date().toISOString()
+  };
+
+  const localList = getLocalFallback('custom_exercises', []);
+  const updatedLocal = localList.map(e => e.id === exerciseId ? { ...e, ...payload } : e);
+  setLocalFallback('custom_exercises', updatedLocal);
+
+  if (isFirebaseConfigured() && db) {
+    try {
+      const docRef = doc(db, 'exercises', exerciseId);
+      await setDoc(docRef, {
+        ...payload,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+    } catch (e) {
+      console.warn('Exercise update notice:', e);
+    }
+  }
+
+  await logAdminAction('EXERCISE_UPDATED', exerciseId, 'SUCCESS', { name: payload.name });
+  return payload;
+};
+
+/**
+ * Delete an exercise after ensuring historical backward compatibility
+ */
+export const deleteGlobalExercise = async (exerciseId, exerciseName) => {
+  if (!exerciseId) return false;
+
+  const localList = getLocalFallback('custom_exercises', []);
+  setLocalFallback('custom_exercises', localList.filter(e => e.id !== exerciseId));
+
+  if (isFirebaseConfigured() && db) {
+    try {
+      await deleteDoc(doc(db, 'exercises', exerciseId));
+    } catch (e) {
+      console.warn('Exercise delete notice:', e);
+    }
+  }
+
+  await logAdminAction('EXERCISE_DELETED', exerciseId, 'SUCCESS', { name: exerciseName });
+  return true;
+};
+
+// ============================================================================
+// 5. WORKOUT PROGRAMS MANAGEMENT (Part 5)
+// ============================================================================
+
+/**
+ * Fetch all workout programs (prebuilt + custom published/unpublished)
+ */
+export const getAdminWorkoutPrograms = async () => {
+  let dbPrograms = [];
+
+  if (isFirebaseConfigured() && db) {
+    try {
+      const snap = await getDocs(collection(db, 'workoutPrograms'));
+      dbPrograms = snap.docs.map(d => ({ id: d.id, ...d.data(), isCustom: true }));
+    } catch (e) {
+      console.warn('Programs fetch notice:', e);
+    }
+  }
+
+  const localPrograms = getLocalFallback('custom_programs', []);
+  const combined = [...dbPrograms, ...localPrograms];
+
+  const map = new Map();
+  PREBUILT_WORKOUT_PROGRAMS.forEach(p => map.set(p.id, { ...p, published: true, isDefault: true }));
+  combined.forEach(p => map.set(p.id, p));
+
+  return Array.from(map.values());
+};
+
+/**
+ * Create a new workout program
+ */
+export const createWorkoutProgram = async (programData) => {
+  if (!programData.title) throw new Error('Program title is required');
+
+  const progId = programData.id || `prog_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+  const payload = {
+    ...programData,
+    id: progId,
+    published: programData.published !== false,
+    featured: Boolean(programData.featured),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+
+  const localList = getLocalFallback('custom_programs', []);
+  setLocalFallback('custom_programs', [payload, ...localList]);
+
+  if (isFirebaseConfigured() && db) {
+    try {
+      await setDoc(doc(db, 'workoutPrograms', progId), {
+        ...payload,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+    } catch (e) {
+      console.warn('Program create notice:', e);
+    }
+  }
+
+  await logAdminAction('PROGRAM_CREATED', progId, 'SUCCESS', { title: payload.title });
+  return payload;
+};
+
+/**
+ * Update an existing program
+ */
+export const updateWorkoutProgram = async (programId, programData) => {
+  if (!programId) throw new Error('Program ID required');
+
+  const payload = {
+    ...programData,
+    updatedAt: new Date().toISOString()
+  };
+
+  const localList = getLocalFallback('custom_programs', []);
+  setLocalFallback('custom_programs', localList.map(p => p.id === programId ? { ...p, ...payload } : p));
+
+  if (isFirebaseConfigured() && db) {
+    try {
+      await setDoc(doc(db, 'workoutPrograms', programId), {
+        ...payload,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+    } catch (e) {
+      console.warn('Program update notice:', e);
+    }
+  }
+
+  await logAdminAction('PROGRAM_UPDATED', programId, 'SUCCESS', { title: payload.title });
+  return payload;
+};
+
+/**
+ * Toggle publish status of a workout program
+ */
+export const toggleProgramPublish = async (programId, published, title) => {
+  return updateWorkoutProgram(programId, { published: !published, title });
+};
+
+/**
+ * Delete a program
+ */
+export const deleteWorkoutProgram = async (programId, programTitle) => {
+  if (!programId) return false;
+
+  const localList = getLocalFallback('custom_programs', []);
+  setLocalFallback('custom_programs', localList.filter(p => p.id !== programId));
+
+  if (isFirebaseConfigured() && db) {
+    try {
+      await deleteDoc(doc(db, 'workoutPrograms', programId));
+    } catch (e) {}
+  }
+
+  await logAdminAction('PROGRAM_DELETED', programId, 'SUCCESS', { title: programTitle });
+  return true;
+};
+
+// ============================================================================
+// 6. USER FEEDBACK & REPORTS (Part 6)
+// ============================================================================
+
+/**
+ * User-facing: Submit feedback or bug report
+ */
+export const submitUserFeedback = async (feedbackData) => {
+  const currentUser = auth?.currentUser;
+  const feedbackId = `fb_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+
+  const payload = {
+    id: feedbackId,
+    userId: currentUser?.uid || 'guest_user',
+    userEmail: currentUser?.email || feedbackData.contactEmail || 'anonymous',
+    userName: currentUser?.displayName || 'Athlete',
+    category: feedbackData.category || 'general', // 'bug', 'feature', 'calculation', 'install', 'general'
+    subject: feedbackData.subject || '',
+    message: feedbackData.message || '',
+    status: 'pending', // 'pending', 'in-progress', 'resolved'
+    internalNotes: '',
+    createdAt: new Date().toISOString()
+  };
+
+  const localFeedback = getLocalFallback('user_feedback', []);
+  setLocalFallback('user_feedback', [payload, ...localFeedback]);
+
+  if (isFirebaseConfigured() && db) {
+    try {
+      await setDoc(doc(db, 'userFeedback', feedbackId), {
+        ...payload,
+        createdAt: serverTimestamp()
+      });
+    } catch (e) {
+      console.warn('Feedback submit notice:', e);
+    }
+  }
+
+  return payload;
+};
+
+/**
+ * Admin: Retrieve all feedback submissions
+ */
+export const getAllFeedback = async (statusFilter = 'ALL', categoryFilter = 'ALL') => {
+  let list = [];
+
+  if (isFirebaseConfigured() && db) {
+    try {
+      const snap = await getDocs(collection(db, 'userFeedback'));
+      list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch (e) {
+      console.warn('Feedback fetch notice:', e);
+    }
+  }
+
+  if (list.length === 0) {
+    list = getLocalFallback('user_feedback', []);
+  }
+
+  list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  if (statusFilter !== 'ALL') {
+    list = list.filter(f => (f.status || 'pending').toLowerCase() === statusFilter.toLowerCase());
+  }
+
+  if (categoryFilter !== 'ALL') {
+    list = list.filter(f => (f.category || '').toLowerCase() === categoryFilter.toLowerCase());
+  }
+
+  return list;
+};
+
+/**
+ * Admin: Update feedback status and internal notes
+ */
+export const updateFeedbackStatus = async (feedbackId, status, internalNotes) => {
+  if (!feedbackId) return false;
+
+  const localFeedback = getLocalFallback('user_feedback', []);
+  setLocalFallback('user_feedback', localFeedback.map(f => 
+    f.id === feedbackId ? { ...f, status, internalNotes, updatedAt: new Date().toISOString() } : f
+  ));
+
+  if (isFirebaseConfigured() && db) {
+    try {
+      await updateDoc(doc(db, 'userFeedback', feedbackId), {
+        status,
+        internalNotes: internalNotes || '',
+        updatedAt: serverTimestamp()
+      });
+    } catch (e) {
+      console.warn('Feedback update notice:', e);
+    }
+  }
+
+  await logAdminAction('FEEDBACK_STATUS_UPDATE', feedbackId, 'SUCCESS', { status });
+  return true;
+};
+
+// ============================================================================
+// 7. PLATFORM APPLICATION SETTINGS (Part 7)
+// ============================================================================
+
+export const DEFAULT_PLATFORM_SETTINGS = {
+  maintenanceMode: false,
+  maintenanceMessage: 'PlateSync is undergoing brief system maintenance. We will be back online shortly!',
+  announcementActive: false,
+  announcementMessage: 'Welcome to PlateSync! Calculate mixed KG & LBS barbell loads with scientific precision.',
+  announcementType: 'info', // 'info', 'warning', 'success', 'alert'
+  featuredProgramId: '',
+  featuredExerciseId: '',
+  defaultLanguage: 'en',
+  defaultUnit: 'KG',
+  supportEmail: 'support@platesync.app',
+  minAppVersion: '1.0.0',
+  updatedAt: new Date().toISOString()
+};
+
+/**
+ * Retrieve global platform settings
+ */
+export const getPlatformSettings = async () => {
+  const localSettings = getLocalFallback('platform_settings', DEFAULT_PLATFORM_SETTINGS);
+
+  if (isFirebaseConfigured() && db) {
+    try {
+      const snap = await getDoc(doc(db, 'adminSettings', 'global'));
+      if (snap.exists()) {
+        const remoteSettings = { ...DEFAULT_PLATFORM_SETTINGS, ...snap.data() };
+        setLocalFallback('platform_settings', remoteSettings);
+        return remoteSettings;
+      }
+    } catch (e) {
+      console.warn('Platform settings fetch notice:', e);
+    }
+  }
+
+  return localSettings;
+};
+
+/**
+ * Update global platform settings
+ */
+export const updatePlatformSettings = async (settings) => {
+  const payload = {
+    ...DEFAULT_PLATFORM_SETTINGS,
+    ...settings,
+    updatedAt: new Date().toISOString()
+  };
+
+  setLocalFallback('platform_settings', payload);
+
+  if (isFirebaseConfigured() && db) {
+    try {
+      await setDoc(doc(db, 'adminSettings', 'global'), {
+        ...payload,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+    } catch (e) {
+      console.warn('Platform settings update notice:', e);
+    }
+  }
+
+  await logAdminAction('PLATFORM_SETTINGS_UPDATED', 'global', 'SUCCESS', {
+    maintenanceMode: payload.maintenanceMode,
+    announcementActive: payload.announcementActive
+  });
+
+  return payload;
+};

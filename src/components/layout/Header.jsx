@@ -12,7 +12,9 @@ import {
   Globe,
   ChevronDown,
   Search,
-  Check
+  Check,
+  MessageSquare,
+  Shield
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
@@ -25,7 +27,7 @@ import {
   toggleEnglishHindi
 } from '../../services/translation/websiteTranslator';
 
-export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, setCollapsed, onOpenAuth }) => {
+export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, setCollapsed, onOpenAuth, onOpenFeedback, onOpenAdmin }) => {
   const { currentUser, userProfile, updateProfile, isDemoMode, isDevTester, demoAccessMode, toggleDemoAccessMode, logout } = useAuth();
   const { addNotification } = useNotification();
 
@@ -242,6 +244,29 @@ export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, s
           <Scale className="w-3.5 h-3.5 text-neon-cyan" />
           <span>{currentUnit}</span>
         </button>
+
+        {/* Feedback Button */}
+        <button
+          type="button"
+          onClick={onOpenFeedback || (() => window.dispatchEvent(new CustomEvent('platesync_open_feedback')))}
+          className="shrink-0 p-2 rounded-xl border border-midnight-border bg-midnight-card hover:bg-midnight-elevated text-slate-300 hover:text-neon-cyan transition"
+          title="Send Feedback or Report Bug"
+        >
+          <MessageSquare className="w-3.5 h-3.5" />
+        </button>
+
+        {/* Owner / Admin Suite Quick Link (Visible if owner email or admin) */}
+        {currentUser?.email?.toLowerCase() === 'samilplatesync@gmail.com' && (
+          <button
+            type="button"
+            onClick={onOpenAdmin || (() => window.dispatchEvent(new CustomEvent('platesync_open_admin')))}
+            className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-amber-400/40 bg-amber-400/10 hover:bg-amber-400/20 text-amber-300 text-xs font-black transition active:scale-95 shadow-sm shadow-amber-500/10"
+            title="Open PlateSync Owner Administration Suite"
+          >
+            <Shield className="w-3.5 h-3.5 text-amber-400" />
+            <span className="hidden xl:inline">Owner Suite</span>
+          </button>
+        )}
 
         {/* User Avatar */}
         <button

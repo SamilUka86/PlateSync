@@ -2,11 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { WorkoutProvider } from './context/WorkoutContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { AdminProvider, useAdmin } from './context/AdminContext';
 import { AuthPage } from './pages/auth/AuthPage';
 import { Sidebar } from './components/layout/Sidebar';
 import { Header } from './components/layout/Header';
 import { Footer } from './components/layout/Footer';
 import { DemoRestrictedView } from './components/layout/DemoRestrictedView';
+
+// Admin Suite Components
+import { AdminLayout } from './pages/admin/AdminLayout';
+import { AdminLoginPage } from './pages/admin/AdminLoginPage';
+import { UserFeedbackModal } from './components/feedback/UserFeedbackModal';
+import { getPlatformSettings } from './services/admin/adminDataService';
 
 // Pages
 import { DashboardPage } from './pages/dashboard/DashboardPage';
@@ -25,15 +32,36 @@ import {
   LayoutDashboard, 
   Calculator, 
   Dumbbell, 
-  BookOpen,
-  Calendar,
-  Trophy,
-  Lock
+  BookOpen, 
+  Calendar, 
+  Trophy, 
+  Lock,
+  AlertTriangle,
+  Shield,
+  Bell
 } from 'lucide-react';
 
 const MainAppLayout = () => {
   const { currentUser, loading, isDemoMode, demoAccessMode } = useAuth();
+  const { isAdmin } = useAdmin();
+
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [platformSettings, setPlatformSettings] = useState(null);
+
+  // Dedicated Admin View Toggle (Activated by /admin, #admin, or admin portal button)
+  const [isAdminViewOpen, setIsAdminViewOpen] = useState(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const path = window.location.pathname.toLowerCase();
+        const hash = window.location.hash.toLowerCase();
+        const params = new URLSearchParams(window.location.search);
+        return path.startsWith('/admin') || hash === '#admin' || params.get('view') === 'admin';
+      }
+    } catch (e) {}
+    return false;
+  });
+
   const [activeTab, setActiveTab] = useState(() => {
     try {
       const isDemo = localStorage.getItem('platesync_demo_active') === 'true';
@@ -45,6 +73,40 @@ const MainAppLayout = () => {
     } catch (e) {}
     return 'calculator';
   });
+
+  // Load platform settings (announcements & maintenance mode)
+  useEffect(() => {
+    getPlatformSettings().then(cfg => {
+      if (cfg) setPlatformSettings(cfg);
+    });
+  }, []);
+
+  // Listen to hash, URL, and custom events for admin navigation
+  useEffect(() => {
+    const handleRouteChange = () => {
+      const path = window.location.pathname.toLowerCase();
+      const hash = window.location.hash.toLowerCase();
+      const params = new URLSearchParams(window.location.search);
+      if (path.startsWith('/admin') || hash === '#admin' || params.get('view') === 'admin') {
+        setIsAdminViewOpen(true);
+      }
+    };
+
+    const handleOpenAdminEvent = () => setIsAdminViewOpen(true);
+    const handleOpenFeedbackEvent = () => setShowFeedbackModal(true);
+
+    window.addEventListener('popstate', handleRouteChange);
+    window.addEventListener('hashchange', handleRouteChange);
+    window.addEventListener('platesync_open_admin', handleOpenAdminEvent);
+    window.addEventListener('platesync_open_feedback', handleOpenFeedbackEvent);
+
+    return () => {
+      window.removeEventListener('popstate', handleRouteChange);
+      window.removeEventListener('hashchange', handleRouteChange);
+      window.removeEventListener('platesync_open_admin', handleOpenAdminEvent);
+      window.removeEventListener('platesync_open_feedback', handleOpenFeedbackEvent);
+    };
+  }, []);
 
   // Persist activeTab across browser page reloads
   useEffect(() => {
@@ -63,13 +125,8 @@ const MainAppLayout = () => {
       if (document.body) document.body.scrollTop = 0;
     };
 
-    // 1. Immediate scroll
     scrollToTop();
-
-    // 2. Immediate animation frame scroll
     const rafId = requestAnimationFrame(scrollToTop);
-
-    // 3. Fallback for mobile browser address bar / layout changes
     const timerId = setTimeout(scrollToTop, 60);
 
     return () => {
@@ -97,6 +154,74 @@ const MainAppLayout = () => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
 
+  // Admin View Active Route
+  if (isAdminViewOpen) {
+    if (isAdmin) {
+      return (
+        <AdminLayout
+          onBackToApp={() => {
+            setIsAdminViewOpen(false);
+            if (window.location.hash === '#admin') window.location.hash = '';
+          }}
+        />
+      );
+    }
+    return (
+      <AdminLoginPage
+        onBackToApp={() => {
+          setIsAdminViewOpen(false);
+          if (window.location.hash === '#admin') window.location.hash = '';
+        }}
+      />
+    );
+  }
+
+  // Maintenance Mode (Blocks non-admin access if enabled in platform settings)
+  if (platformSettings?.maintenanceMode && !isAdmin) {
+    return (
+      <div className="min-h-screen bg-[#070b14] text-slate-100 flex flex-col justify-between items-center p-6 text-center relative overflow-hidden select-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-neon-cyan/5 rounded-full blur-[140px] pointer-events-none" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-neon-violet/10 rounded-full blur-[140px] pointer-events-none" />
+        
+        <div className="pt-8">
+          <div className="flex items-center gap-2 justify-center">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-neon-cyan to-neon-violet p-0.5">
+              <div className="w-full h-full bg-midnight-card rounded-[14px] flex items-center justify-center p-1.5">
+                <img src="/logo.svg" alt="PlateSync Logo" className="w-full h-full object-contain" />
+              </div>
+            </div>
+            <span className="text-xl font-black text-white">Plate<span className="text-neon-cyan">Sync</span></span>
+          </div>
+        </div>
+
+        <div className="max-w-md w-full bg-midnight-card border border-amber-400/30 rounded-3xl p-8 shadow-2xl relative my-auto">
+          <div className="w-14 h-14 rounded-2xl bg-amber-400/10 border border-amber-400/30 flex items-center justify-center text-amber-400 mx-auto mb-4">
+            <AlertTriangle className="w-7 h-7" />
+          </div>
+          <h2 className="text-xl font-black text-white tracking-tight mb-2">
+            System Maintenance in Progress
+          </h2>
+          <p className="text-xs text-slate-300 leading-relaxed">
+            {platformSettings.maintenanceMessage || 'PlateSync is undergoing brief scheduled maintenance. We will be back online shortly!'}
+          </p>
+          <div className="mt-6 pt-4 border-t border-midnight-border text-[11px] text-slate-500 font-mono">
+            PlateSync High-Precision Barbell System
+          </div>
+        </div>
+
+        <div className="pb-6">
+          <button
+            onClick={() => setIsAdminViewOpen(true)}
+            className="text-[11px] text-slate-500 hover:text-amber-400 transition flex items-center gap-1.5"
+          >
+            <Shield className="w-3.5 h-3.5" />
+            <span>Administrative Access</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-midnight-bg flex flex-col items-center justify-center space-y-4">
@@ -116,6 +241,20 @@ const MainAppLayout = () => {
 
   return (
     <div className="min-h-screen bg-midnight-bg text-slate-100 flex flex-col">
+
+      {/* Global Broadcast Announcement Banner (Controlled by Admin Settings) */}
+      {platformSettings?.announcementActive && platformSettings?.announcementMessage && (
+        <div className={`px-4 py-2 text-xs font-bold text-center flex items-center justify-center gap-2 border-b z-40 ${
+          platformSettings.announcementType === 'alert' ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' :
+          platformSettings.announcementType === 'warning' ? 'bg-amber-400/20 text-amber-300 border-amber-400/40' :
+          platformSettings.announcementType === 'success' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' :
+          'bg-neon-cyan/15 text-neon-cyan border-neon-cyan/30'
+        }`}>
+          <Bell className="w-3.5 h-3.5 shrink-0" />
+          <span>{platformSettings.announcementMessage}</span>
+        </div>
+      )}
+
       {/* Desktop & Mobile Drawer Sidebar */}
       <Sidebar
         activeTab={activeTab}
@@ -125,6 +264,7 @@ const MainAppLayout = () => {
         collapsed={collapsed}
         setCollapsed={setCollapsed}
         onOpenAuth={() => setShowAuthModal(true)}
+        onOpenAdmin={() => setIsAdminViewOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -137,6 +277,8 @@ const MainAppLayout = () => {
           collapsed={collapsed}
           setCollapsed={setCollapsed}
           onOpenAuth={() => setShowAuthModal(true)}
+          onOpenFeedback={() => setShowFeedbackModal(true)}
+          onOpenAdmin={() => setIsAdminViewOpen(true)}
         />
 
         {/* Tab View Container */}
@@ -159,7 +301,13 @@ const MainAppLayout = () => {
               {activeTab === 'records' && <PersonalRecordsPage setActiveTab={handleSetActiveTab} />}
               {activeTab === 'bodyweight' && <BodyWeightPage setActiveTab={handleSetActiveTab} />}
               {activeTab === 'profile' && <ProfilePage setActiveTab={handleSetActiveTab} />}
-              {activeTab === 'settings' && <SettingsPage setActiveTab={handleSetActiveTab} />}
+              {activeTab === 'settings' && (
+                <SettingsPage 
+                  setActiveTab={handleSetActiveTab} 
+                  onOpenFeedback={() => setShowFeedbackModal(true)}
+                  onOpenAdmin={() => setIsAdminViewOpen(true)}
+                />
+              )}
             </>
           )}
         </main>
@@ -180,6 +328,12 @@ const MainAppLayout = () => {
           />
         </div>
       )}
+
+      {/* User Feedback Modal */}
+      <UserFeedbackModal
+        isOpen={showFeedbackModal}
+        onClose={() => setShowFeedbackModal(false)}
+      />
 
       {/* Mobile Bottom Navigation Bar */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-midnight-card/95 border-t border-midnight-border px-3 py-2 flex items-center justify-around backdrop-blur-xl">
@@ -253,9 +407,11 @@ export function App() {
   return (
     <NotificationProvider>
       <AuthProvider>
-        <WorkoutProvider>
-          <MainAppLayout />
-        </WorkoutProvider>
+        <AdminProvider>
+          <WorkoutProvider>
+            <MainAppLayout />
+          </WorkoutProvider>
+        </AdminProvider>
       </AuthProvider>
     </NotificationProvider>
   );

@@ -34,6 +34,7 @@ import {
 import { useWorkout } from '../../context/WorkoutContext';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
+import { getGlobalExercises } from '../../services/admin/adminDataService';
 import { 
   EXERCISE_DATABASE, 
   MAIN_MUSCLE_GROUPS,
@@ -92,6 +93,15 @@ export const WorkoutTrackerPage = ({ setActiveTab }) => {
   const [isExerciseModalOpen, setIsExerciseModalOpen] = useState(false);
   const [plannerExercise, setPlannerExercise] = useState(null);
   const [exerciseSearch, setExerciseSearch] = useState('');
+  const [globalExercises, setGlobalExercises] = useState(EXERCISE_DATABASE);
+
+  useEffect(() => {
+    let mounted = true;
+    getGlobalExercises().then(data => {
+      if (mounted && data?.length) setGlobalExercises(data);
+    }).catch(() => {});
+    return () => { mounted = false; };
+  }, []);
   const [selectedMuscleFilter, setSelectedMuscleFilter] = useState('All');
   const [selectedSubgroupFilter, setSelectedSubgroupFilter] = useState('All');
   const [expandedMusclesInModal, setExpandedMusclesInModal] = useState({ 'Chest': true });
@@ -527,10 +537,10 @@ export const WorkoutTrackerPage = ({ setActiveTab }) => {
     addNotification(`Workout completed! Total volume: ${Math.round(totalVolumeKg)} KG (${Math.round(totalVolumeKg * KG_TO_LBS)} LBS)`, 'success');
   };
 
-  // Unified Exercise Catalog = Custom + 194 Built-in Exercises
+  // Unified Exercise Catalog = Custom + Built-in & Firestore Global Exercises
   const allAvailableExercises = useMemo(() => {
-    return [...customExercises, ...EXERCISE_DATABASE];
-  }, [customExercises]);
+    return [...customExercises, ...globalExercises];
+  }, [customExercises, globalExercises]);
 
   // Strict 1-to-1 category and subgroup counts
   const trackerCategoryCounts = useMemo(() => {
