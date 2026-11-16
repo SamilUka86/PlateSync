@@ -238,7 +238,7 @@ export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, s
           </button>
         )}
 
-        {/* PWA Install Button with 5-Second "Click here to install" Pop-Up (Strictly for non-signed-in users, no logo inside) */}
+        {/* PWA Install Button with Responsive Label & 5-Second "Click here to install" Pop-Up (Strictly for non-signed-in users, no logo inside) */}
         <div className="relative shrink-0">
           <button
             type="button"
@@ -246,7 +246,7 @@ export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, s
               setShowInstallPromptBubble(false);
               handleInstallClick();
             }}
-            className={`shrink-0 flex items-center justify-center p-2 rounded-xl border transition active:scale-95 cursor-pointer shadow-sm ${
+            className={`shrink-0 flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border transition active:scale-95 cursor-pointer shadow-sm ${
               showInstallPromptBubble && !isStandalone && !currentUser && !isDemoMode
                 ? 'border-neon-cyan bg-neon-cyan text-slate-950 shadow-glow-cyan ring-2 ring-neon-cyan ring-offset-2 ring-offset-midnight-bg animate-pulse'
                 : isStandalone
@@ -257,10 +257,13 @@ export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, s
             aria-label="Install App"
           >
             {isStandalone ? (
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400 shrink-0" />
             ) : (
-              <Download className="w-4 h-4 shrink-0" />
+              <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
             )}
+            <span className="hidden sm:inline font-bold text-xs tracking-tight">
+              {isStandalone ? 'Installed' : 'Install'}
+            </span>
           </button>
 
           {/* 5-second popup on first visit / refresh - only for non-signed-in users with no logo */}
@@ -270,24 +273,24 @@ export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, s
                 setShowInstallPromptBubble(false);
                 handleInstallClick();
               }}
-              className="absolute top-full mt-2 right-0 sm:left-1/2 sm:-translate-x-1/2 z-[100] cursor-pointer animate-in fade-in slide-in-from-top-2 duration-200 select-none"
+              className="absolute top-full mt-2 left-1/2 -translate-x-1/2 z-[100] cursor-pointer animate-in fade-in slide-in-from-top-1 duration-200 select-none max-w-[calc(100vw-24px)]"
               title="Click here to install PlateSync"
             >
               {/* Upward triangular arrow pointing directly at the download icon */}
-              <div className="flex justify-end sm:justify-center pr-3 sm:pr-0 -mb-[1px]">
+              <div className="flex justify-center -mb-[1px]">
                 <div className="w-0 h-0 border-x-[6px] border-x-transparent border-b-[6px] border-b-neon-cyan drop-shadow-sm" />
               </div>
               
               {/* Badge bubble - Just 'Click here to install' without logo */}
               <div className="px-3.5 py-1.5 rounded-2xl bg-gradient-to-r from-neon-cyan to-[#22d3ee] text-slate-950 text-xs sm:text-[13px] font-black shadow-[0_10px_25px_-5px_rgba(53,217,232,0.6),0_0_15px_rgba(53,217,232,0.4)] flex items-center gap-2 border-2 border-white/60 tracking-tight whitespace-nowrap hover:scale-105 transition active:scale-95">
-                <span className="font-black text-slate-950">Click here to install</span>
+                <span className="font-black text-slate-950 tracking-tight">Click here to install</span>
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     setShowInstallPromptBubble(false);
                   }}
-                  className="ml-1 p-0.5 hover:bg-black/25 rounded-full transition text-slate-950"
+                  className="ml-1 p-0.5 hover:bg-black/25 rounded-full transition text-slate-950 shrink-0"
                   aria-label="Dismiss install tip"
                 >
                   <X className="w-3.5 h-3.5 stroke-[2.5]" />
