@@ -163,10 +163,10 @@ export const SidebarWeightTracker = ({ collapsed = false, onExpandSidebar, onOpe
 
     if (Math.abs(diffKg) < 0.01) return { type: 'neutral', label: '0.00 kg' };
     if (diffKg > 0) {
-      const val = (unit === 'LB' || unit === 'LBS') ? `+${Math.round(diffKg * KG_TO_LBS * 100) / 100} lbs` : `+${diffKg} kg`;
+      const val = (unit === 'LB' || unit === 'LBS') ? `+${(diffKg * KG_TO_LBS).toFixed(2)} lbs` : `+${diffKg.toFixed(2)} kg`;
       return { type: 'up', label: val };
     } else {
-      const val = (unit === 'LB' || unit === 'LBS') ? `${Math.round(diffKg * KG_TO_LBS * 100) / 100} lbs` : `${diffKg} kg`;
+      const val = (unit === 'LB' || unit === 'LBS') ? `${(diffKg * KG_TO_LBS).toFixed(2)} lbs` : `${diffKg.toFixed(2)} kg`;
       return { type: 'down', label: val };
     }
   }, [logs, unit]);
@@ -215,7 +215,7 @@ export const SidebarWeightTracker = ({ collapsed = false, onExpandSidebar, onOpe
       // Keep selectedDate at today's date automatically
       setSelectedDate(getTodayLocalDateStr());
 
-      addNotification(`Body weight recorded: ${num} ${unit} (${formatDisplayDate(newEntry.date)})`, 'success');
+      addNotification(`Body weight recorded: ${num.toFixed(2)} ${unit} (${formatDisplayDate(newEntry.date)})`, 'success');
 
       setTimeout(() => {
         setJustSaved(false);
@@ -360,12 +360,12 @@ export const SidebarWeightTracker = ({ collapsed = false, onExpandSidebar, onOpe
                   <div className="relative">
                     <input
                       type="number"
-                      step="0.1"
-                      min="20"
+                      step="any"
+                      min="0"
                       max="500"
                       value={weightValue}
                       onChange={(e) => setWeightValue(e.target.value)}
-                      placeholder={`Enter weight in ${unit} (e.g. ${unit === 'KG' ? '75.5' : '165'})`}
+                      placeholder={`Enter weight in ${unit} (e.g. ${unit === 'KG' ? '73.65' : '165.00'})`}
                       className="w-full pl-3 pr-12 py-2 bg-midnight-bg border border-midnight-border rounded-xl text-white text-xs font-mono placeholder-slate-500 focus:outline-none focus:border-neon-cyan"
                       autoFocus
                     />
@@ -580,12 +580,12 @@ export const SidebarWeightTracker = ({ collapsed = false, onExpandSidebar, onOpe
               <div className="relative">
                 <input
                   type="number"
-                  step="0.1"
-                  min="20"
+                  step="any"
+                  min="0"
                   max="500"
                   value={weightValue}
                   onChange={(e) => setWeightValue(e.target.value)}
-                  placeholder={`Weight in ${unit} (e.g. ${unit === 'KG' ? '75.5' : '165'})`}
+                  placeholder={`Weight in ${unit} (e.g. ${unit === 'KG' ? '73.65' : '165.00'})`}
                   className="w-full pl-2.5 pr-10 py-1.5 bg-midnight-bg border border-midnight-border rounded-xl text-white text-xs font-mono placeholder-slate-500 focus:outline-none focus:border-neon-cyan transition"
                 />
                 <span className="absolute right-2.5 top-1.5 text-[10px] font-mono font-bold text-slate-400">

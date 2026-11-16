@@ -270,7 +270,7 @@ export const AddToPlannerModal = ({ isOpen, onClose, exercise, setActiveTab }) =
                 <div className="relative">
                   <input
                     type="number"
-                    step="0.5"
+                    step="any"
                     min="0"
                     max="500"
                     value={targetWeight}

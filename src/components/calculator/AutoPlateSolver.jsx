@@ -229,7 +229,7 @@ export const AutoPlateSolver = ({
             <input
               type="number"
               min="0"
-              step="0.5"
+              step="any"
               placeholder="e.g. 140"
               value={targetWeight}
               onChange={(e) => setTargetWeight(e.target.value)}

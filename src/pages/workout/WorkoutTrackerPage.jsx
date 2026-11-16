@@ -855,7 +855,7 @@ export const WorkoutTrackerPage = ({ setActiveTab }) => {
                           <div className="flex items-center gap-2">
                             <input
                               type="number"
-                              step="0.5"
+                              step="any"
                               min="0"
                               value={set.weight}
                               onChange={(e) => handleUpdateSet(exIdx, setIdx, 'weight', parseFloat(e.target.value) || 0)}

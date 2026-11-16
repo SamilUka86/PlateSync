@@ -113,10 +113,10 @@ export const BodyWeightPage = ({ setActiveTab }) => {
   const currentWeightFormatted = useMemo(() => {
     if (!currentWeightKg) return '--';
     if (unit === 'LB' || unit === 'LBS') {
-      const lbs = Math.round(currentWeightKg * KG_TO_LBS * 100) / 100;
-      return `${lbs} lbs`;
+      const lbs = currentWeightKg * KG_TO_LBS;
+      return `${lbs.toFixed(2)} lbs`;
     }
-    return `${Math.round(currentWeightKg * 100) / 100} kg`;
+    return `${Number(currentWeightKg).toFixed(2)} kg`;
   }, [currentWeightKg, unit]);
 
   // 30-Day Change
@@ -128,10 +128,10 @@ export const BodyWeightPage = ({ setActiveTab }) => {
 
     if (Math.abs(diffKg) < 0.01) return { type: 'neutral', value: '0.00 kg' };
     if (diffKg > 0) {
-      const val = (unit === 'LB' || unit === 'LBS') ? `+${Math.round(diffKg * KG_TO_LBS * 100) / 100} lbs` : `+${diffKg} kg`;
+      const val = (unit === 'LB' || unit === 'LBS') ? `+${(diffKg * KG_TO_LBS).toFixed(2)} lbs` : `+${diffKg.toFixed(2)} kg`;
       return { type: 'up', value: val };
     } else {
-      const val = (unit === 'LB' || unit === 'LBS') ? `${Math.round(diffKg * KG_TO_LBS * 100) / 100} lbs` : `${diffKg} kg`;
+      const val = (unit === 'LB' || unit === 'LBS') ? `${(diffKg * KG_TO_LBS).toFixed(2)} lbs` : `${diffKg.toFixed(2)} kg`;
       return { type: 'down', value: val };
     }
   }, [logs, unit]);
@@ -140,8 +140,8 @@ export const BodyWeightPage = ({ setActiveTab }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const num = parseFloat(weightInput);
-    if (!num || isNaN(num) || num <= 10 || num > 500) {
-      addNotification('Please enter a valid weight (e.g. 75.5 or 165)', 'error');
+    if (!num || isNaN(num) || num <= 0 || num > 500) {
+      addNotification('Please enter a valid weight (e.g. 73.65 or 165.00)', 'error');
       return;
     }
 
@@ -180,8 +180,8 @@ export const BodyWeightPage = ({ setActiveTab }) => {
       // Automatically keep the date set to today
       setSelectedDate(getTodayLocalDateStr());
 
-      addNotification(`Body weight logged: ${num} ${unit} (${formatDisplayDate(newEntry.date)})`, 'success');
-      logUserActivityEvent('WEIGHT_LOGGED', `Logged body weight: ${num} ${unit}`, {
+      addNotification(`Body weight logged: ${num.toFixed(2)} ${unit} (${formatDisplayDate(newEntry.date)})`, 'success');
+      logUserActivityEvent('WEIGHT_LOGGED', `Logged body weight: ${num.toFixed(2)} ${unit}`, {
         weight: num,
         unit,
         weightKg
@@ -325,12 +325,12 @@ export const BodyWeightPage = ({ setActiveTab }) => {
               <div className="relative">
                 <input
                   type="number"
-                  step="0.1"
-                  min="20"
+                  step="any"
+                  min="0"
                   max="500"
                   value={weightInput}
                   onChange={(e) => setWeightInput(e.target.value)}
-                  placeholder={`Enter weight in ${unit} (e.g. ${unit === 'KG' ? '75.5' : '165'})`}
+                  placeholder={`Enter weight in ${unit} (e.g. ${unit === 'KG' ? '73.65' : '165.00'})`}
                   className="w-full pl-4 pr-14 py-3 bg-midnight-bg border border-midnight-border rounded-2xl text-white font-mono text-base placeholder-slate-500 focus:outline-none focus:border-neon-cyan transition"
                   required
                 />
@@ -341,8 +341,8 @@ export const BodyWeightPage = ({ setActiveTab }) => {
               {weightInput && !isNaN(parseFloat(weightInput)) && (
                 <p className="text-[11px] text-slate-400 mt-1 font-mono">
                   {unit === 'KG' 
-                    ? `≈ ${Math.round(parseFloat(weightInput) * KG_TO_LBS * 100) / 100} lbs` 
-                    : `≈ ${Math.round((parseFloat(weightInput) / KG_TO_LBS) * 100) / 100} kg`}
+                    ? `≈ ${(parseFloat(weightInput) * KG_TO_LBS).toFixed(2)} lbs` 
+                    : `≈ ${(parseFloat(weightInput) / KG_TO_LBS).toFixed(2)} kg`}
                 </p>
               )}
             </div>

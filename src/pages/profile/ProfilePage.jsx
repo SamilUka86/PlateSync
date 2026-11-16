@@ -106,9 +106,7 @@ export const ProfilePage = ({ setActiveTab }) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'height' || name === 'bodyWeight' || name === 'defaultBarbellWeight'
-        ? Number(value)
-        : value
+      [name]: value
     }));
   };
 
@@ -116,7 +114,16 @@ export const ProfilePage = ({ setActiveTab }) => {
     e.preventDefault();
     setSaving(true);
     try {
-      await updateProfile(formData);
+      const numericHeight = Number(formData.height) || 178;
+      const numericBodyWeight = Number(formData.bodyWeight) || 75;
+      const numericBarbellWeight = Number(formData.defaultBarbellWeight) || 20;
+
+      await updateProfile({
+        ...formData,
+        height: numericHeight,
+        bodyWeight: numericBodyWeight,
+        defaultBarbellWeight: numericBarbellWeight
+      });
       addNotification('Athlete profile updated successfully!', 'success');
     } catch (err) {
       addNotification('Failed to update profile', 'error');
@@ -125,10 +132,10 @@ export const ProfilePage = ({ setActiveTab }) => {
     }
   };
 
-  const heightInInches = Math.round(formData.height / 2.54);
+  const heightInInches = Math.round((Number(formData.height) || 0) / 2.54);
   const heightFeet = Math.floor(heightInInches / 12);
   const heightRem = heightInInches % 12;
-  const weightInLbs = Math.round(formData.bodyWeight * KG_TO_LBS * 100) / 100;
+  const weightInLbs = ((Number(formData.bodyWeight) || 0) * KG_TO_LBS).toFixed(2);
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto animate-in fade-in duration-300">
@@ -212,14 +219,15 @@ export const ProfilePage = ({ setActiveTab }) => {
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-xs font-semibold text-slate-300">Current Body Weight ({formData.preferredUnit})</label>
               <span className="text-[11px] text-slate-400 font-mono">
-                {formData.preferredUnit === 'KG' ? `≈ ${weightInLbs} lbs` : `≈ ${Math.round(formData.bodyWeight / KG_TO_LBS)} kg`}
+                {formData.preferredUnit === 'KG' ? `≈ ${weightInLbs} lbs` : `≈ ${((Number(formData.bodyWeight) || 0) / KG_TO_LBS).toFixed(2)} kg`}
               </span>
             </div>
             <div className="relative">
               <Scale className="w-4 h-4 text-slate-500 absolute left-3 top-3 pointer-events-none" />
               <input
                 type="number"
-                step="0.1"
+                step="any"
+                min="0"
                 name="bodyWeight"
                 value={formData.bodyWeight}
                 onChange={handleChange}

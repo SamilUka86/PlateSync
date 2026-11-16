@@ -478,7 +478,7 @@ export const AddPlanExerciseModal = ({
                       <div className="relative">
                         <input
                           type="number"
-                          step="0.5"
+                          step="any"
                           min="0"
                           value={targetWeight}
                           onChange={(e) => setTargetWeight(e.target.value)}
@@ -600,7 +600,7 @@ export const AddPlanExerciseModal = ({
                   <div className="relative">
                     <input
                       type="number"
-                      step="0.5"
+                      step="any"
                       min="0"
                       value={targetWeight}
                       onChange={(e) => setTargetWeight(e.target.value)}

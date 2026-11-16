@@ -669,7 +669,7 @@ export const CalculatorPage = ({ setActiveTab }) => {
                   <input
                     type="number"
                     min="0"
-                    step="0.5"
+                    step="any"
                     value={customBarbellWeight}
                     onChange={(e) => setCustomBarbellWeight(e.target.value)}
                     className="w-full px-3 py-2 bg-midnight-bg border border-midnight-border rounded-xl text-white text-xs font-mono focus:outline-none focus:border-neon-cyan"
@@ -817,8 +817,8 @@ export const CalculatorPage = ({ setActiveTab }) => {
                 <div className="col-span-2">
                   <input
                     type="number"
-                    step="0.1"
-                    min="0.1"
+                    step="any"
+                    min="0"
                     placeholder="e.g. 7.5 or 12.5"
                     value={customPlateWeight}
                     onChange={(e) => setCustomPlateWeight(e.target.value)}
