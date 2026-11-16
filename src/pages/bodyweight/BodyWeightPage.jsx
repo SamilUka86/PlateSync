@@ -565,10 +565,10 @@ export const BodyWeightPage = ({ setActiveTab }) => {
                         <div className="text-[10px] text-slate-500">{log.date}</div>
                       </td>
                       <td className="py-3 font-mono font-bold text-neon-cyan">
-                        {log.weightKg} kg
+                        {(Number(log.weightKg) || 0).toFixed(2)} kg
                       </td>
                       <td className="py-3 font-mono font-bold text-neon-violet">
-                        {log.weightLb} lbs
+                        {(Number(log.weightLb) || 0).toFixed(2)} lbs
                       </td>
                       <td className="py-3 font-mono">
                         {delta !== null ? (
@@ -576,7 +576,7 @@ export const BodyWeightPage = ({ setActiveTab }) => {
                             delta < 0 ? 'text-neon-cyan' : 'text-neon-violet'
                           }`}>
                             {delta < 0 ? <TrendingDown className="w-3 h-3" /> : <TrendingUp className="w-3 h-3" />}
-                            <span>{delta > 0 ? `+${delta}` : delta} kg</span>
+                            <span>{delta > 0 ? `+${delta.toFixed(2)}` : delta.toFixed(2)} kg</span>
                           </span>
                         ) : (
                           <span className="text-slate-500">&mdash;</span>

@@ -91,10 +91,14 @@ export const PersonalRecordsPage = () => {
                 <div className="pt-2 border-t border-midnight-border flex items-baseline justify-between">
                   <div>
                     <span className="text-2xl font-black font-mono text-white">
-                      {preferredUnit === 'LBS' ? `${pr.maxWeightLbs} LBS` : `${pr.maxWeightKg} KG`}
+                      {preferredUnit === 'LBS'
+                        ? `${(Number(pr.maxWeightLbs) || 0).toFixed(2)} LBS`
+                        : `${(Number(pr.maxWeightKg) || 0).toFixed(2)} KG`}
                     </span>
                     <span className="text-xs font-mono text-slate-400 ml-2">
-                      {preferredUnit === 'LBS' ? `(${pr.maxWeightKg} KG)` : `(${pr.maxWeightLbs} LBS)`}
+                      {preferredUnit === 'LBS'
+                        ? `(${(Number(pr.maxWeightKg) || 0).toFixed(2)} KG)`
+                        : `(${(Number(pr.maxWeightLbs) || 0).toFixed(2)} LBS)`}
                     </span>
                   </div>
 

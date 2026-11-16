@@ -242,13 +242,6 @@ export const WeightConverter = ({ isEmbedded = false }) => {
             >
               -2.5
             </button>
-            <button
-              type="button"
-              onClick={() => handleKgChange('')}
-              className="px-2 py-1 rounded-lg bg-midnight-bg hover:bg-midnight-elevated text-slate-400 hover:text-white border border-midnight-border text-[10.5px] font-bold transition ml-auto cursor-pointer"
-            >
-              Clear
-            </button>
           </div>
         </div>
 
@@ -320,13 +313,6 @@ export const WeightConverter = ({ isEmbedded = false }) => {
               className="px-2 py-1 rounded-lg bg-midnight-bg hover:bg-rose-500/20 text-slate-300 hover:text-rose-400 border border-midnight-border text-[10.5px] font-bold font-mono transition active:scale-95 cursor-pointer"
             >
               -5
-            </button>
-            <button
-              type="button"
-              onClick={() => handleLbsChange('')}
-              className="px-2 py-1 rounded-lg bg-midnight-bg hover:bg-midnight-elevated text-slate-400 hover:text-white border border-midnight-border text-[10.5px] font-bold transition ml-auto cursor-pointer"
-            >
-              Clear
             </button>
           </div>
         </div>

@@ -149,9 +149,9 @@ export const SidebarWeightTracker = ({ collapsed = false, onExpandSidebar, onOpe
   const displayCurrentWeight = useMemo(() => {
     if (unit === 'LB' || unit === 'LBS') {
       const lbs = Math.round(currentWeightKg * KG_TO_LBS * 100) / 100;
-      return `${lbs} lbs`;
+      return `${lbs.toFixed(2)} lbs`;
     }
-    return `${Math.round(currentWeightKg * 100) / 100} kg`;
+    return `${(Math.round(currentWeightKg * 100) / 100).toFixed(2)} kg`;
   }, [currentWeightKg, unit]);
 
   // Trend vs previous log
@@ -691,7 +691,9 @@ export const SidebarWeightTracker = ({ collapsed = false, onExpandSidebar, onOpe
                       <div className="flex items-center gap-1.5 font-mono">
                         <span className="text-slate-400">{formatDisplayDate(l.date)}</span>
                         <span className="text-white font-bold">
-                          {(unit === 'LB' || unit === 'LBS') ? `${l.weightLb} lbs` : `${l.weightKg} kg`}
+                          {(unit === 'LB' || unit === 'LBS')
+                            ? `${(Number(l.weightLb) || 0).toFixed(2)} lbs`
+                            : `${(Number(l.weightKg) || 0).toFixed(2)} kg`}
                         </span>
                       </div>
                       <button
@@ -816,7 +818,7 @@ export const SidebarWeightTracker = ({ collapsed = false, onExpandSidebar, onOpe
                       </div>
                       <div>
                         <div className="text-xs font-bold text-white font-mono">
-                          {l.weightKg} kg <span className="text-slate-500 font-normal">/</span> {l.weightLb} lb
+                          {(Number(l.weightKg) || 0).toFixed(2)} kg <span className="text-slate-500 font-normal">/</span> {(Number(l.weightLb) || 0).toFixed(2)} lb
                         </div>
                         <div className="text-[10px] text-slate-400 font-mono">
                           {formatDisplayDate(l.date)} ({l.date})
