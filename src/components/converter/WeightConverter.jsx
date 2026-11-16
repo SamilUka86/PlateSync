@@ -24,62 +24,30 @@ export const WeightConverter = ({ isEmbedded = false, setActiveTab = null }) => 
   const [kgValue, setKgValue] = useState('100');
   const [lbsValue, setLbsValue] = useState(() => (100 * KG_TO_LBS).toFixed(2));
   const [copiedKey, setCopiedKey] = useState(null);
-  const [precision, setPrecision] = useState('2'); // '2' decimals (default), '1' decimal, or 'exact'
 
-  // Update LBS when KG changes
+  // Update LBS when KG changes (always 2 decimal places)
   const handleKgChange = (val) => {
     setKgValue(val);
     setActiveUnit('KG');
     const num = parseFloat(val);
     if (!isNaN(num) && num >= 0) {
-      const converted = num * KG_TO_LBS;
-      if (precision === 'exact') {
-        setLbsValue(converted.toFixed(4));
-      } else if (precision === '1') {
-        setLbsValue(converted.toFixed(1));
-      } else {
-        setLbsValue(converted.toFixed(2));
-      }
+      setLbsValue((num * KG_TO_LBS).toFixed(2));
     } else {
       setLbsValue('');
     }
   };
 
-  // Update KG when LBS changes
+  // Update KG when LBS changes (always 2 decimal places)
   const handleLbsChange = (val) => {
     setLbsValue(val);
     setActiveUnit('LBS');
     const num = parseFloat(val);
     if (!isNaN(num) && num >= 0) {
-      const converted = num * LBS_TO_KG;
-      if (precision === 'exact') {
-        setKgValue(converted.toFixed(4));
-      } else if (precision === '1') {
-        setKgValue(converted.toFixed(1));
-      } else {
-        setKgValue(converted.toFixed(2));
-      }
+      setKgValue((num * LBS_TO_KG).toFixed(2));
     } else {
       setKgValue('');
     }
   };
-
-  // Re-calculate on precision toggle
-  useEffect(() => {
-    if (activeUnit === 'KG') {
-      const num = parseFloat(kgValue);
-      if (!isNaN(num) && num >= 0) {
-        const converted = num * KG_TO_LBS;
-        setLbsValue(precision === 'exact' ? converted.toFixed(4) : precision === '1' ? converted.toFixed(1) : converted.toFixed(2));
-      }
-    } else {
-      const num = parseFloat(lbsValue);
-      if (!isNaN(num) && num >= 0) {
-        const converted = num * LBS_TO_KG;
-        setKgValue(precision === 'exact' ? converted.toFixed(4) : precision === '1' ? converted.toFixed(1) : converted.toFixed(2));
-      }
-    }
-  }, [precision]);
 
   // Swap Units
   const handleSwapUnits = () => {
@@ -90,8 +58,7 @@ export const WeightConverter = ({ isEmbedded = false, setActiveTab = null }) => 
     setKgValue(currentLbs);
     const num = parseFloat(currentLbs);
     if (!isNaN(num) && num >= 0) {
-      const converted = num * KG_TO_LBS;
-      setLbsValue(precision === 'exact' ? converted.toFixed(4) : precision === '1' ? converted.toFixed(1) : converted.toFixed(2));
+      setLbsValue((num * KG_TO_LBS).toFixed(2));
     }
     addNotification('Swapped conversion values', 'info');
   };
@@ -179,42 +146,16 @@ export const WeightConverter = ({ isEmbedded = false, setActiveTab = null }) => 
           </div>
         </div>
 
-        {/* Precision & Reset Actions */}
+        {/* Reset Action */}
         <div className="flex items-center gap-2 relative z-10 shrink-0">
-          <div className="flex items-center p-1 rounded-xl bg-midnight-bg border border-midnight-border text-[11px] font-semibold text-slate-400">
-            <button
-              type="button"
-              onClick={() => setPrecision('2')}
-              className={`px-2.5 py-1 rounded-lg transition ${precision === '2' ? 'bg-neon-cyan text-slate-950 font-black shadow-sm' : 'hover:text-white'}`}
-              title="2 Decimal Places (Standard e.g. 220.46 lbs)"
-            >
-              .01 (2 Dec)
-            </button>
-            <button
-              type="button"
-              onClick={() => setPrecision('1')}
-              className={`px-2.5 py-1 rounded-lg transition ${precision === '1' ? 'bg-neon-cyan text-slate-950 font-black shadow-sm' : 'hover:text-white'}`}
-              title="1 Decimal Place (e.g. 220.5 lbs)"
-            >
-              .1
-            </button>
-            <button
-              type="button"
-              onClick={() => setPrecision('exact')}
-              className={`px-2.5 py-1 rounded-lg transition ${precision === 'exact' ? 'bg-neon-cyan text-slate-950 font-black shadow-sm' : 'hover:text-white'}`}
-              title="Scientific Exact Precision (4 decimal places)"
-            >
-              Exact
-            </button>
-          </div>
-
           <button
             type="button"
             onClick={handleReset}
-            className="p-2 rounded-xl bg-midnight-bg hover:bg-midnight-elevated border border-midnight-border text-slate-400 hover:text-white transition"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-midnight-bg hover:bg-midnight-elevated border border-midnight-border text-slate-300 hover:text-white text-xs font-semibold transition active:scale-95 shadow-sm"
             title="Reset to 100 kg"
           >
-            <RotateCcw className="w-4 h-4" />
+            <RotateCcw className="w-3.5 h-3.5 text-neon-cyan" />
+            <span>Reset</span>
           </button>
         </div>
       </div>

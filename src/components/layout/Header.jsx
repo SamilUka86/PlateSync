@@ -61,7 +61,7 @@ export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, s
     );
   };
 
-  // 5-second popup near download button when user refreshes or first visits the website
+  // 5-second popup near download button when user refreshes or first visits the website (strictly for non-signed-in visitors)
   const [showInstallPromptBubble, setShowInstallPromptBubble] = useState(() => {
     try {
       const isStandaloneMode = 
@@ -75,7 +75,7 @@ export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, s
   });
 
   useEffect(() => {
-    if (isStandalone) {
+    if (isStandalone || currentUser || isDemoMode) {
       setShowInstallPromptBubble(false);
       return;
     }
@@ -86,7 +86,7 @@ export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, s
     }, 5000);
 
     return () => clearTimeout(timer);
-  }, [isStandalone]);
+  }, [isStandalone, currentUser, isDemoMode]);
 
   // Global Website Language Translation State (English <-> Hindi)
   const [currentLang, setCurrentLang] = useState(getCurrentLanguage);
@@ -238,7 +238,7 @@ export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, s
           </button>
         )}
 
-        {/* PWA Install Button with High-Visibility 5-Second "Click here to install" Prompt Bubble */}
+        {/* PWA Install Button with 5-Second "Click here to install" Pop-Up (Strictly for non-signed-in users, no logo inside) */}
         <div className="relative shrink-0">
           <button
             type="button"
@@ -247,7 +247,7 @@ export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, s
               handleInstallClick();
             }}
             className={`shrink-0 flex items-center justify-center p-2 rounded-xl border transition active:scale-95 cursor-pointer shadow-sm ${
-              showInstallPromptBubble && !isStandalone
+              showInstallPromptBubble && !isStandalone && !currentUser && !isDemoMode
                 ? 'border-neon-cyan bg-neon-cyan text-slate-950 shadow-glow-cyan ring-2 ring-neon-cyan ring-offset-2 ring-offset-midnight-bg animate-pulse'
                 : isStandalone
                   ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 hover:border-emerald-400 shadow-emerald-500/10'
@@ -263,8 +263,8 @@ export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, s
             )}
           </button>
 
-          {/* 5-second popup on first visit / refresh */}
-          {showInstallPromptBubble && !isStandalone && (
+          {/* 5-second popup on first visit / refresh - only for non-signed-in users with no logo */}
+          {showInstallPromptBubble && !isStandalone && !currentUser && !isDemoMode && (
             <div 
               onClick={() => {
                 setShowInstallPromptBubble(false);
@@ -278,9 +278,8 @@ export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, s
                 <div className="w-0 h-0 border-x-[6px] border-x-transparent border-b-[6px] border-b-neon-cyan drop-shadow-sm" />
               </div>
               
-              {/* Badge bubble */}
-              <div className="px-3.5 py-2 rounded-2xl bg-gradient-to-r from-neon-cyan to-[#22d3ee] text-slate-950 text-xs sm:text-[13px] font-black shadow-[0_10px_25px_-5px_rgba(53,217,232,0.6),0_0_15px_rgba(53,217,232,0.4)] flex items-center gap-2 border-2 border-white/60 tracking-tight whitespace-nowrap hover:scale-105 transition active:scale-95">
-                <Download className="w-4 h-4 stroke-[2.5] animate-bounce shrink-0 text-slate-950" />
+              {/* Badge bubble - Just 'Click here to install' without logo */}
+              <div className="px-3.5 py-1.5 rounded-2xl bg-gradient-to-r from-neon-cyan to-[#22d3ee] text-slate-950 text-xs sm:text-[13px] font-black shadow-[0_10px_25px_-5px_rgba(53,217,232,0.6),0_0_15px_rgba(53,217,232,0.4)] flex items-center gap-2 border-2 border-white/60 tracking-tight whitespace-nowrap hover:scale-105 transition active:scale-95">
                 <span className="font-black text-slate-950">Click here to install</span>
                 <button
                   type="button"
