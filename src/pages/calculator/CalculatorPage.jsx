@@ -29,14 +29,13 @@ import {
 } from '../../utils/weightCalculations';
 import { BarbellVisualizer } from '../../components/calculator/BarbellVisualizer';
 import { AutoPlateSolver } from '../../components/calculator/AutoPlateSolver';
-import { WeightConverter } from '../../components/converter/WeightConverter';
 import { useAuth } from '../../context/AuthContext';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useNotification } from '../../context/NotificationContext';
 import { logUserActivityEvent } from '../../services/analytics/activityTracker';
 
-export const CalculatorPage = ({ setActiveTab }) => {
-  const { userProfile, updateProfile } = useAuth();
+export const CalculatorPage = ({ setActiveTab, onOpenAuth }) => {
+  const { currentUser, userProfile, updateProfile, isDemoMode } = useAuth();
   const { 
     savedConfigurations, 
     savePlateConfiguration, 
@@ -63,6 +62,16 @@ export const CalculatorPage = ({ setActiveTab }) => {
   useEffect(() => {
     if (stagedWeight?.isLegPress45) {
       setSelectedBarbellId('leg-press-45');
+    } else if (stagedWeight?.configToLoad) {
+      const cfg = stagedWeight.configToLoad;
+      setSelectedBarbellId('custom');
+      setCustomBarbellWeight(cfg.barbellWeight || 20);
+      setCustomBarbellUnit(cfg.barbellUnit || 'KG');
+      setLeftPlates(cfg.leftPlates || []);
+      setRightPlates(cfg.rightPlates || []);
+      setCenterPlates(cfg.centerPlates || []);
+      setStagedWeight(null);
+      addNotification(`Loaded favorite setup "${cfg.name}" ⭐`, 'success');
     }
   }, [stagedWeight]);
 
@@ -287,6 +296,19 @@ export const CalculatorPage = ({ setActiveTab }) => {
   };
 
   // Save current plate configuration
+  const handleSaveClick = () => {
+    if (!currentUser || isDemoMode) {
+      addNotification('Please sign in to save barbell setups to your profile favorites ⭐', 'info');
+      if (onOpenAuth) {
+        onOpenAuth();
+      } else if (setActiveTab) {
+        setActiveTab('profile');
+      }
+      return;
+    }
+    setShowSaveModal(true);
+  };
+
   const handleSaveConfig = (e) => {
     e.preventDefault();
     const name = configNameInput.trim() || `Barbell Load (${weightSummary.totalKg.toFixed(2)}kg)`;
@@ -298,9 +320,10 @@ export const CalculatorPage = ({ setActiveTab }) => {
       rightPlates,
       centerPlates,
       totalKg: Math.round(weightSummary.totalKg * 100) / 100,
-      totalLbs: Math.round(weightSummary.totalLbs * 100) / 100
+      totalLbs: Math.round(weightSummary.totalLbs * 100) / 100,
+      isFavorite: true
     });
-    addNotification(`Configuration "${name}" saved!`, 'success');
+    addNotification(`Saved "${name}" to Profile Favorites ⭐!`, 'success');
     logUserActivityEvent('CALCULATOR_CONFIG_SAVED', `Saved plate configuration: "${name}" (${weightSummary.totalKg.toFixed(2)} KG)`, {
       name,
       totalKg: weightSummary.totalKg
@@ -491,7 +514,7 @@ export const CalculatorPage = ({ setActiveTab }) => {
 
             {/* Save Config Button */}
             <button
-              onClick={() => setShowSaveModal(true)}
+              onClick={handleSaveClick}
               className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-midnight-border bg-midnight-elevated hover:bg-[#1e2f50] text-slate-200 text-xs font-bold transition hover:text-neon-cyan"
             >
               <BookmarkPlus className="w-4 h-4 text-neon-cyan" />
@@ -1108,9 +1131,6 @@ export const CalculatorPage = ({ setActiveTab }) => {
         </div>
 
       </div>
-
-      {/* Interactive Weight Conversion Calculator (KG ⇄ LBS) Below Barbell Calculator */}
-      <WeightConverter isEmbedded={true} setActiveTab={setActiveTab} />
 
       {/* Save Configuration Modal */}
       {showSaveModal && (

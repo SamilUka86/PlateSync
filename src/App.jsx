@@ -346,7 +346,12 @@ const MainAppLayout = () => {
           ) : (
             <>
               {activeTab === 'dashboard' && <DashboardPage setActiveTab={handleSetActiveTab} />}
-              {activeTab === 'calculator' && <CalculatorPage setActiveTab={handleSetActiveTab} />}
+              {activeTab === 'calculator' && (
+                <CalculatorPage 
+                  setActiveTab={handleSetActiveTab} 
+                  onOpenAuth={() => setShowAuthModal(true)} 
+                />
+              )}
               {activeTab === 'converter' && <WeightConversionPage setActiveTab={handleSetActiveTab} />}
               {activeTab === 'tracker' && <WorkoutTrackerPage setActiveTab={handleSetActiveTab} />}
               {activeTab === 'planner' && <WeeklyPlannerPage setActiveTab={handleSetActiveTab} />}

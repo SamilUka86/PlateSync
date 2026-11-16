@@ -12,9 +12,13 @@ import {
   Star,
   ChevronRight,
   Flame,
-  ExternalLink
+  ExternalLink,
+  Trash2,
+  Calculator,
+  Bookmark
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useWorkout } from '../../context/WorkoutContext';
 import { useNotification } from '../../context/NotificationContext';
 import { KG_TO_LBS } from '../../utils/weightCalculations';
 import { EXERCISE_DATABASE } from '../../utils/exerciseData';
@@ -22,7 +26,31 @@ import { ExerciseDetailModal } from '../../components/library/ExerciseDetailModa
 
 export const ProfilePage = ({ setActiveTab }) => {
   const { userProfile, currentUser, updateProfile, isDemoMode } = useAuth();
+  const { savedConfigurations = [], deletePlateConfiguration, setStagedWeight } = useWorkout();
   const { addNotification } = useNotification();
+
+  // Active Favorites Tab: 'barbell' | 'exercises'
+  const [favoriteTab, setFavoriteTab] = useState('barbell');
+
+  // Load setup in calculator
+  const handleLoadSetupInCalculator = (cfg) => {
+    if (setStagedWeight) {
+      setStagedWeight({ configToLoad: cfg });
+    }
+    if (setActiveTab) {
+      setActiveTab('calculator');
+    }
+    addNotification(`Loaded setup "${cfg.name}" in Weight Calculator!`, 'info');
+  };
+
+  // Remove setup from favorites
+  const handleRemoveSavedConfig = (cfgId, e) => {
+    if (e) e.stopPropagation();
+    if (deletePlateConfiguration) {
+      deletePlateConfiguration(cfgId);
+    }
+    addNotification('Barbell setup removed from favorites', 'info');
+  };
 
   // Scroll to top on mount
   useEffect(() => {
@@ -295,98 +323,209 @@ export const ProfilePage = ({ setActiveTab }) => {
         </div>
       </form>
 
-      {/* Favorite Workouts & Exercises Section */}
+      {/* Favorite Setups & Workouts Section */}
       <div className="bg-midnight-card border border-midnight-border rounded-3xl p-6 md:p-8 space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-midnight-border pb-4">
           <div className="space-y-1">
             <h3 className="text-base font-bold text-white flex items-center gap-2">
               <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
-              Favorite Workouts & Exercises
-              <span className="px-2.5 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/30 text-amber-400 text-xs font-mono font-bold ml-1.5">
-                {favoriteWorkouts.length}
-              </span>
+              Athlete Favorites & Saved Setups
             </h3>
             <p className="text-xs text-slate-400">
-              Quick access to your bookmarked benchmark lifts, compound routines, and training movements.
+              Quick access to your saved barbell configurations from the calculator and bookmarked training movements.
             </p>
           </div>
 
-          {setActiveTab && (
+          {/* Toggle between Barbell Setups & Favorite Exercises */}
+          <div className="flex items-center p-1 rounded-xl bg-midnight-bg border border-midnight-border self-start sm:self-auto">
             <button
               type="button"
-              onClick={() => setActiveTab('library')}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-midnight-border bg-midnight-bg hover:bg-midnight-elevated text-neon-cyan hover:text-white text-xs font-bold transition shrink-0 self-start sm:self-auto"
+              onClick={() => setFavoriteTab('barbell')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                favoriteTab === 'barbell'
+                  ? 'bg-neon-cyan text-slate-950 shadow-md shadow-neon-cyan/20'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Bookmark className="w-3.5 h-3.5" />
+              <span>Barbell Setups ({savedConfigurations.length})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setFavoriteTab('exercises')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                favoriteTab === 'exercises'
+                  ? 'bg-neon-cyan text-slate-950 shadow-md shadow-neon-cyan/20'
+                  : 'text-slate-400 hover:text-white'
+              }`}
             >
               <Dumbbell className="w-3.5 h-3.5" />
-              <span>Browse Exercise Library</span>
-              <ChevronRight className="w-3.5 h-3.5" />
+              <span>Exercises ({favoriteWorkouts.length})</span>
             </button>
-          )}
+          </div>
         </div>
 
-        {/* Favorite Workouts Grid or Empty State */}
-        {favoriteWorkouts.length === 0 ? (
-          <div className="p-8 rounded-2xl bg-midnight-bg border border-dashed border-midnight-border text-center space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-amber-400/10 border border-amber-400/20 text-amber-400 flex items-center justify-center mx-auto">
-              <Star className="w-6 h-6" />
-            </div>
-            <div className="space-y-1">
-              <h4 className="text-sm font-bold text-white">No Favorite Workouts Added Yet</h4>
-              <p className="text-xs text-slate-400 max-w-md mx-auto">
-                While browsing the Exercise Library or logging workouts in the Tracker, tap the ⭐ star icon on any movement to save it here for rapid access.
-              </p>
-            </div>
-            {setActiveTab && (
-              <button
-                type="button"
-                onClick={() => setActiveTab('library')}
-                className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-neon-cyan text-slate-950 text-xs font-bold hover:bg-[#29bfcd] transition shadow-md shadow-neon-cyan/20"
-              >
-                <Dumbbell className="w-4 h-4" />
-                <span>Explore Exercise Library</span>
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-            {favoriteWorkouts.map((workout) => (
-              <div
-                key={workout.id}
-                onClick={() => setSelectedExerciseForModal(workout)}
-                className="group p-4 rounded-2xl bg-midnight-bg border border-midnight-border hover:border-neon-cyan/50 hover:bg-midnight-secondary/60 transition cursor-pointer flex flex-col justify-between space-y-3 relative shadow-sm"
-              >
-                <div>
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <span className="px-2 py-0.5 rounded-md text-[10px] font-bold font-mono uppercase bg-neon-cyan/10 border border-neon-cyan/30 text-neon-cyan">
-                      {workout.muscle}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={(e) => handleRemoveFavorite(workout.id, e)}
-                      className="p-1 rounded-lg text-amber-400 hover:text-rose-400 hover:bg-rose-500/10 transition"
-                      title="Remove from favorites"
-                    >
-                      <Star className="w-4 h-4 fill-amber-400" />
-                    </button>
-                  </div>
-
-                  <h4 className="text-sm font-bold text-white group-hover:text-neon-cyan transition line-clamp-1">
-                    {workout.name}
-                  </h4>
-                  <p className="text-[11px] text-slate-400 mt-1 line-clamp-1">
-                    {workout.subgroup || workout.category || workout.equipment}
+        {/* TAB 1: Favorite Barbell Configurations */}
+        {favoriteTab === 'barbell' && (
+          <div>
+            {savedConfigurations.length === 0 ? (
+              <div className="p-8 rounded-2xl bg-midnight-bg border border-dashed border-midnight-border text-center space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-neon-cyan/10 border border-neon-cyan/20 text-neon-cyan flex items-center justify-center mx-auto">
+                  <Bookmark className="w-6 h-6" />
+                </div>
+                <div className="space-y-1">
+                  <h4 className="text-sm font-bold text-white">No Favorite Barbell Setups Saved Yet</h4>
+                  <p className="text-xs text-slate-400 max-w-md mx-auto">
+                    Load your plates in the Smart Weight Calculator and click &quot;Save Setup&quot; to bookmark your custom lifts and rack configurations here.
                   </p>
                 </div>
-
-                <div className="pt-2 border-t border-midnight-border/60 flex items-center justify-between text-[11px] text-slate-400">
-                  <span className="font-mono">{workout.equipment}</span>
-                  <span className="text-neon-cyan font-bold flex items-center gap-1 group-hover:translate-x-0.5 transition">
-                    View Guide
-                    <ChevronRight className="w-3 h-3" />
-                  </span>
-                </div>
+                {setActiveTab && (
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('calculator')}
+                    className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-neon-cyan text-slate-950 text-xs font-bold hover:bg-[#29bfcd] transition shadow-md shadow-neon-cyan/20"
+                  >
+                    <Calculator className="w-4 h-4" />
+                    <span>Open Weight Calculator</span>
+                  </button>
+                )}
               </div>
-            ))}
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                {savedConfigurations.map((cfg) => {
+                  const leftSummary = cfg.leftPlates && cfg.leftPlates.length > 0 
+                    ? cfg.leftPlates.map(p => `${p.weight}${p.unit}`).join(', ') 
+                    : 'Empty';
+                  const rightSummary = cfg.rightPlates && cfg.rightPlates.length > 0 
+                    ? cfg.rightPlates.map(p => `${p.weight}${p.unit}`).join(', ') 
+                    : 'Empty';
+                  return (
+                    <div
+                      key={cfg.id}
+                      className="group p-4 rounded-2xl bg-midnight-bg border border-midnight-border hover:border-neon-cyan/50 hover:bg-midnight-secondary/60 transition flex flex-col justify-between space-y-3 relative shadow-sm"
+                    >
+                      <div>
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold font-mono uppercase bg-neon-cyan/10 border border-neon-cyan/30 text-neon-cyan flex items-center gap-1">
+                            <Star className="w-2.5 h-2.5 fill-neon-cyan text-neon-cyan" />
+                            <span>Favorite Setup</span>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => handleRemoveSavedConfig(cfg.id, e)}
+                            className="p-1 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition"
+                            title="Remove from favorites"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+
+                        <h4 className="text-sm font-bold text-white group-hover:text-neon-cyan transition line-clamp-1">
+                          {cfg.name}
+                        </h4>
+
+                        <div className="mt-2 flex items-baseline gap-2">
+                          <span className="text-lg font-black font-mono text-neon-cyan">
+                            {(Number(cfg.totalKg) || 0).toFixed(2)} KG
+                          </span>
+                          <span className="text-xs font-mono text-slate-400">
+                            / {(Number(cfg.totalLbs) || 0).toFixed(2)} LBS
+                          </span>
+                        </div>
+
+                        <div className="mt-2.5 text-[10px] font-mono text-slate-400 space-y-1 bg-midnight-card/80 p-2.5 rounded-xl border border-midnight-border/50">
+                          <p><span className="text-slate-500 font-bold">Barbell:</span> {cfg.barbellWeight} {cfg.barbellUnit || 'KG'}</p>
+                          <p className="truncate"><span className="text-slate-500 font-bold">Left:</span> [{leftSummary}]</p>
+                          <p className="truncate"><span className="text-slate-500 font-bold">Right:</span> [{rightSummary}]</p>
+                        </div>
+                      </div>
+
+                      <div className="pt-2 border-t border-midnight-border/60">
+                        <button
+                          type="button"
+                          onClick={() => handleLoadSetupInCalculator(cfg)}
+                          className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-neon-cyan/10 hover:bg-neon-cyan text-neon-cyan hover:text-slate-950 font-bold text-xs transition border border-neon-cyan/30 active:scale-95"
+                        >
+                          <Calculator className="w-3.5 h-3.5" />
+                          <span>Load in Calculator</span>
+                          <ChevronRight className="w-3.5 h-3.5 ml-auto" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 2: Favorite Exercises */}
+        {favoriteTab === 'exercises' && (
+          <div>
+            {favoriteWorkouts.length === 0 ? (
+              <div className="p-8 rounded-2xl bg-midnight-bg border border-dashed border-midnight-border text-center space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-amber-400/10 border border-amber-400/20 text-amber-400 flex items-center justify-center mx-auto">
+                  <Star className="w-6 h-6" />
+                </div>
+                <div className="space-y-1">
+                  <h4 className="text-sm font-bold text-white">No Favorite Workouts Added Yet</h4>
+                  <p className="text-xs text-slate-400 max-w-md mx-auto">
+                    While browsing the Exercise Library or logging workouts in the Tracker, tap the ⭐ star icon on any movement to save it here for rapid access.
+                  </p>
+                </div>
+                {setActiveTab && (
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('library')}
+                    className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-neon-cyan text-slate-950 text-xs font-bold hover:bg-[#29bfcd] transition shadow-md shadow-neon-cyan/20"
+                  >
+                    <Dumbbell className="w-4 h-4" />
+                    <span>Explore Exercise Library</span>
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                {favoriteWorkouts.map((workout) => (
+                  <div
+                    key={workout.id}
+                    onClick={() => setSelectedExerciseForModal(workout)}
+                    className="group p-4 rounded-2xl bg-midnight-bg border border-midnight-border hover:border-neon-cyan/50 hover:bg-midnight-secondary/60 transition cursor-pointer flex flex-col justify-between space-y-3 relative shadow-sm"
+                  >
+                    <div>
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold font-mono uppercase bg-neon-cyan/10 border border-neon-cyan/30 text-neon-cyan">
+                          {workout.muscle}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => handleRemoveFavorite(workout.id, e)}
+                          className="p-1 rounded-lg text-amber-400 hover:text-rose-400 hover:bg-rose-500/10 transition"
+                          title="Remove from favorites"
+                        >
+                          <Star className="w-4 h-4 fill-amber-400" />
+                        </button>
+                      </div>
+
+                      <h4 className="text-sm font-bold text-white group-hover:text-neon-cyan transition line-clamp-1">
+                        {workout.name}
+                      </h4>
+                      <p className="text-[11px] text-slate-400 mt-1 line-clamp-1">
+                        {workout.subgroup || workout.category || workout.equipment}
+                      </p>
+                    </div>
+
+                    <div className="pt-2 border-t border-midnight-border/60 flex items-center justify-between text-[11px] text-slate-400">
+                      <span className="font-mono">{workout.equipment}</span>
+                      <span className="text-neon-cyan font-bold flex items-center gap-1 group-hover:translate-x-0.5 transition">
+                        View Guide
+                        <ChevronRight className="w-3 h-3" />
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
