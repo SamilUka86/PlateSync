@@ -2,28 +2,40 @@ import React, { useState, useEffect } from 'react';
 import { 
   ArrowLeftRight, 
   Scale, 
-  Dumbbell, 
   Copy, 
   Check, 
   RotateCcw, 
-  Sparkles, 
-  Calculator,
-  ArrowRight,
-  Info
+  Trash2, 
+  Info 
 } from 'lucide-react';
 import { KG_TO_LBS, LBS_TO_KG } from '../../utils/weightCalculations';
-import { useWorkout } from '../../context/WorkoutContext';
+import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
 
-export const WeightConverter = ({ isEmbedded = false, setActiveTab = null }) => {
-  const { setStagedWeight } = useWorkout();
+export const WeightConverter = ({ isEmbedded = false }) => {
+  const { userProfile } = useAuth();
   const { addNotification } = useNotification();
 
+  // Detect header unit preference ('KG' or 'LBS')
+  const headerUnit = (userProfile?.preferredUnit === 'LB' || userProfile?.preferredUnit === 'LBS') ? 'LBS' : 'KG';
+
   // Active primary input unit ('KG' or 'LBS')
-  const [activeUnit, setActiveUnit] = useState('KG');
-  const [kgValue, setKgValue] = useState('100');
-  const [lbsValue, setLbsValue] = useState(() => (100 * KG_TO_LBS).toFixed(2));
+  const [activeUnit, setActiveUnit] = useState(headerUnit);
+  const [kgValue, setKgValue] = useState(() => headerUnit === 'LBS' ? (100 * LBS_TO_KG).toFixed(2) : '100');
+  const [lbsValue, setLbsValue] = useState(() => headerUnit === 'LBS' ? '100' : (100 * KG_TO_LBS).toFixed(2));
   const [copiedKey, setCopiedKey] = useState(null);
+
+  // When user toggles KG/LBS in header, update active unit and recalculate formula accordingly
+  useEffect(() => {
+    setActiveUnit(headerUnit);
+    if (headerUnit === 'LBS') {
+      setLbsValue('100');
+      setKgValue((100 * LBS_TO_KG).toFixed(2));
+    } else {
+      setKgValue('100');
+      setLbsValue((100 * KG_TO_LBS).toFixed(2));
+    }
+  }, [headerUnit]);
 
   // Update LBS when KG changes (always 2 decimal places)
   const handleKgChange = (val) => {
@@ -51,23 +63,35 @@ export const WeightConverter = ({ isEmbedded = false, setActiveTab = null }) => 
 
   // Swap Units
   const handleSwapUnits = () => {
+    const nextUnit = activeUnit === 'KG' ? 'LBS' : 'KG';
+    setActiveUnit(nextUnit);
     const currentKg = kgValue;
     const currentLbs = lbsValue;
-    setActiveUnit(prev => (prev === 'KG' ? 'LBS' : 'KG'));
-    // Swap the values into the opposite fields
     setKgValue(currentLbs);
     const num = parseFloat(currentLbs);
     if (!isNaN(num) && num >= 0) {
       setLbsValue((num * KG_TO_LBS).toFixed(2));
     }
-    addNotification('Swapped conversion values', 'info');
+    addNotification(`Swapped primary unit to ${nextUnit}`, 'info');
   };
 
-  // Reset to default
+  // Reset to default 100 of active unit
   const handleReset = () => {
-    setKgValue('100');
-    setLbsValue((100 * KG_TO_LBS).toFixed(2));
-    setActiveUnit('KG');
+    if (activeUnit === 'LBS') {
+      setLbsValue('100');
+      setKgValue((100 * LBS_TO_KG).toFixed(2));
+    } else {
+      setKgValue('100');
+      setLbsValue((100 * KG_TO_LBS).toFixed(2));
+    }
+    addNotification(`Reset conversion to default (100 ${activeUnit})`, 'success');
+  };
+
+  // Clear all inputs
+  const handleClearAll = () => {
+    setKgValue('');
+    setLbsValue('');
+    addNotification('Cleared conversion inputs', 'info');
   };
 
   // Copy result to clipboard
@@ -92,36 +116,6 @@ export const WeightConverter = ({ isEmbedded = false, setActiveTab = null }) => 
     handleLbsChange(next % 1 === 0 ? next.toString() : Number(next.toFixed(2)).toString());
   };
 
-  // Common gym weight reference milestones
-  const GYM_MILESTONES = [
-    { label: 'Olympic Bar', kg: 20, lbs: 44.09, plates: 'Barbell Only' },
-    { label: '1 Plate (135 lbs)', kg: 61.23, lbs: 135.00, plates: '1 × 45 lb plate per side' },
-    { label: '1 Plate (60 kg)', kg: 60, lbs: 132.28, plates: '1 × 20 kg plate per side' },
-    { label: '2 Plates (225 lbs)', kg: 102.06, lbs: 225.00, plates: '2 × 45 lb plates per side' },
-    { label: '2 Plates (100 kg)', kg: 100, lbs: 220.46, plates: '2 × 20 kg plates per side' },
-    { label: '3 Plates (315 lbs)', kg: 142.88, lbs: 315.00, plates: '3 × 45 lb plates per side' },
-    { label: '3 Plates (140 kg)', kg: 140, lbs: 308.65, plates: '3 × 20 kg plates per side' },
-    { label: '4 Plates (405 lbs)', kg: 183.70, lbs: 405.00, plates: '4 × 45 lb plates per side' },
-    { label: '4 Plates (180 kg)', kg: 180, lbs: 396.83, plates: '4 × 20 kg plates per side' },
-    { label: '5 Plates (495 lbs)', kg: 224.53, lbs: 495.00, plates: '5 × 45 lb plates per side' },
-    { label: '5 Plates (220 kg)', kg: 220, lbs: 485.02, plates: '5 × 20 kg plates per side' },
-  ];
-
-  // Send converted weight into Barbell Calculator
-  const handleLoadIntoCalculator = (weight, unit) => {
-    if (setStagedWeight) {
-      setStagedWeight({
-        targetWeight: parseFloat(weight) || 20,
-        unit: unit || 'KG',
-        timestamp: Date.now()
-      });
-    }
-    if (setActiveTab) {
-      setActiveTab('calculator');
-    }
-    addNotification(`Loaded ${weight} ${unit} into Barbell Calculator!`, 'success');
-  };
-
   return (
     <div className={`space-y-6 ${isEmbedded ? 'mt-8 pt-8 border-t border-midnight-border' : ''}`}>
       
@@ -141,18 +135,28 @@ export const WeightConverter = ({ isEmbedded = false, setActiveTab = null }) => 
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-0.5">
-              Instant bidirectional conversion between Kilograms and Pounds with precision barbell math
+              Bidirectional real-time conversion between Kilograms and Pounds (Standard 2 Decimal Precision)
             </p>
           </div>
         </div>
 
-        {/* Reset Action */}
+        {/* Clear & Reset Actions */}
         <div className="flex items-center gap-2 relative z-10 shrink-0">
           <button
             type="button"
+            onClick={handleClearAll}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-midnight-bg hover:bg-rose-500/10 border border-midnight-border hover:border-rose-500/30 text-slate-400 hover:text-rose-400 text-xs font-medium transition active:scale-95 shadow-sm cursor-pointer"
+            title="Clear all values"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Clear</span>
+          </button>
+
+          <button
+            type="button"
             onClick={handleReset}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-midnight-bg hover:bg-midnight-elevated border border-midnight-border text-slate-300 hover:text-white text-xs font-semibold transition active:scale-95 shadow-sm"
-            title="Reset to 100 kg"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-midnight-bg hover:bg-midnight-elevated border border-midnight-border hover:border-neon-cyan/40 text-slate-300 hover:text-neon-cyan text-xs font-bold transition active:scale-95 shadow-sm cursor-pointer"
+            title="Reset to 100"
           >
             <RotateCcw className="w-3.5 h-3.5 text-neon-cyan" />
             <span>Reset</span>
@@ -177,7 +181,8 @@ export const WeightConverter = ({ isEmbedded = false, setActiveTab = null }) => 
             <button
               type="button"
               onClick={() => handleCopy(kgValue, 'kg')}
-              className="text-[11px] text-slate-400 hover:text-white flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-midnight-bg transition"
+              className="text-[11px] text-slate-400 hover:text-white flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-midnight-bg transition cursor-pointer"
+              title="Copy KG value"
             >
               {copiedKey === 'kg' ? <Check className="w-3 h-3 text-neon-success" /> : <Copy className="w-3 h-3" />}
               <span>{copiedKey === 'kg' ? 'Copied' : 'Copy'}</span>
@@ -191,7 +196,7 @@ export const WeightConverter = ({ isEmbedded = false, setActiveTab = null }) => 
               step="any"
               value={kgValue}
               onChange={(e) => handleKgChange(e.target.value)}
-              placeholder="0.0"
+              placeholder="0.00"
               className="w-full bg-midnight-bg border border-midnight-border focus:border-neon-cyan text-white text-3xl md:text-4xl font-black font-mono px-4 py-3.5 rounded-2xl outline-none transition"
             />
             <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-black font-mono text-neon-cyan/70 select-none">
@@ -207,7 +212,7 @@ export const WeightConverter = ({ isEmbedded = false, setActiveTab = null }) => 
                 key={amt}
                 type="button"
                 onClick={() => adjustKg(amt)}
-                className="px-2 py-1 rounded-lg bg-midnight-bg hover:bg-neon-cyan/20 text-slate-200 hover:text-neon-cyan border border-midnight-border hover:border-neon-cyan/40 text-[10.5px] font-bold font-mono transition active:scale-95"
+                className="px-2 py-1 rounded-lg bg-midnight-bg hover:bg-neon-cyan/20 text-slate-200 hover:text-neon-cyan border border-midnight-border hover:border-neon-cyan/40 text-[10.5px] font-bold font-mono transition active:scale-95 cursor-pointer"
               >
                 +{amt}
               </button>
@@ -215,31 +220,18 @@ export const WeightConverter = ({ isEmbedded = false, setActiveTab = null }) => 
             <button
               type="button"
               onClick={() => adjustKg(-2.5)}
-              className="px-2 py-1 rounded-lg bg-midnight-bg hover:bg-rose-500/20 text-slate-300 hover:text-rose-400 border border-midnight-border text-[10.5px] font-bold font-mono transition active:scale-95"
+              className="px-2 py-1 rounded-lg bg-midnight-bg hover:bg-rose-500/20 text-slate-300 hover:text-rose-400 border border-midnight-border text-[10.5px] font-bold font-mono transition active:scale-95 cursor-pointer"
             >
               -2.5
             </button>
             <button
               type="button"
-              onClick={() => handleKgChange('0')}
-              className="px-2 py-1 rounded-lg bg-midnight-bg hover:bg-midnight-elevated text-slate-400 hover:text-white border border-midnight-border text-[10.5px] font-bold transition ml-auto"
+              onClick={() => handleKgChange('')}
+              className="px-2 py-1 rounded-lg bg-midnight-bg hover:bg-midnight-elevated text-slate-400 hover:text-white border border-midnight-border text-[10.5px] font-bold transition ml-auto cursor-pointer"
             >
               Clear
             </button>
           </div>
-
-          {/* Barbell Quick Action */}
-          {setActiveTab && (
-            <button
-              type="button"
-              onClick={() => handleLoadIntoCalculator(kgValue, 'KG')}
-              className="w-full mt-3.5 py-2 px-3 rounded-xl bg-neon-cyan/10 hover:bg-neon-cyan/20 border border-neon-cyan/30 text-neon-cyan text-xs font-bold flex items-center justify-center gap-1.5 transition active:scale-95"
-            >
-              <Dumbbell className="w-3.5 h-3.5" />
-              <span>Load {kgValue || 0} KG in Barbell Calculator</span>
-              <ArrowRight className="w-3.5 h-3.5 ml-1" />
-            </button>
-          )}
         </div>
 
         {/* Center: Swap Direction Button */}
@@ -247,7 +239,7 @@ export const WeightConverter = ({ isEmbedded = false, setActiveTab = null }) => 
           <button
             type="button"
             onClick={handleSwapUnits}
-            className="w-12 h-12 rounded-2xl bg-midnight-card hover:bg-midnight-elevated border border-midnight-border hover:border-neon-cyan/50 text-slate-200 hover:text-neon-cyan flex items-center justify-center shadow-lg transition duration-200 transform hover:scale-110 active:scale-95 group"
+            className="w-12 h-12 rounded-2xl bg-midnight-card hover:bg-midnight-elevated border border-midnight-border hover:border-neon-cyan/50 text-slate-200 hover:text-neon-cyan flex items-center justify-center shadow-lg transition duration-200 transform hover:scale-110 active:scale-95 group cursor-pointer"
             title="Swap conversion direction (KG ⇄ LBS)"
           >
             <ArrowLeftRight className="w-5 h-5 group-hover:rotate-180 transition-transform duration-300" />
@@ -268,7 +260,8 @@ export const WeightConverter = ({ isEmbedded = false, setActiveTab = null }) => 
             <button
               type="button"
               onClick={() => handleCopy(lbsValue, 'lbs')}
-              className="text-[11px] text-slate-400 hover:text-white flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-midnight-bg transition"
+              className="text-[11px] text-slate-400 hover:text-white flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-midnight-bg transition cursor-pointer"
+              title="Copy LBS value"
             >
               {copiedKey === 'lbs' ? <Check className="w-3 h-3 text-neon-success" /> : <Copy className="w-3 h-3" />}
               <span>{copiedKey === 'lbs' ? 'Copied' : 'Copy'}</span>
@@ -282,7 +275,7 @@ export const WeightConverter = ({ isEmbedded = false, setActiveTab = null }) => 
               step="any"
               value={lbsValue}
               onChange={(e) => handleLbsChange(e.target.value)}
-              placeholder="0.0"
+              placeholder="0.00"
               className="w-full bg-midnight-bg border border-midnight-border focus:border-neon-violet text-white text-3xl md:text-4xl font-black font-mono px-4 py-3.5 rounded-2xl outline-none transition"
             />
             <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-black font-mono text-neon-violet/70 select-none">
@@ -298,7 +291,7 @@ export const WeightConverter = ({ isEmbedded = false, setActiveTab = null }) => 
                 key={amt}
                 type="button"
                 onClick={() => adjustLbs(amt)}
-                className="px-2 py-1 rounded-lg bg-midnight-bg hover:bg-neon-violet/20 text-slate-200 hover:text-neon-violet border border-midnight-border hover:border-neon-violet/40 text-[10.5px] font-bold font-mono transition active:scale-95"
+                className="px-2 py-1 rounded-lg bg-midnight-bg hover:bg-neon-violet/20 text-slate-200 hover:text-neon-violet border border-midnight-border hover:border-neon-violet/40 text-[10.5px] font-bold font-mono transition active:scale-95 cursor-pointer"
               >
                 +{amt}
               </button>
@@ -306,120 +299,48 @@ export const WeightConverter = ({ isEmbedded = false, setActiveTab = null }) => 
             <button
               type="button"
               onClick={() => adjustLbs(-5)}
-              className="px-2 py-1 rounded-lg bg-midnight-bg hover:bg-rose-500/20 text-slate-300 hover:text-rose-400 border border-midnight-border text-[10.5px] font-bold font-mono transition active:scale-95"
+              className="px-2 py-1 rounded-lg bg-midnight-bg hover:bg-rose-500/20 text-slate-300 hover:text-rose-400 border border-midnight-border text-[10.5px] font-bold font-mono transition active:scale-95 cursor-pointer"
             >
               -5
             </button>
             <button
               type="button"
-              onClick={() => handleLbsChange('0')}
-              className="px-2 py-1 rounded-lg bg-midnight-bg hover:bg-midnight-elevated text-slate-400 hover:text-white border border-midnight-border text-[10.5px] font-bold transition ml-auto"
+              onClick={() => handleLbsChange('')}
+              className="px-2 py-1 rounded-lg bg-midnight-bg hover:bg-midnight-elevated text-slate-400 hover:text-white border border-midnight-border text-[10.5px] font-bold transition ml-auto cursor-pointer"
             >
               Clear
             </button>
           </div>
+        </div>
 
-          {/* Barbell Quick Action */}
-          {setActiveTab && (
-            <button
-              type="button"
-              onClick={() => handleLoadIntoCalculator(lbsValue, 'LBS')}
-              className="w-full mt-3.5 py-2 px-3 rounded-xl bg-neon-violet/10 hover:bg-neon-violet/20 border border-neon-violet/30 text-neon-violet text-xs font-bold flex items-center justify-center gap-1.5 transition active:scale-95"
-            >
-              <Dumbbell className="w-3.5 h-3.5" />
-              <span>Load {lbsValue || 0} LBS in Barbell Calculator</span>
-              <ArrowRight className="w-3.5 h-3.5 ml-1" />
-            </button>
+      </div>
+
+      {/* Dynamic Conversion Standard & Formula Bar (Changes automatically when KG / LBS is switched in Header) */}
+      <div className="p-4 rounded-2xl bg-midnight-bg/90 border border-midnight-border flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400 shadow-md">
+        <div className="flex items-center gap-2">
+          <Info className="w-4 h-4 text-neon-cyan shrink-0" />
+          {activeUnit === 'KG' ? (
+            <span>
+              Standard Formula: <strong className="text-white font-mono">1 KG = 2.20462 LBS</strong> &bull; Multiply KG by 2.20462 to get Pounds
+            </span>
+          ) : (
+            <span>
+              Standard Formula: <strong className="text-white font-mono">1 LB = 0.45359 KG</strong> &bull; Multiply LBS by 0.45359 to get Kilograms
+            </span>
           )}
         </div>
 
-      </div>
-
-      {/* Conversion Standard & Formula Bar */}
-      <div className="p-4 rounded-2xl bg-midnight-bg/80 border border-midnight-border flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
-        <div className="flex items-center gap-2">
-          <Info className="w-4 h-4 text-neon-cyan shrink-0" />
-          <span>
-            Strict Scientific Standard: <strong className="text-white font-mono">1 KG = 2.20462 LBS</strong> &bull; <strong className="text-white font-mono">1 LB = 0.45359 KG</strong>
-          </span>
-        </div>
-        <div className="font-mono text-[11px] text-slate-500">
-          Formula: <span className="text-neon-cyan">KG × 2.20462</span> = <span className="text-neon-violet">LBS</span>
-        </div>
-      </div>
-
-      {/* Common Gym Milestones Table */}
-      <div className="p-5 md:p-6 rounded-3xl bg-midnight-card border border-midnight-border space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-neon-gold" />
-            <h3 className="text-sm font-bold text-white">
-              Common Barbell &amp; Plate Milestones
-            </h3>
-          </div>
-          <span className="text-[11px] text-slate-400 font-mono">
-            Click any row to load into converter
-          </span>
-        </div>
-
-        <div className="overflow-x-auto rounded-2xl border border-midnight-border">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-midnight-bg/90 text-slate-400 uppercase font-mono text-[10px] tracking-wider border-b border-midnight-border">
-              <tr>
-                <th className="py-2.5 px-4 font-bold">Milestone / Standard</th>
-                <th className="py-2.5 px-4 font-bold text-neon-cyan">Kilograms (KG)</th>
-                <th className="py-2.5 px-4 font-bold text-neon-violet">Pounds (LBS)</th>
-                <th className="py-2.5 px-4 font-bold text-slate-400 hidden sm:table-cell">Plate Breakdown</th>
-                <th className="py-2.5 px-4 font-bold text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-midnight-border/60 bg-midnight-bg/40 font-mono text-[11px]">
-              {GYM_MILESTONES.map((row, idx) => {
-                const isMatch = Math.abs((parseFloat(kgValue) || 0) - row.kg) < 0.5;
-                return (
-                  <tr 
-                    key={idx}
-                    onClick={() => {
-                      handleKgChange(row.kg.toString());
-                      addNotification(`Loaded ${row.label} (${row.kg} KG / ${row.lbs} LBS)`, 'info');
-                    }}
-                    className={`cursor-pointer transition-colors ${
-                      isMatch 
-                        ? 'bg-neon-cyan/15 hover:bg-neon-cyan/20' 
-                        : 'hover:bg-midnight-elevated/80'
-                    }`}
-                  >
-                    <td className="py-2.5 px-4 font-sans font-bold text-white flex items-center gap-2">
-                      <span className={`w-1.5 h-1.5 rounded-full ${isMatch ? 'bg-neon-cyan animate-pulse' : 'bg-slate-600'}`} />
-                      {row.label}
-                    </td>
-                    <td className="py-2.5 px-4 font-black text-neon-cyan">
-                      {typeof row.kg === 'number' ? row.kg.toFixed(2) : row.kg} KG
-                    </td>
-                    <td className="py-2.5 px-4 font-black text-neon-violet">
-                      {typeof row.lbs === 'number' ? row.lbs.toFixed(2) : row.lbs} LBS
-                    </td>
-                    <td className="py-2.5 px-4 text-slate-400 font-sans text-[10.5px] hidden sm:table-cell">
-                      {row.plates}
-                    </td>
-                    <td className="py-2.5 px-4 text-right font-sans">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleLoadIntoCalculator(row.kg, 'KG');
-                        }}
-                        className="px-2 py-1 rounded-lg bg-midnight-card hover:bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/30 text-[10px] font-bold transition active:scale-95"
-                        title="Load into 2D Barbell Visualizer"
-                      >
-                        Calculate ➔
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <div className="font-mono text-xs font-bold flex items-center gap-1.5">
+          <span className="text-slate-400">Formula:</span>
+          {activeUnit === 'KG' ? (
+            <span className="text-white bg-midnight-card px-3 py-1 rounded-lg border border-neon-cyan/30 text-xs">
+              <strong className="text-neon-cyan">KG</strong> × <span className="text-slate-200">2.20462</span> = <strong className="text-neon-violet">LBS</strong>
+            </span>
+          ) : (
+            <span className="text-white bg-midnight-card px-3 py-1 rounded-lg border border-neon-violet/30 text-xs">
+              <strong className="text-neon-violet">LBS</strong> × <span className="text-slate-200">0.45359</span> = <strong className="text-neon-cyan">KG</strong>
+            </span>
+          )}
         </div>
       </div>
 

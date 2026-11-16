@@ -98,7 +98,7 @@ export const ensureGoogleTranslateLoaded = () => {
   // Check if already loaded
   if (window.google && window.google.translate) return;
 
-  // Setup init callback
+// Setup init callback
   if (!window.googleTranslateElementInit) {
     window.googleTranslateElementInit = () => {
       try {
@@ -114,6 +114,35 @@ export const ensureGoogleTranslateLoaded = () => {
       }
     };
   }
+
+  // Enforce zero shift on body to prevent Google Translate from moving the site down
+  const enforceBodyPosition = () => {
+    if (document.body && document.body.style.top && document.body.style.top !== '0px') {
+      document.body.style.setProperty('top', '0px', 'important');
+      document.body.style.setProperty('position', 'static', 'important');
+    }
+    if (document.documentElement && document.documentElement.style.top && document.documentElement.style.top !== '0px') {
+      document.documentElement.style.setProperty('top', '0px', 'important');
+    }
+  };
+
+  try {
+    const observer = new MutationObserver(() => {
+      enforceBodyPosition();
+      const bannerFrames = document.querySelectorAll(
+        '.goog-te-banner-frame, iframe.skiptranslate, .VIpgJd-ZVi9od-ORHb-OEVmcd, .VIpgJd-ZVi9od-aZ2wEe-wOHMyf, .VIpgJd-ZVi9od-aZ2wEe-OiiCO, iframe.VIpgJd-ZVi9od-xl07Ob-OEVmcd'
+      );
+      bannerFrames.forEach(f => {
+        f.style.setProperty('display', 'none', 'important');
+        f.style.setProperty('visibility', 'hidden', 'important');
+        f.style.setProperty('height', '0px', 'important');
+      });
+    });
+
+    if (document.body) {
+      observer.observe(document.body, { attributes: true, attributeFilter: ['style', 'class'] });
+    }
+  } catch (e) {}
 
   // Ensure mount container exists
   if (!document.getElementById('google_translate_element')) {
