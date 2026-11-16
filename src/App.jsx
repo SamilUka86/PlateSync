@@ -360,7 +360,12 @@ const MainAppLayout = () => {
               {activeTab === 'analytics' && <AnalyticsPage setActiveTab={handleSetActiveTab} />}
               {activeTab === 'records' && <PersonalRecordsPage setActiveTab={handleSetActiveTab} />}
               {activeTab === 'bodyweight' && <BodyWeightPage setActiveTab={handleSetActiveTab} />}
-              {activeTab === 'profile' && <ProfilePage setActiveTab={handleSetActiveTab} />}
+              {activeTab === 'profile' && (
+                <ProfilePage 
+                  setActiveTab={handleSetActiveTab} 
+                  onOpenAuth={() => setShowAuthModal(true)} 
+                />
+              )}
               {activeTab === 'settings' && (
                 <SettingsPage 
                   setActiveTab={handleSetActiveTab} 

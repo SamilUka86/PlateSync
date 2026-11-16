@@ -24,7 +24,7 @@ import { KG_TO_LBS } from '../../utils/weightCalculations';
 import { EXERCISE_DATABASE } from '../../utils/exerciseData';
 import { ExerciseDetailModal } from '../../components/library/ExerciseDetailModal';
 
-export const ProfilePage = ({ setActiveTab }) => {
+export const ProfilePage = ({ setActiveTab, onOpenAuth }) => {
   const { userProfile, currentUser, updateProfile, isDemoMode } = useAuth();
   const { savedConfigurations = [], deletePlateConfiguration, setStagedWeight } = useWorkout();
   const { addNotification } = useNotification();
@@ -376,19 +376,31 @@ export const ProfilePage = ({ setActiveTab }) => {
                 <div className="space-y-1">
                   <h4 className="text-sm font-bold text-white">No Favorite Barbell Setups Saved Yet</h4>
                   <p className="text-xs text-slate-400 max-w-md mx-auto">
-                    Load your plates in the Smart Weight Calculator and click &quot;Save Setup&quot; to bookmark your custom lifts and rack configurations here.
+                    Load your plates in the Smart Weight Calculator and tap &quot;Favorite Rack&quot; to bookmark your custom lifts and rack configurations here.
                   </p>
                 </div>
-                {setActiveTab && (
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('calculator')}
-                    className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-neon-cyan text-slate-950 text-xs font-bold hover:bg-[#29bfcd] transition shadow-md shadow-neon-cyan/20"
-                  >
-                    <Calculator className="w-4 h-4" />
-                    <span>Open Weight Calculator</span>
-                  </button>
-                )}
+                <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
+                  {(!currentUser && !isDemoMode) && onOpenAuth && (
+                    <button
+                      type="button"
+                      onClick={onOpenAuth}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-400 text-slate-950 text-xs font-bold hover:bg-amber-300 transition shadow-md shadow-amber-400/20"
+                    >
+                      <Star className="w-4 h-4 fill-slate-950" />
+                      <span>Sign In to Save Favorites</span>
+                    </button>
+                  )}
+                  {setActiveTab && (
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('calculator')}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-neon-cyan text-slate-950 text-xs font-bold hover:bg-[#29bfcd] transition shadow-md shadow-neon-cyan/20"
+                    >
+                      <Calculator className="w-4 h-4" />
+                      <span>Open Weight Calculator</span>
+                    </button>
+                  )}
+                </div>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">

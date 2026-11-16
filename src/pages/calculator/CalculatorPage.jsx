@@ -16,7 +16,8 @@ import {
   CheckCircle2,
   AlertTriangle,
   ArrowRight,
-  Info
+  Info,
+  Star
 } from 'lucide-react';
 import { 
   STANDARD_KG_PLATES, 
@@ -295,10 +296,61 @@ export const CalculatorPage = ({ setActiveTab, onOpenAuth }) => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Save current plate configuration
+  // Determine if the currently loaded barbell setup is already saved in Favorites
+  const currentFavoritedConfig = useMemo(() => {
+    if (!savedConfigurations || savedConfigurations.length === 0) return null;
+    return savedConfigurations.find(cfg => {
+      const matchWeight = Math.abs((Number(cfg.totalKg) || 0) - weightSummary.totalKg) < 0.05;
+      const matchBarbell = Number(cfg.barbellWeight) === Number(barbellConfig.weight);
+      const matchLeft = (cfg.leftPlates?.length || 0) === leftPlates.length;
+      const matchRight = (cfg.rightPlates?.length || 0) === rightPlates.length;
+      return matchWeight && matchBarbell && matchLeft && matchRight;
+    }) || null;
+  }, [savedConfigurations, weightSummary.totalKg, barbellConfig.weight, leftPlates.length, rightPlates.length]);
+
+  const isCurrentSetupFavorited = Boolean(currentFavoritedConfig);
+
+  // Toggle favorite for current barbell rack setup
+  const handleToggleFavoriteSetup = () => {
+    if (!currentUser || isDemoMode || currentUser?.isDemo) {
+      addNotification('Please sign in to save barbell setups to your Profile Favorites ⭐', 'info');
+      if (onOpenAuth) {
+        onOpenAuth();
+      } else if (setActiveTab) {
+        setActiveTab('profile');
+      }
+      return;
+    }
+
+    if (isCurrentSetupFavorited && currentFavoritedConfig) {
+      deletePlateConfiguration(currentFavoritedConfig.id);
+      addNotification(`Removed "${currentFavoritedConfig.name}" from Profile Favorites`, 'info');
+    } else {
+      const defaultName = `${barbellConfig.isLegPress45 ? '45° Leg Press' : 'Barbell'} ${weightSummary.totalKg.toFixed(2)} KG (${weightSummary.totalLbs.toFixed(2)} LBS)`;
+      savePlateConfiguration({
+        name: defaultName,
+        barbellWeight: barbellConfig.weight,
+        barbellUnit: barbellConfig.unit,
+        isLegPress45: !!barbellConfig.isLegPress45,
+        leftPlates: [...leftPlates],
+        rightPlates: [...rightPlates],
+        centerPlates: [...centerPlates],
+        totalKg: Math.round(weightSummary.totalKg * 100) / 100,
+        totalLbs: Math.round(weightSummary.totalLbs * 100) / 100,
+        isFavorite: true
+      });
+      addNotification(`Added to Profile Favorites ⭐! (${weightSummary.totalKg.toFixed(2)} KG setup saved)`, 'success');
+      logUserActivityEvent('CALCULATOR_CONFIG_FAVORITED', `Favorited barbell setup: "${defaultName}" (${weightSummary.totalKg.toFixed(2)} KG)`, {
+        name: defaultName,
+        totalKg: weightSummary.totalKg
+      });
+    }
+  };
+
+  // Save current plate configuration with custom name modal
   const handleSaveClick = () => {
-    if (!currentUser || isDemoMode) {
-      addNotification('Please sign in to save barbell setups to your profile favorites ⭐', 'info');
+    if (!currentUser || isDemoMode || currentUser?.isDemo) {
+      addNotification('Please sign in to save barbell setups to your Profile Favorites ⭐', 'info');
       if (onOpenAuth) {
         onOpenAuth();
       } else if (setActiveTab) {
@@ -512,13 +564,28 @@ export const CalculatorPage = ({ setActiveTab, onOpenAuth }) => {
               <span className="sm:hidden">Copy</span>
             </button>
 
-            {/* Save Config Button */}
+            {/* Favorite Rack Setup Button */}
+            <button
+              onClick={handleToggleFavoriteSetup}
+              className={`flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl border text-xs font-bold transition ${
+                isCurrentSetupFavorited
+                  ? 'bg-amber-400/15 border-amber-400/50 text-amber-300 shadow-md shadow-amber-400/10'
+                  : 'border-midnight-border bg-midnight-elevated hover:bg-[#1e2f50] text-slate-200 hover:text-amber-300 hover:border-amber-400/40'
+              }`}
+              title={isCurrentSetupFavorited ? 'Remove from Profile Favorites' : 'Add current setup to Profile Favorites'}
+            >
+              <Star className={`w-4 h-4 ${isCurrentSetupFavorited ? 'fill-amber-400 text-amber-400' : 'text-amber-400'}`} />
+              <span>{isCurrentSetupFavorited ? 'Favorited ⭐' : 'Favorite Rack'}</span>
+            </button>
+
+            {/* Save Config with Custom Name Button */}
             <button
               onClick={handleSaveClick}
-              className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-midnight-border bg-midnight-elevated hover:bg-[#1e2f50] text-slate-200 text-xs font-bold transition hover:text-neon-cyan"
+              className="hidden sm:flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-midnight-border bg-midnight-elevated hover:bg-[#1e2f50] text-slate-400 hover:text-white text-xs font-semibold transition"
+              title="Save setup with a custom name"
             >
-              <BookmarkPlus className="w-4 h-4 text-neon-cyan" />
-              <span>Save Setup</span>
+              <BookmarkPlus className="w-4 h-4 text-slate-400" />
+              <span>Name Setup</span>
             </button>
 
             {/* Transfer to Tracker Button */}
@@ -633,6 +700,19 @@ export const CalculatorPage = ({ setActiveTab, onOpenAuth }) => {
           >
             <ArrowRightLeft className="w-3.5 h-3.5" />
             <span>Mirror R&rarr;L</span>
+          </button>
+
+          <button
+            onClick={handleToggleFavoriteSetup}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition ${
+              isCurrentSetupFavorited
+                ? 'border-amber-400/40 bg-amber-400/15 text-amber-300'
+                : 'border-midnight-border bg-midnight-elevated hover:bg-[#1f2f50] text-slate-300 hover:text-amber-300 hover:border-amber-400/30'
+            }`}
+            title={isCurrentSetupFavorited ? 'Remove setup from Profile Favorites' : 'Save setup to Profile Favorites'}
+          >
+            <Star className={`w-3.5 h-3.5 ${isCurrentSetupFavorited ? 'fill-amber-400 text-amber-400' : 'text-amber-400'}`} />
+            <span>{isCurrentSetupFavorited ? 'Favorited' : 'Favorite Setup'}</span>
           </button>
 
           <button
@@ -1074,14 +1154,36 @@ export const CalculatorPage = ({ setActiveTab, onOpenAuth }) => {
 
           </div>
 
-          {/* Saved Configurations Carousel / List */}
+          {/* Saved Configurations / Profile Favorites Rack */}
           {savedConfigurations && savedConfigurations.length > 0 ? (
             <div className="p-4 rounded-2xl bg-midnight-card border border-midnight-border space-y-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <h4 className="text-xs font-bold text-white flex items-center gap-2">
-                  <Bookmark className="w-3.5 h-3.5 text-neon-cyan" />
-                  Saved Plate Configurations ({savedConfigurations.length})
+                  <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                  <span>Profile Favorites: Saved Setups ({savedConfigurations.length})</span>
                 </h4>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleToggleFavoriteSetup}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition ${
+                      isCurrentSetupFavorited
+                        ? 'bg-amber-400/15 border-amber-400/50 text-amber-300'
+                        : 'bg-amber-400/10 hover:bg-amber-400/20 border-amber-400/30 text-amber-300'
+                    }`}
+                  >
+                    <Star className={`w-3.5 h-3.5 ${isCurrentSetupFavorited ? 'fill-amber-400 text-amber-400' : 'text-amber-400'}`} />
+                    <span>{isCurrentSetupFavorited ? 'Setup Favorited' : '+ Favorite Current Setup'}</span>
+                  </button>
+                  {setActiveTab && (
+                    <button
+                      onClick={() => setActiveTab('profile')}
+                      className="flex items-center gap-1 text-[11px] font-bold text-slate-400 hover:text-neon-cyan px-2 py-1 transition"
+                    >
+                      <span>View in Profile</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1091,8 +1193,11 @@ export const CalculatorPage = ({ setActiveTab, onOpenAuth }) => {
                     className="p-3 rounded-xl bg-midnight-bg border border-midnight-border flex items-center justify-between group hover:border-neon-cyan/40 transition"
                   >
                     <div className="min-w-0 pr-2">
-                      <p className="text-xs font-bold text-white truncate">{cfg.name}</p>
-                      <p className="text-[10px] text-slate-400 font-mono">
+                      <div className="flex items-center gap-1.5">
+                        <Star className="w-3 h-3 fill-amber-400 text-amber-400 shrink-0" />
+                        <p className="text-xs font-bold text-white truncate">{cfg.name}</p>
+                      </div>
+                      <p className="text-[10px] text-slate-400 font-mono mt-0.5">
                         {cfg.totalKg} KG &bull; {cfg.totalLbs} LBS
                       </p>
                     </div>
@@ -1117,14 +1222,34 @@ export const CalculatorPage = ({ setActiveTab, onOpenAuth }) => {
               </div>
             </div>
           ) : (
-            <div className="p-4 rounded-2xl bg-midnight-card/50 border border-midnight-border/60 text-center space-y-1.5">
-              <div className="w-7 h-7 rounded-lg bg-midnight-bg border border-midnight-border flex items-center justify-center text-slate-500 mx-auto">
-                <Bookmark className="w-3.5 h-3.5" />
+            <div className="p-6 rounded-2xl bg-midnight-card/50 border border-midnight-border/60 text-center space-y-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-amber-400 mx-auto">
+                <Star className="w-5 h-5 fill-amber-400" />
               </div>
-              <p className="text-xs font-bold text-white">The Rack is Empty</p>
-              <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
-                Load your barbell setup and click &quot;Save Configuration&quot; above to store custom setups on your rack.
-              </p>
+              <div>
+                <p className="text-xs font-bold text-white">Your Rack Favorites are Empty</p>
+                <p className="text-[11px] text-slate-400 max-w-sm mx-auto mt-1">
+                  Assemble your barbell setup and tap &quot;Favorite Rack&quot; to bookmark custom setups to your Profile Favorites.
+                </p>
+              </div>
+              <div className="flex items-center justify-center gap-2 pt-1">
+                <button
+                  onClick={handleToggleFavoriteSetup}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-400/15 border border-amber-400/30 text-amber-300 hover:bg-amber-400 hover:text-slate-950 font-bold text-xs transition"
+                >
+                  <Star className="w-3.5 h-3.5 fill-amber-400" />
+                  <span>Favorite Current Setup</span>
+                </button>
+                {setActiveTab && (
+                  <button
+                    onClick={() => setActiveTab('profile')}
+                    className="inline-flex items-center gap-1 px-3 py-2 text-xs font-bold text-slate-400 hover:text-white transition"
+                  >
+                    <span>View Profile</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
