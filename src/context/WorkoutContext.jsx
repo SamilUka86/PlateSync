@@ -159,7 +159,7 @@ const DEFAULT_SAVED_CONFIGS = [
       { id: 'p4', weight: 20, unit: 'KG' }
     ],
     totalKg: 100,
-    totalLbs: Math.round(100 * KG_TO_LBS * 10) / 10,
+    totalLbs: Math.round(100 * KG_TO_LBS * 100) / 100,
     createdAt: new Date().toISOString()
   },
   {
@@ -571,8 +571,8 @@ export const WorkoutProvider = ({ children }) => {
           const wKg = isLb ? (Number(s.weight) || 0) / KG_TO_LBS : (Number(s.weight) || 0);
           if (wKg > personalRecords[exName].maxWeightKg) {
             personalRecords[exName] = {
-              maxWeightKg: Math.round(wKg * 10) / 10,
-              maxWeightLbs: Math.round(wKg * KG_TO_LBS * 10) / 10,
+              maxWeightKg: Math.round(wKg * 100) / 100,
+              maxWeightLbs: Math.round(wKg * KG_TO_LBS * 100) / 100,
               reps: s.reps,
               date: w.date
             };

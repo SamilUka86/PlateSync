@@ -20,6 +20,7 @@ import { isDesignatedAdminEmail } from './utils/adminSecurity';
 // Pages
 import { DashboardPage } from './pages/dashboard/DashboardPage';
 import { CalculatorPage } from './pages/calculator/CalculatorPage';
+import { WeightConversionPage } from './pages/converter/WeightConversionPage';
 import { WorkoutTrackerPage } from './pages/workout/WorkoutTrackerPage';
 import { WeeklyPlannerPage } from './pages/planner/WeeklyPlannerPage';
 import { ExerciseLibraryPage } from './pages/library/ExerciseLibraryPage';
@@ -111,9 +112,12 @@ const MainAppLayout = () => {
     try {
       const isDemo = localStorage.getItem('platesync_demo_active') === 'true';
       const mode = localStorage.getItem('platesync_demo_access_mode') || 'calculator-only';
-      if (isDemo && mode === 'calculator-only') return 'calculator';
-
       const savedTab = localStorage.getItem('platesync_active_tab');
+      if (isDemo && mode === 'calculator-only') {
+        if (savedTab === 'converter' || savedTab === 'calculator') return savedTab;
+        return 'calculator';
+      }
+
       if (savedTab) return savedTab;
     } catch (e) {}
     return 'calculator';
@@ -287,7 +291,7 @@ const MainAppLayout = () => {
     );
   }
 
-  const isTabLocked = (!currentUser || (isDemoMode && demoAccessMode === 'calculator-only')) && activeTab !== 'calculator';
+  const isTabLocked = (!currentUser || (isDemoMode && demoAccessMode === 'calculator-only')) && activeTab !== 'calculator' && activeTab !== 'converter';
 
   return (
     <div className="min-h-screen bg-midnight-bg text-slate-100 flex flex-col">
@@ -343,6 +347,7 @@ const MainAppLayout = () => {
             <>
               {activeTab === 'dashboard' && <DashboardPage setActiveTab={handleSetActiveTab} />}
               {activeTab === 'calculator' && <CalculatorPage setActiveTab={handleSetActiveTab} />}
+              {activeTab === 'converter' && <WeightConversionPage setActiveTab={handleSetActiveTab} />}
               {activeTab === 'tracker' && <WorkoutTrackerPage setActiveTab={handleSetActiveTab} />}
               {activeTab === 'planner' && <WeeklyPlannerPage setActiveTab={handleSetActiveTab} />}
               {activeTab === 'library' && <ExerciseLibraryPage setActiveTab={handleSetActiveTab} />}

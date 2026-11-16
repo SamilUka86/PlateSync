@@ -79,10 +79,10 @@ export const BodyWeightPage = ({ setActiveTab }) => {
               {
                 id: `seed_initial_${userId}`,
                 date: getTodayLocalDateStr(),
-                weight: (preferredUnit === 'LB' || preferredUnit === 'LBS') ? Math.round(baseKg * KG_TO_LBS * 10) / 10 : baseKg,
+                weight: (preferredUnit === 'LB' || preferredUnit === 'LBS') ? Math.round(baseKg * KG_TO_LBS * 100) / 100 : baseKg,
                 unit: (preferredUnit === 'LB' || preferredUnit === 'LBS') ? 'LBS' : 'KG',
                 weightKg: baseKg,
-                weightLb: Math.round(baseKg * KG_TO_LBS * 10) / 10,
+                weightLb: Math.round(baseKg * KG_TO_LBS * 100) / 100,
                 notes: 'Baseline check-in',
                 createdAt: new Date().toISOString()
               }
@@ -113,10 +113,10 @@ export const BodyWeightPage = ({ setActiveTab }) => {
   const currentWeightFormatted = useMemo(() => {
     if (!currentWeightKg) return '--';
     if (unit === 'LB' || unit === 'LBS') {
-      const lbs = Math.round(currentWeightKg * KG_TO_LBS * 10) / 10;
+      const lbs = Math.round(currentWeightKg * KG_TO_LBS * 100) / 100;
       return `${lbs} lbs`;
     }
-    return `${Math.round(currentWeightKg * 10) / 10} kg`;
+    return `${Math.round(currentWeightKg * 100) / 100} kg`;
   }, [currentWeightKg, unit]);
 
   // 30-Day Change
@@ -124,14 +124,14 @@ export const BodyWeightPage = ({ setActiveTab }) => {
     if (logs.length < 2) return null;
     const current = logs[0].weightKg;
     const oldest = logs[logs.length - 1].weightKg;
-    const diffKg = Math.round((current - oldest) * 10) / 10;
+    const diffKg = Math.round((current - oldest) * 100) / 100;
 
-    if (Math.abs(diffKg) < 0.05) return { type: 'neutral', value: '0.0 kg' };
+    if (Math.abs(diffKg) < 0.01) return { type: 'neutral', value: '0.00 kg' };
     if (diffKg > 0) {
-      const val = (unit === 'LB' || unit === 'LBS') ? `+${Math.round(diffKg * KG_TO_LBS * 10) / 10} lbs` : `+${diffKg} kg`;
+      const val = (unit === 'LB' || unit === 'LBS') ? `+${Math.round(diffKg * KG_TO_LBS * 100) / 100} lbs` : `+${diffKg} kg`;
       return { type: 'up', value: val };
     } else {
-      const val = (unit === 'LB' || unit === 'LBS') ? `${Math.round(diffKg * KG_TO_LBS * 10) / 10} lbs` : `${diffKg} kg`;
+      const val = (unit === 'LB' || unit === 'LBS') ? `${Math.round(diffKg * KG_TO_LBS * 100) / 100} lbs` : `${diffKg} kg`;
       return { type: 'down', value: val };
     }
   }, [logs, unit]);
@@ -148,8 +148,8 @@ export const BodyWeightPage = ({ setActiveTab }) => {
     setIsSaving(true);
     try {
       const isLb = (unit === 'LB' || unit === 'LBS');
-      const weightKg = isLb ? Math.round((num / KG_TO_LBS) * 10) / 10 : Math.round(num * 10) / 10;
-      const weightLb = unit === 'KG' ? Math.round((num * KG_TO_LBS) * 10) / 10 : Math.round(num * 10) / 10;
+      const weightKg = isLb ? Math.round((num / KG_TO_LBS) * 100) / 100 : Math.round(num * 100) / 100;
+      const weightLb = unit === 'KG' ? Math.round((num * KG_TO_LBS) * 100) / 100 : Math.round(num * 100) / 100;
 
       const newEntry = {
         id: `bw_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
@@ -341,8 +341,8 @@ export const BodyWeightPage = ({ setActiveTab }) => {
               {weightInput && !isNaN(parseFloat(weightInput)) && (
                 <p className="text-[11px] text-slate-400 mt-1 font-mono">
                   {unit === 'KG' 
-                    ? `≈ ${Math.round(parseFloat(weightInput) * KG_TO_LBS * 10) / 10} lbs` 
-                    : `≈ ${Math.round((parseFloat(weightInput) / KG_TO_LBS) * 10) / 10} kg`}
+                    ? `≈ ${Math.round(parseFloat(weightInput) * KG_TO_LBS * 100) / 100} lbs` 
+                    : `≈ ${Math.round((parseFloat(weightInput) / KG_TO_LBS) * 100) / 100} kg`}
                 </p>
               )}
             </div>
@@ -552,8 +552,8 @@ export const BodyWeightPage = ({ setActiveTab }) => {
                   const prevLog = logs[index + 1];
                   let delta = null;
                   if (prevLog) {
-                    const diff = Math.round((log.weightKg - prevLog.weightKg) * 10) / 10;
-                    if (Math.abs(diff) >= 0.05) {
+                    const diff = Math.round((log.weightKg - prevLog.weightKg) * 100) / 100;
+                    if (Math.abs(diff) >= 0.01) {
                       delta = diff;
                     }
                   }

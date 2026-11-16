@@ -14,7 +14,8 @@ import {
   Search,
   Check,
   MessageSquare,
-  Shield
+  Shield,
+  X
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
@@ -60,6 +61,33 @@ export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, s
     );
   };
 
+  // 5-second popup near download button when user refreshes or first visits the website
+  const [showInstallPromptBubble, setShowInstallPromptBubble] = useState(() => {
+    try {
+      const isStandaloneMode = 
+        window.matchMedia?.('(display-mode: standalone)')?.matches ||
+        window.navigator?.standalone === true ||
+        document.referrer?.includes('android-app://');
+      return !isStandaloneMode;
+    } catch (e) {
+      return true;
+    }
+  });
+
+  useEffect(() => {
+    if (isStandalone) {
+      setShowInstallPromptBubble(false);
+      return;
+    }
+
+    setShowInstallPromptBubble(true);
+    const timer = setTimeout(() => {
+      setShowInstallPromptBubble(false);
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [isStandalone]);
+
   // Global Website Language Translation State (English <-> Hindi)
   const [currentLang, setCurrentLang] = useState(getCurrentLanguage);
 
@@ -92,6 +120,7 @@ export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, s
     switch (activeTab) {
       case 'dashboard': return 'Dashboard Overview';
       case 'calculator': return 'Smart Barbell Calculator';
+      case 'converter': return 'Weight Conversion (KG ⇄ LBS)';
       case 'tracker': return 'Workout Tracker & Logging';
       case 'planner': return 'Weekly Workout Planner (Mon - Sun)';
       case 'library': return 'Exercise Library & Programs';
@@ -109,6 +138,7 @@ export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, s
     switch (activeTab) {
       case 'dashboard': return 'Dashboard';
       case 'calculator': return 'Calculator';
+      case 'converter': return 'Conversion';
       case 'tracker': return 'Tracker';
       case 'planner': return 'Weekly Planner';
       case 'library': return 'Exercises';
@@ -208,23 +238,65 @@ export const Header = ({ activeTab, setActiveTab, onOpenMobileMenu, collapsed, s
           </button>
         )}
 
-        {/* PWA Install Button - In general, show only the icon/logo without "Install" text */}
-        <button
-          type="button"
-          onClick={handleInstallClick}
-          className={`shrink-0 flex items-center justify-center p-2 rounded-xl border transition active:scale-95 cursor-pointer shadow-sm ${isStandalone
-            ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 hover:border-emerald-400 shadow-emerald-500/10'
-            : 'border-neon-cyan/40 bg-neon-cyan/10 text-neon-cyan hover:bg-neon-cyan hover:text-slate-950 hover:shadow-neon-cyan/25 shadow-neon-cyan/10'
-          }`}
-          title={isStandalone ? "PlateSync is running in installed app mode (Click for details)" : "Install PlateSync Progressive Web App"}
-          aria-label="Install App"
-        >
-          {isStandalone ? (
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-          ) : (
-            <Download className="w-4 h-4 shrink-0" />
+        {/* PWA Install Button with High-Visibility 5-Second "Click here to install" Prompt Bubble */}
+        <div className="relative shrink-0">
+          <button
+            type="button"
+            onClick={() => {
+              setShowInstallPromptBubble(false);
+              handleInstallClick();
+            }}
+            className={`shrink-0 flex items-center justify-center p-2 rounded-xl border transition active:scale-95 cursor-pointer shadow-sm ${
+              showInstallPromptBubble && !isStandalone
+                ? 'border-neon-cyan bg-neon-cyan text-slate-950 shadow-glow-cyan ring-2 ring-neon-cyan ring-offset-2 ring-offset-midnight-bg animate-pulse'
+                : isStandalone
+                  ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 hover:border-emerald-400 shadow-emerald-500/10'
+                  : 'border-neon-cyan/40 bg-neon-cyan/10 text-neon-cyan hover:bg-neon-cyan hover:text-slate-950 hover:shadow-neon-cyan/25 shadow-neon-cyan/10'
+            }`}
+            title={isStandalone ? "PlateSync is running in installed app mode (Click for details)" : "Install PlateSync Progressive Web App"}
+            aria-label="Install App"
+          >
+            {isStandalone ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            ) : (
+              <Download className="w-4 h-4 shrink-0" />
+            )}
+          </button>
+
+          {/* 5-second popup on first visit / refresh */}
+          {showInstallPromptBubble && !isStandalone && (
+            <div 
+              onClick={() => {
+                setShowInstallPromptBubble(false);
+                handleInstallClick();
+              }}
+              className="absolute top-full mt-2 right-0 sm:left-1/2 sm:-translate-x-1/2 z-[100] cursor-pointer animate-in fade-in slide-in-from-top-2 duration-200 select-none"
+              title="Click here to install PlateSync"
+            >
+              {/* Upward triangular arrow pointing directly at the download icon */}
+              <div className="flex justify-end sm:justify-center pr-3 sm:pr-0 -mb-[1px]">
+                <div className="w-0 h-0 border-x-[6px] border-x-transparent border-b-[6px] border-b-neon-cyan drop-shadow-sm" />
+              </div>
+              
+              {/* Badge bubble */}
+              <div className="px-3.5 py-2 rounded-2xl bg-gradient-to-r from-neon-cyan to-[#22d3ee] text-slate-950 text-xs sm:text-[13px] font-black shadow-[0_10px_25px_-5px_rgba(53,217,232,0.6),0_0_15px_rgba(53,217,232,0.4)] flex items-center gap-2 border-2 border-white/60 tracking-tight whitespace-nowrap hover:scale-105 transition active:scale-95">
+                <Download className="w-4 h-4 stroke-[2.5] animate-bounce shrink-0 text-slate-950" />
+                <span className="font-black text-slate-950">Click here to install</span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowInstallPromptBubble(false);
+                  }}
+                  className="ml-1 p-0.5 hover:bg-black/25 rounded-full transition text-slate-950"
+                  aria-label="Dismiss install tip"
+                >
+                  <X className="w-3.5 h-3.5 stroke-[2.5]" />
+                </button>
+              </div>
+            </div>
           )}
-        </button>
+        </div>
 
         {/* English <-> Hindi Live Translation Button (Directly Left to KG) */}
         <button

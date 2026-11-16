@@ -341,8 +341,8 @@ export const saveWeightLog = async (userId, weightEntry) => {
   const rawUnit = (weightEntry.unit || 'KG').toUpperCase();
   const unit = (rawUnit === 'LB' || rawUnit === 'LBS') ? 'LBS' : 'KG';
   const weightVal = Number(weightEntry.weight) || 0;
-  const weightKg = unit === 'LBS' ? Math.round((weightVal / KG_TO_LBS_CONST) * 10) / 10 : Math.round(weightVal * 10) / 10;
-  const weightLb = unit === 'KG' ? Math.round((weightVal * KG_TO_LBS_CONST) * 10) / 10 : Math.round(weightVal * 10) / 10;
+  const weightKg = unit === 'LBS' ? Math.round((weightVal / KG_TO_LBS_CONST) * 100) / 100 : Math.round(weightVal * 100) / 100;
+  const weightLb = unit === 'KG' ? Math.round((weightVal * KG_TO_LBS_CONST) * 100) / 100 : Math.round(weightVal * 100) / 100;
 
   const payload = {
     id: entryId,

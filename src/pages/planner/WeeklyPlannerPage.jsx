@@ -71,38 +71,38 @@ export const WeeklyPlannerPage = ({ setActiveTab }) => {
     const baseKg = Number(userProfile?.bodyWeight) || 75;
     if (!weightLogs || weightLogs.length === 0) {
       const displayCurrent = preferredUnit === 'LBS'
-        ? `${Math.round(baseKg * KG_TO_LBS * 10) / 10} lbs`
-        : `${Math.round(baseKg * 10) / 10} kg`;
+        ? `${Math.round(baseKg * KG_TO_LBS * 100) / 100} lbs`
+        : `${Math.round(baseKg * 100) / 100} kg`;
       return {
         current: displayCurrent,
-        trend: { type: 'neutral', value: '0.0 kg' },
+        trend: { type: 'neutral', value: '0.00 kg' },
         hasLogs: false
       };
     }
 
     const currentKg = weightLogs[0].weightKg;
     const oldestKg = weightLogs[weightLogs.length - 1].weightKg;
-    const diffKg = Math.round((currentKg - oldestKg) * 10) / 10;
+    const diffKg = Math.round((currentKg - oldestKg) * 100) / 100;
 
     let trendType = 'neutral';
-    let trendValue = '0.0 kg';
-    if (Math.abs(diffKg) >= 0.05) {
+    let trendValue = '0.00 kg';
+    if (Math.abs(diffKg) >= 0.01) {
       if (diffKg > 0) {
         trendType = 'up';
         trendValue = preferredUnit === 'LBS'
-          ? `+${Math.round(diffKg * KG_TO_LBS * 10) / 10} lbs`
+          ? `+${Math.round(diffKg * KG_TO_LBS * 100) / 100} lbs`
           : `+${diffKg} kg`;
       } else {
         trendType = 'down';
         trendValue = preferredUnit === 'LBS'
-          ? `${Math.round(diffKg * KG_TO_LBS * 10) / 10} lbs`
+          ? `${Math.round(diffKg * KG_TO_LBS * 100) / 100} lbs`
           : `${diffKg} kg`;
       }
     }
 
     const displayCurrent = preferredUnit === 'LBS'
-      ? `${(weightLogs[0].weightLb || Math.round(currentKg * KG_TO_LBS * 10) / 10)} lbs`
-      : `${Math.round(currentKg * 10) / 10} kg`;
+      ? `${(weightLogs[0].weightLb || Math.round(currentKg * KG_TO_LBS * 100) / 100)} lbs`
+      : `${Math.round(currentKg * 100) / 100} kg`;
 
     return {
       current: displayCurrent,

@@ -18,7 +18,8 @@ import {
   Download,
   Lock,
   Scale,
-  Shield
+  Shield,
+  ArrowLeftRight
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useAdmin } from '../../context/AdminContext';
@@ -27,6 +28,7 @@ import { isDesignatedAdminEmail } from '../../utils/adminSecurity';
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'calculator', label: 'Weight Calculator', icon: Calculator, badge: 'Core' },
+  { id: 'converter', label: 'Weight Conversion', icon: ArrowLeftRight, badge: 'KG⇄LB' },
   { id: 'tracker', label: 'Workout Tracker', icon: Dumbbell },
   { id: 'planner', label: 'Weekly Planner', icon: Calendar, badge: '7-Day' },
   { id: 'library', label: 'Exercise Library', icon: BookOpen },
@@ -143,7 +145,7 @@ export const Sidebar = ({ activeTab, setActiveTab, isMobileOpen, setIsMobileOpen
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
-              const isLocked = (!currentUser || (isDemoMode && demoAccessMode === 'calculator-only')) && item.id !== 'calculator';
+              const isLocked = (!currentUser || (isDemoMode && demoAccessMode === 'calculator-only')) && item.id !== 'calculator' && item.id !== 'converter';
 
               return (
                 <button

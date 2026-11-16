@@ -3,6 +3,7 @@ import {
   Lock, 
   Calculator, 
   ArrowRight, 
+  ArrowLeftRight,
   LogIn,
   LogOut, 
   Sparkles, 
@@ -58,11 +59,11 @@ export const DemoRestrictedView = ({ activeTab, setActiveTab, onOpenAuth }) => {
           <p className="text-sm text-slate-400 max-w-md mx-auto leading-relaxed">
             {isGuest 
               ? `Sign in or create a free athlete account to access ${getTabName()}, record custom workouts, and save your Personal Records.`
-              : 'The Demo Account provides unrestricted access to the Smart Weight Calculator, plate racks, 45° leg press, and auto plate solver.'}
+              : 'The Demo Account provides unrestricted access to the Smart Weight Calculator, Weight Conversion, plate racks, 45° leg press, and auto plate solver.'}
           </p>
           <p className="text-xs text-slate-500 max-w-sm mx-auto">
             {isGuest
-              ? 'Our Smart Barbell Calculator is 100% free and open for everyone. Create a free account anytime to unlock all features.'
+              ? 'Our Smart Barbell Calculator and Weight Conversion (KG ⇄ LBS) are 100% free and open for everyone without login. Create a free account anytime to unlock all features.'
               : 'To track live sets, save exercise histories, and analyze performance records, please create a free account or sign in.'}
           </p>
         </div>
@@ -72,7 +73,7 @@ export const DemoRestrictedView = ({ activeTab, setActiveTab, onOpenAuth }) => {
           <button
             type="button"
             onClick={onOpenAuth || logout}
-            className="w-full sm:w-auto px-6 py-3 bg-neon-cyan hover:bg-[#29bfcd] text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-neon-cyan/20 transition active:scale-95 flex items-center justify-center gap-2"
+            className="w-full sm:w-auto px-5 py-3 bg-neon-cyan hover:bg-[#29bfcd] text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-neon-cyan/20 transition active:scale-95 flex items-center justify-center gap-2"
           >
             <LogIn className="w-4 h-4" />
             <span>Sign In or Register</span>
@@ -81,10 +82,19 @@ export const DemoRestrictedView = ({ activeTab, setActiveTab, onOpenAuth }) => {
           <button
             type="button"
             onClick={() => setActiveTab('calculator')}
-            className="w-full sm:w-auto px-6 py-3 bg-midnight-bg hover:bg-midnight-elevated border border-midnight-border text-slate-200 hover:text-white font-bold text-xs rounded-xl transition active:scale-95 flex items-center justify-center gap-2"
+            className="w-full sm:w-auto px-5 py-3 bg-midnight-bg hover:bg-midnight-elevated border border-midnight-border text-slate-200 hover:text-white font-bold text-xs rounded-xl transition active:scale-95 flex items-center justify-center gap-2"
           >
             <Calculator className="w-4 h-4 text-neon-cyan" />
-            <span>Return to Weight Calculator</span>
+            <span>Weight Calculator</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('converter')}
+            className="w-full sm:w-auto px-5 py-3 bg-midnight-bg hover:bg-midnight-elevated border border-midnight-border text-slate-200 hover:text-white font-bold text-xs rounded-xl transition active:scale-95 flex items-center justify-center gap-2"
+          >
+            <ArrowLeftRight className="w-4 h-4 text-neon-violet" />
+            <span>Weight Conversion</span>
           </button>
         </div>
 

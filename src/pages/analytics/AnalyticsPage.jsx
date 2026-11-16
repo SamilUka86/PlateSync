@@ -60,17 +60,17 @@ export const AnalyticsPage = () => {
       return [
         {
           date: 'Current',
-          weight: (preferredUnit === 'LB' || preferredUnit === 'LBS') ? Math.round(baseKg * KG_TO_LBS * 10) / 10 : baseKg,
+          weight: (preferredUnit === 'LB' || preferredUnit === 'LBS') ? Math.round(baseKg * KG_TO_LBS * 100) / 100 : baseKg,
           kg: baseKg,
-          lbs: Math.round(baseKg * KG_TO_LBS * 10) / 10
+          lbs: Math.round(baseKg * KG_TO_LBS * 100) / 100
         }
       ];
     }
     return [...weightLogs].reverse().map(l => ({
       date: new Date(l.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-      weight: (preferredUnit === 'LB' || preferredUnit === 'LBS') ? (l.weightLb || Math.round(l.weightKg * KG_TO_LBS * 10) / 10) : l.weightKg,
+      weight: (preferredUnit === 'LB' || preferredUnit === 'LBS') ? (l.weightLb || Math.round(l.weightKg * KG_TO_LBS * 100) / 100) : l.weightKg,
       kg: l.weightKg,
-      lbs: l.weightLb || Math.round(l.weightKg * KG_TO_LBS * 10) / 10,
+      lbs: l.weightLb || Math.round(l.weightKg * KG_TO_LBS * 100) / 100,
       fullDate: l.date
     }));
   }, [weightLogs, preferredUnit, userProfile?.bodyWeight]);
@@ -109,14 +109,14 @@ export const AnalyticsPage = () => {
         if (maxWeightKg > 0) {
           const isLb = (preferredUnit === 'LB' || preferredUnit === 'LBS');
           const displayW = isLb
-            ? Math.round(maxWeightKg * KG_TO_LBS * 10) / 10
-            : Math.round(maxWeightKg * 10) / 10;
+            ? Math.round(maxWeightKg * KG_TO_LBS * 100) / 100
+            : Math.round(maxWeightKg * 100) / 100;
 
           list.push({
             date: new Date(w.date || w.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
             weight: displayW,
-            kg: Math.round(maxWeightKg * 10) / 10,
-            lbs: Math.round(maxWeightKg * KG_TO_LBS * 10) / 10
+            kg: Math.round(maxWeightKg * 100) / 100,
+            lbs: Math.round(maxWeightKg * KG_TO_LBS * 100) / 100
           });
         }
       }
@@ -278,7 +278,7 @@ export const AnalyticsPage = () => {
             <div className="text-right">
               <span className="text-[10px] text-slate-400 block font-mono">Current Weight</span>
               <span className="text-xs font-mono font-bold text-neon-cyan bg-neon-cyan/10 px-2 py-0.5 rounded border border-neon-cyan/20">
-                {preferredUnit === 'LBS' ? `${Math.round((userProfile?.bodyWeight || 75) * KG_TO_LBS * 10) / 10} lbs` : `${userProfile?.bodyWeight || 75} kg`}
+                {preferredUnit === 'LBS' ? `${Math.round((userProfile?.bodyWeight || 75) * KG_TO_LBS * 100) / 100} lbs` : `${userProfile?.bodyWeight || 75} kg`}
               </span>
             </div>
           </div>

@@ -29,6 +29,7 @@ import {
 } from '../../utils/weightCalculations';
 import { BarbellVisualizer } from '../../components/calculator/BarbellVisualizer';
 import { AutoPlateSolver } from '../../components/calculator/AutoPlateSolver';
+import { WeightConverter } from '../../components/converter/WeightConverter';
 import { useAuth } from '../../context/AuthContext';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useNotification } from '../../context/NotificationContext';
@@ -288,7 +289,7 @@ export const CalculatorPage = ({ setActiveTab }) => {
   // Save current plate configuration
   const handleSaveConfig = (e) => {
     e.preventDefault();
-    const name = configNameInput.trim() || `Barbell Load (${weightSummary.totalKg.toFixed(1)}kg)`;
+    const name = configNameInput.trim() || `Barbell Load (${weightSummary.totalKg.toFixed(2)}kg)`;
     savePlateConfiguration({
       name,
       barbellWeight: barbellConfig.weight,
@@ -300,7 +301,7 @@ export const CalculatorPage = ({ setActiveTab }) => {
       totalLbs: Math.round(weightSummary.totalLbs * 100) / 100
     });
     addNotification(`Configuration "${name}" saved!`, 'success');
-    logUserActivityEvent('CALCULATOR_CONFIG_SAVED', `Saved plate configuration: "${name}" (${weightSummary.totalKg.toFixed(1)} KG)`, {
+    logUserActivityEvent('CALCULATOR_CONFIG_SAVED', `Saved plate configuration: "${name}" (${weightSummary.totalKg.toFixed(2)} KG)`, {
       name,
       totalKg: weightSummary.totalKg
     });
@@ -1107,6 +1108,9 @@ export const CalculatorPage = ({ setActiveTab }) => {
         </div>
 
       </div>
+
+      {/* Interactive Weight Conversion Calculator (KG ⇄ LBS) Below Barbell Calculator */}
+      <WeightConverter isEmbedded={true} setActiveTab={setActiveTab} />
 
       {/* Save Configuration Modal */}
       {showSaveModal && (

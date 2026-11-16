@@ -128,7 +128,7 @@ export const ProfilePage = ({ setActiveTab }) => {
   const heightInInches = Math.round(formData.height / 2.54);
   const heightFeet = Math.floor(heightInInches / 12);
   const heightRem = heightInInches % 12;
-  const weightInLbs = Math.round(formData.bodyWeight * KG_TO_LBS * 10) / 10;
+  const weightInLbs = Math.round(formData.bodyWeight * KG_TO_LBS * 100) / 100;
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto animate-in fade-in duration-300">

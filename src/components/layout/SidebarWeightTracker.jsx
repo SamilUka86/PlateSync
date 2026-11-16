@@ -114,10 +114,10 @@ export const SidebarWeightTracker = ({ collapsed = false, onExpandSidebar, onOpe
               {
                 id: `seed_1_${userId}`,
                 date: getTodayLocalDateStr(),
-                weight: (preferredUnit === 'LB' || preferredUnit === 'LBS') ? Math.round(baseKg * KG_TO_LBS * 10) / 10 : baseKg,
+                weight: (preferredUnit === 'LB' || preferredUnit === 'LBS') ? Math.round(baseKg * KG_TO_LBS * 100) / 100 : baseKg,
                 unit: (preferredUnit === 'LB' || preferredUnit === 'LBS') ? 'LBS' : 'KG',
                 weightKg: baseKg,
-                weightLb: Math.round(baseKg * KG_TO_LBS * 10) / 10,
+                weightLb: Math.round(baseKg * KG_TO_LBS * 100) / 100,
                 createdAt: new Date().toISOString()
               }
             ];
@@ -148,10 +148,10 @@ export const SidebarWeightTracker = ({ collapsed = false, onExpandSidebar, onOpe
   // Current weight formatted in active unit
   const displayCurrentWeight = useMemo(() => {
     if (unit === 'LB' || unit === 'LBS') {
-      const lbs = Math.round(currentWeightKg * KG_TO_LBS * 10) / 10;
+      const lbs = Math.round(currentWeightKg * KG_TO_LBS * 100) / 100;
       return `${lbs} lbs`;
     }
-    return `${Math.round(currentWeightKg * 10) / 10} kg`;
+    return `${Math.round(currentWeightKg * 100) / 100} kg`;
   }, [currentWeightKg, unit]);
 
   // Trend vs previous log
@@ -159,14 +159,14 @@ export const SidebarWeightTracker = ({ collapsed = false, onExpandSidebar, onOpe
     if (!logs || logs.length < 2) return null;
     const current = logs[0].weightKg;
     const prev = logs[1].weightKg;
-    const diffKg = Math.round((current - prev) * 10) / 10;
+    const diffKg = Math.round((current - prev) * 100) / 100;
 
-    if (Math.abs(diffKg) < 0.05) return { type: 'neutral', label: '0.0 kg' };
+    if (Math.abs(diffKg) < 0.01) return { type: 'neutral', label: '0.00 kg' };
     if (diffKg > 0) {
-      const val = (unit === 'LB' || unit === 'LBS') ? `+${Math.round(diffKg * KG_TO_LBS * 10) / 10} lbs` : `+${diffKg} kg`;
+      const val = (unit === 'LB' || unit === 'LBS') ? `+${Math.round(diffKg * KG_TO_LBS * 100) / 100} lbs` : `+${diffKg} kg`;
       return { type: 'up', label: val };
     } else {
-      const val = (unit === 'LB' || unit === 'LBS') ? `${Math.round(diffKg * KG_TO_LBS * 10) / 10} lbs` : `${diffKg} kg`;
+      const val = (unit === 'LB' || unit === 'LBS') ? `${Math.round(diffKg * KG_TO_LBS * 100) / 100} lbs` : `${diffKg} kg`;
       return { type: 'down', label: val };
     }
   }, [logs, unit]);
@@ -182,8 +182,8 @@ export const SidebarWeightTracker = ({ collapsed = false, onExpandSidebar, onOpe
 
     setIsSaving(true);
     try {
-      const weightKg = (unit === 'LB' || unit === 'LBS') ? Math.round((num / KG_TO_LBS) * 10) / 10 : Math.round(num * 10) / 10;
-      const weightLb = unit === 'KG' ? Math.round((num * KG_TO_LBS) * 10) / 10 : Math.round(num * 10) / 10;
+      const weightKg = (unit === 'LB' || unit === 'LBS') ? Math.round((num / KG_TO_LBS) * 100) / 100 : Math.round(num * 100) / 100;
+      const weightLb = unit === 'KG' ? Math.round((num * KG_TO_LBS) * 100) / 100 : Math.round(num * 100) / 100;
 
       const newEntry = {
         id: `bw_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
