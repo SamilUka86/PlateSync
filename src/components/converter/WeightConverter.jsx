@@ -61,18 +61,36 @@ export const WeightConverter = ({ isEmbedded = false }) => {
     }
   };
 
-  // Swap Units
+  // Swap conversion direction (KG ⇄ LBS) properly without compounding values
   const handleSwapUnits = () => {
     const nextUnit = activeUnit === 'KG' ? 'LBS' : 'KG';
     setActiveUnit(nextUnit);
-    const currentKg = kgValue;
-    const currentLbs = lbsValue;
-    setKgValue(currentLbs);
-    const num = parseFloat(currentLbs);
-    if (!isNaN(num) && num >= 0) {
-      setLbsValue((num * KG_TO_LBS).toFixed(2));
+
+    // Take the user's primary input value from the currently active unit
+    const currentValue = activeUnit === 'KG' ? kgValue : lbsValue;
+    const num = parseFloat(currentValue);
+
+    if (!isNaN(num) && num > 0) {
+      if (nextUnit === 'LBS') {
+        // Transfer the base number into LBS and convert properly to KG
+        setLbsValue(currentValue);
+        setKgValue((num * LBS_TO_KG).toFixed(2));
+      } else {
+        // Transfer the base number into KG and convert properly to LBS
+        setKgValue(currentValue);
+        setLbsValue((num * KG_TO_LBS).toFixed(2));
+      }
+    } else {
+      if (nextUnit === 'LBS') {
+        setLbsValue(currentValue || '');
+        setKgValue('');
+      } else {
+        setKgValue(currentValue || '');
+        setLbsValue('');
+      }
     }
-    addNotification(`Swapped primary unit to ${nextUnit}`, 'info');
+
+    addNotification(`Swapped direction: now converting ${nextUnit} ➔ ${nextUnit === 'KG' ? 'LBS' : 'KG'}`, 'info');
   };
 
   // Reset to default 100 of active unit
